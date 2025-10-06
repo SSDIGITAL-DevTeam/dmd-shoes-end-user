@@ -1,0 +1,31 @@
+{
+  "about": {
+    "title": "Tentang Kami",
+    "description": "Kami adalah pabrik spesialis komponen sepatu yang berfokus pada produksi hak sepatu, outsole, dan insole berkualitas. Dengan teknologi modern dan material ramah lingkungan, kami menghadirkan solusi shoes parts yang presisi, terjangkau, dan cocok untuk berbagai skala produksi — dari workshop kecil hingga pabrik besar."
+  },
+  "whyChooseUs": {
+    "title": "MENGAPA MEMILIH KAMI",
+    "subtitle": "Karena Kaki Anda Layak yang Terbaik",
+    "quality": {
+      "title": "Kualitas Terjamin",
+      "description": "Setiap produk kami melewati proses seleksi ketat."
+    },
+    "choices": {
+      "title": "Pilihan Lengkap",
+      "description": "Dari sneakers, loafers, hingga sandal santai, semua ada di sini."
+    },
+    "price": {
+      "title": "Harga Bersahabat",
+      "description": "Produk berkualitas dengan harga yang tetap ramah di dompet."
+    },
+    "service": {
+      "title": "Layanan Ramah & Cepat",
+      "description": "Tim kami selalu siap membantu memilihkan yang terbaik untuk Anda."
+    }
+  },
+  "contactSupport": {
+    "title": "Butuh Bantuan?",
+    "description": "Kirimkan pertanyaan Anda, dan tim layanan pelanggan kami akan segera membantu.",
+    "button": "Hubungi Kami"
+  }
+}

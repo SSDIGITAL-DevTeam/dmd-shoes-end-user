@@ -1,0 +1,42 @@
+{
+  "hero": {
+    "title": "Innovative solutions for the future of footwear components",
+    "subtitle": "With over 20 years of manufacturing experience, we deliver strong, precise, and eco-friendly shoe parts for brands and factories worldwide.",
+    "cta": "View Products"
+  },
+  "technology": {
+    "heading": "Technology and Advantages",
+    "features": {
+      "fastProduction": {
+        "title": "Rapid Production",
+        "description": "Powered by a broad range of modern machines."
+      },
+      "recycledMaterial": {
+        "title": "Recycled Materials",
+        "description": "Committed to reducing industrial waste."
+      },
+      "precisionConsistency": {
+        "title": "Precision & Consistency",
+        "description": "Design-accurate results that stay stable across batches."
+      },
+      "costEfficiency": {
+        "title": "Cost Efficiency",
+        "description": "Save more without compromising function."
+      },
+      "scalability": {
+        "title": "Scalability",
+        "description": "Ready for small orders to mass production."
+      }
+    },
+    "button": "View Products",
+    "imageAlt": "Footwear manufacturing process"
+  },
+  "category": {
+    "more": "More"
+  },
+  "contact": {
+    "heading": "Ready to Work with a Trusted Footwear Components Factory?",
+    "subheading": "Contact our team today for a discussion and the best offer",
+    "button": "Contact Us"
+  }
+}

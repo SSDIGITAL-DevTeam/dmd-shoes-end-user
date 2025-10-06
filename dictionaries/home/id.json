@@ -1,0 +1,42 @@
+{
+  "hero": {
+    "title": "Solusi inovatif untuk komponen sepatu masa depan",
+    "subtitle": "Dengan pengalaman manufaktur lebih dari 20 tahun, kami menghadirkan part sepatu yang kuat, presisi, dan ramah lingkungan untuk brand & pabrik sepatu di seluruh dunia",
+    "cta": "Lihat Produk"
+  },
+  "technology": {
+    "heading": "Teknologi dan Keunggulan",
+    "features": {
+      "fastProduction": {
+        "title": "Produksi Cepat",
+        "description": "Didukung banyak mesin modern."
+      },
+      "recycledMaterial": {
+        "title": "Material Recycle",
+        "description": "Mendukung pengurangan limbah industri."
+      },
+      "precisionConsistency": {
+        "title": "Presisi & Konsisten",
+        "description": "Hasil sesuai desain dan stabil di setiap batch."
+      },
+      "costEfficiency": {
+        "title": "Efisiensi Biaya",
+        "description": "Lebih hemat tanpa mengorbankan fungsi."
+      },
+      "scalability": {
+        "title": "Skalabilitas",
+        "description": "Siap melayani pesanan kecil hingga produksi massal."
+      }
+    },
+    "button": "Lihat Produk",
+    "imageAlt": "Proses produksi sepatu"
+  },
+  "category": {
+    "more": "Selengkapnya"
+  },
+  "contact": {
+    "heading": "Siap Bekerja Sama Dengan Pabrik Komponen Sepatu Terpercaya?",
+    "subheading": "Hubungi Tim Kami Hari Ini Untuk Diskusi Dan Penawaran Terbaik",
+    "button": "Hubungi Kami"
+  }
+}

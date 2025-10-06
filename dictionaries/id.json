@@ -1,0 +1,16 @@
+{
+  "menu": {
+    "home": "Beranda",
+    "products": "Produk",
+    "articles": "Artikel",
+    "about_us": "Tentang Kami",
+    "contact_us": "Kontak Kami",
+      "faq": "FAQ"
+  },
+  "company": {
+    "name": "DMD Shoeparts Manufacturing",
+    "tagline": "Memproduksi komponen alas kaki berkualitas untuk industri sepatu sejak 2004",
+    "address": "Alamat"  ,
+    "operating_hours": "Jam Operasional"
+  }
+}

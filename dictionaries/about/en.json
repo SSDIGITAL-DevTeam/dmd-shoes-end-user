@@ -1,0 +1,37 @@
+{
+  "about": {
+    "title": "About Us",
+    "description": "We are a specialized footwear components factory focusing on the production of high-quality shoe heels, outsoles, and insoles. Using modern technology and eco-friendly materials, we deliver precise, affordable shoe parts solutions suitable for all production scales — from small workshops to large factories."
+  },
+
+    "whyChooseUs": {
+      "title": "WHY CHOOSE US",
+      "subtitle": "Because Your Feet Deserve the Best",
+
+      "quality": {
+        "title": "Guaranteed Quality",
+        "description": "Every product goes through a strict selection process."
+      },
+      "choices": {
+        "title": "Complete Choices",
+        "description": "From sneakers and loafers to casual sandals, everything is here."
+      },
+      "price": {
+        "title": "Affordable Prices",
+        "description": "High-quality products at wallet-friendly prices."
+      },
+      "service": {
+        "title": "Friendly & Fast Service",
+        "description": "Our team is always ready to help you choose the best."
+      }
+    },
+    
+      "contactSupport": {
+        "title": "Need Help?",
+        "description": "Send us your questions and our customer service team will assist you shortly.",
+        "button": "Contact Us"
+      }
+    
+  
+  
+}

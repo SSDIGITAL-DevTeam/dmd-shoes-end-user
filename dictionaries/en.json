@@ -1,0 +1,18 @@
+{
+  "menu": {
+    "home": "Home",
+    "products": "Products",
+    "articles": "Articles",
+    "about_us": "About Us",
+    "contact_us": "Contact Us",
+    "faq": "FAQ"
+    
+  },
+  "company": {
+    "name": "DMD Shoeparts Manufacturing",
+    "tagline": "Producing high-quality footwear components for the shoe industry since 2004",
+    "address": "Address",
+    "operating_hours": "Business Hours"
+  
+  }
+}
