@@ -14,8 +14,8 @@ const jakartaSans = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-const REGISTER_ENDPOINT = "/api/auth/customer/register";
-
+//const REGISTER_ENDPOINT = "/api/auth/customer/register";
+const REGISTER_ENDPOINT = process.env.NEXT_PUBLIC_API_URL+"/auth/customer/register";
 type RegisterFormValues = {
   name: string;
   email: string;
