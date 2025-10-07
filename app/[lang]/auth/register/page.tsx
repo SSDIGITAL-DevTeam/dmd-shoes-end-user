@@ -1,8 +1,8 @@
-import FormLogin from "./_component/FormRegister";
+import FormRegister from "./_component/FormRegister";
 import Image from "next/image";
 // import Logo from "@/../../public/assets/logo-dmd.svg"; // import langsung SVG
 import Logo from "@/assets/Logo"
-export default function Login() {
+export default function Register() {
   return (
     <div className="flex h-screen">
       {/* Kolom kiri - Gambar Full */}
@@ -38,9 +38,9 @@ export default function Login() {
         </div>
         <div className="w-full max-w-md bg-white mx-6 p-6">
           <h1 className="text-2xl font-bold mb-6 text-center text-primary">
-            Masuk
+            Daftar
           </h1>
-          <FormLogin />
+          <FormRegister />
         </div>
       </div>
     </div>

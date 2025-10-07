@@ -1,8 +1,8 @@
 import { getDictionary } from "../../dictionaries/get-dictionary";
 import { i18n, type Locale } from "../../i18n-config";
-import Footer from "./components/layout/footer/Footer";
-import Header from "./components/layout/header/Header"
-import "./global.css"; // <- global CSS
+import AuthInitializer from "@/components/providers/AuthInitializer";
+import "./global.css";
+
 export const metadata = {
   title: "i18n within app router - Vercel Examples",
   description: "How to do i18n in Next.js 15 within app router",
@@ -17,17 +17,14 @@ export default async function Root(props: {
   params: Promise<{ lang: Locale }>;
 }) {
   const params = await props.params;
-  const lang = await params.lang;
   const { children } = props;
-  const dictionary = await getDictionary(lang);
+  await getDictionary(params.lang);
+
   return (
     <html lang={params.lang}>
       <body>
-      
-    
-   
+        <AuthInitializer />
         {children}
-       
       </body>
     </html>
   );

@@ -9,6 +9,7 @@ import { getDictionary } from "../../../../../dictionaries/get-dictionary";
 import Link from "next/link";
 import { FaUserAlt, FaRegHeart } from "react-icons/fa";
 import Logo from "./Logo";
+import { useAuthStore } from "@/store/auth-store";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -26,6 +27,11 @@ export default function Navbar({
   const [isOpen, setIsOpen] = useState(false);
   const [navHeight, setNavHeight] = useState(0);
   const navRef = useRef<HTMLDivElement>(null);
+  const { token, user, isHydrated } = useAuthStore((state) => ({
+    token: state.token,
+    user: state.user,
+    isHydrated: state.isHydrated,
+  }));
 
   useEffect(() => {
     if (navRef.current) {
@@ -35,6 +41,8 @@ export default function Navbar({
 
   const segments = pathname.split("/").filter(Boolean);
   const currentPath = "/" + (segments[1] ?? "");
+  const isAuthenticated = Boolean(token && user);
+  const showGuestView = isHydrated ? !isAuthenticated : true;
 
   const menu = [
     { label: dictionary.menu.home, href: "/" },
@@ -60,18 +68,50 @@ export default function Navbar({
             <button
               className="text-white text-3xl"
               onClick={() => setIsOpen((prev) => !prev)}
-              aria-label={isOpen ? "Close menu" : "Open menu"} // ✅ Accessible name
+              aria-label={isOpen ? "Close menu" : "Open menu"}
             >
-              <HiMenu aria-hidden="true" /> {/* Icon dikecualikan dari pembacaan */}
+              <HiMenu aria-hidden="true" />
             </button>
 
             {/* Logo tengah */}
             <Logo lang={lang} />
 
-            {/* Placeholder kanan biar logo benar-benar center */}
-            <Link href={"/wishlist"} className="w-8 text-white" aria-label="Wishlist">
-              <FaRegHeart size={28} aria-hidden="true" />
-          </Link>
+            {/* Auth actions kanan */}
+            <div className="flex items-center justify-end gap-3 text-white">
+              {showGuestView ? (
+                <>
+                  <Link
+                    href={`/${lang}/auth/register`}
+                    className="px-[10px] py-[6px] text-sm font-medium border border-white"
+                  >
+                    Daftar
+                  </Link>
+                  <Link
+                    className="px-[10px] py-[6px] text-sm font-medium border border-white bg-white text-primary"
+                    href={`/${lang}/auth/login`}
+                  >
+                    Masuk
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/${lang}/wishlist`}
+                    className="w-8 text-white"
+                    aria-label="Wishlist"
+                  >
+                    <FaRegHeart size={28} aria-hidden="true" />
+                  </Link>
+                  <Link
+                    href={`/${lang}/profile`}
+                    className="w-8 text-white"
+                    aria-label="Profile"
+                  >
+                    <FaUserAlt size={28} aria-hidden="true" />
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Desktop: Logo kiri */}
@@ -108,42 +148,39 @@ export default function Navbar({
           {/* Right: LocaleSwitcher + Auth (desktop only) */}
           <div className="hidden lg:flex items-center space-x-4">
             <LocaleSwitcher />
+            {showGuestView ? (
+              <>
+                <Link
+                  href={`/${lang}/auth/register`}
+                  className="px-[16px] py-[10px] text-[20px] text-white font-medium border border-white"
+                >
+                  Daftar
+                </Link>
 
-              {/* Placeholder kanan biar logo benar-benar center */}
-            <Link  href={"/wishlist"} className="w-8 text-white">
-              <FaRegHeart size={28} />
-            </Link>
+                <Link
+                  className="px-[16px] py-[10px] text-[20px] font-medium border border-white bg-white text-primary"
+                  href={`/${lang}/auth/login`}
+                >
+                  Masuk
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4 text-white">
+                <Link
+                  href={`/${lang}/wishlist`}
+                  className="px-[10px] py-[16px] text-[24px] font-medium"
+                >
+                  <FaRegHeart size={24} />
+                </Link>
 
-            <Link
-              href={`/${lang}/auth/register`}
-              className="px-[16px] py-[10px] text-[20px] text-white font-medium border border-white"
-            >
-              Daftar
-            </Link>
-
-            <Link
-              className="px-[16px] py-[10px] text-[20px] font-medium border border-white bg-white text-primary"
-              href={`/${lang}/auth/login`}
-            >
-              Masuk
-            </Link>
-          </div>
-
-          {/* need login (future feature) */}
-          <div className="hidden flex items-center space-x-4">
-            <Link
-              href={`/${lang}/wishlist`}
-              className="px-[10px] py-[16px] text-[24px] text-white font-medium "
-            >
-              <FaRegHeart size={24} />
-            </Link>
-
-            <Link
-              href={`/${lang}/profile`}
-              className="px-[10px] py-[16px] text-[24px] text-white font-medium "
-            >
-              <FaUserAlt size={24} />
-            </Link>
+                <Link
+                  href={`/${lang}/profile`}
+                  className="px-[10px] py-[16px] text-[24px] font-medium"
+                >
+                  <FaUserAlt size={24} />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -167,8 +204,8 @@ export default function Navbar({
             isOpen ? "translate-x-0" : "-translate-x-full"
           } w-full max-w-[250px] flex flex-col`}
         style={{
-          top: navHeight, // mulai tepat di bawah navbar
-          height: `calc(100% - ${navHeight}px)`, // sisanya penuh
+          top: navHeight,
+          height: `calc(100% - ${navHeight}px)`,
         }}
       >
         {/* Scrollable Menu Items */}
@@ -197,20 +234,41 @@ export default function Navbar({
 
           {/* Auth Buttons */}
           <div className="flex flex-col gap-4 mt-6 px-[25px]">
-            <Link
-              href={`/${lang}/auth/register`}
-              className="px-4 py-3 text-[16px] leading-[22px] font-medium text-primary border border-primary text-center"
-              onClick={() => setIsOpen(false)}
-            >
-              Daftar
-            </Link>
-            <Link
-              href={`/${lang}/auth/login`}
-              className="px-4 py-3 text-[16px] leading-[22px] font-medium border border-primary bg-primary text-white text-center"
-              onClick={() => setIsOpen(false)}
-            >
-              Masuk
-            </Link>
+            {showGuestView ? (
+              <>
+                <Link
+                  href={`/${lang}/auth/register`}
+                  className="px-4 py-3 text-[16px] leading-[22px] font-medium text-primary border border-primary text-center"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Daftar
+                </Link>
+                <Link
+                  href={`/${lang}/auth/login`}
+                  className="px-4 py-3 text-[16px] leading-[22px] font-medium border border-primary bg-primary text-white text-center"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Masuk
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-4 text-primary text-[24px]">
+                <Link
+                  href={`/${lang}/wishlist`}
+                  className="px-[10px] py-[16px]"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <FaRegHeart size={24} />
+                </Link>
+                <Link
+                  href={`/${lang}/profile`}
+                  className="px-[10px] py-[16px]"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <FaUserAlt size={24} />
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 border-t border-t-[#121212]/25  px-[25px]">
