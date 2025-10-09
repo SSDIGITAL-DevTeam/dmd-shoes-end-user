@@ -3,5 +3,36 @@
   "searchPlaceholder": "Search products...",
   "filterCategory": "Filter Category",
   "productCategory": "Product Categories",
-  "allProducts": "All Products (120)"
+  "allProducts": "All Products",
+  "categoriesEmpty": "Categories are not available yet.",
+  "sort": {
+    "label": "Sort :",
+    "trigger": "Sort",
+    "modalTitle": "Sort Products",
+    "close": "Close sort",
+     "newest": "Most Popular",
+    "priceLow": "Lowest Price",
+    "priceHigh": "Highest Price"
+  },
+  "sizeFilter": {
+    "trigger": "Size Filter",
+    "title": "Filter Size",
+    "close": "Close filter",
+    "iconAlt": "Size filter icon",
+    "heelTitle": "{categories} product sizes",
+    "sizeTitle": "Sizes for {categories}",
+    "heelDefaultCategory": "Heel",
+    "sizeDefaultCategory": "Outsole & Wedges",
+    "heelRange": "Available range: {range} ({unit})",
+    "sizeRange": "Available range: {range} ({unit})",
+    "min": "Min",
+    "max": "Max",
+    "heelUnit": "cm",
+    "sizeUnit": "EU",
+    "reset": "Reset",
+    "apply": "Apply"
+  },
+  "empty": "No products found.",
+  "prev": "Previous",
+  "next": "Next"
 }

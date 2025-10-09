@@ -3,7 +3,6 @@ import { i18n, type Locale } from "../../../i18n-config";
 import Footer from "@/components/layout/footer/Footer";
 import Header from "@/components/layout/header/Header";
 import FloatingContact from "@/components/layout/FloatingContact";
-import { inter } from "@/config/font";
 import { CONTACT } from "@/config/contact";
 
 export const metadata = {
@@ -25,13 +24,11 @@ export default async function Root(props: {
   const dictionary = await getDictionary(lang);
 
   return (
-    <html lang={params.lang}>
-      <body className={`${inter.className} antialiased`}>
-        <Header lang={params.lang} dictionary={dictionary} />
-        {children}
-        <Footer lang={params.lang} dictionary={dictionary} />
-        <FloatingContact whatsapp={CONTACT.whatsapp} />
-      </body>
-    </html>
+    <>
+      <Header lang={lang} dictionary={dictionary} />
+      {children}
+      <Footer lang={lang} dictionary={dictionary} />
+      <FloatingContact whatsapp={CONTACT.whatsapp} />
+    </>
   );
 }

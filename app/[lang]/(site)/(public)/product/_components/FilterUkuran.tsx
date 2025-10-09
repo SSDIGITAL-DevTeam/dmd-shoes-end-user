@@ -1,108 +1,452 @@
 "use client";
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 import Image from "next/image";
 
-export default function FilterUkuran() {
+type CategoryRange = {
+  id: number;
+  name?: string | null;
+  min?: number | null;
+  max?: number | null;
+};
+
+type RangeValue = {
+  min?: number | null;
+  max?: number | null;
+  categories?: CategoryRange[];
+};
+
+export type FilterValues = {
+  heel_min?: number;
+  heel_max?: number;
+  size_min?: number;
+  size_max?: number;
+};
+
+type FilterUkuranProps = {
+  heel?: RangeValue;
+  size?: RangeValue;
+  values: FilterValues;
+  onApply: (values: FilterValues) => void;
+  onReset: () => void;
+  fullWidth?: boolean;
+  dictionary?: {
+    trigger?: string;
+    title?: string;
+    close?: string;
+    iconAlt?: string;
+    heelTitle?: string;
+    heelDefaultCategory?: string;
+    heelRange?: string;
+    sizeTitle?: string;
+    sizeDefaultCategory?: string;
+    sizeRange?: string;
+    min?: string;
+    max?: string;
+    heelUnit?: string;
+    sizeUnit?: string;
+    reset?: string;
+    apply?: string;
+  };
+  locale?: string;
+};
+
+const formatNumber = (value?: number | null, locale?: string) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "-";
+  }
+  try {
+    return new Intl.NumberFormat(locale ?? undefined, {
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return String(value);
+  }
+};
+
+const formatRange = (
+  min?: number | null,
+  max?: number | null,
+  locale?: string,
+) => `${formatNumber(min, locale)} - ${formatNumber(max, locale)}`;
+
+const formatRangeValue = (range?: RangeValue, locale?: string) => {
+  if (!range) return "-";
+  const hasMin = range.min !== null && range.min !== undefined;
+  const hasMax = range.max !== null && range.max !== undefined;
+  if (hasMin || hasMax) {
+    return formatRange(range.min, range.max, locale);
+  }
+  const mins: number[] = [];
+  const maxs: number[] = [];
+  (range.categories ?? []).forEach((category) => {
+    if (category?.min !== null && category?.min !== undefined) {
+      mins.push(category.min);
+    }
+    if (category?.max !== null && category?.max !== undefined) {
+      maxs.push(category.max);
+    }
+  });
+  if (!mins.length && !maxs.length) return "-";
+  const minValue = mins.length ? Math.min(...mins) : undefined;
+  const maxValue = maxs.length ? Math.max(...maxs) : undefined;
+  return formatRange(minValue, maxValue, locale);
+};
+
+const applyTemplate = (
+  template: string,
+  replacements: Record<string, string>,
+) =>
+  template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    replacements[key] ?? "",
+  );
+
+const formatCategoryNames = (
+  categories: CategoryRange[] | undefined,
+  locale: string | undefined,
+  fallback: string,
+) => {
+  const names = (categories ?? [])
+    .map((cat) => (cat?.name ?? "").trim())
+    .filter((name): name is string => Boolean(name));
+  if (!names.length) return fallback;
+  if (typeof Intl !== "undefined" && typeof Intl.ListFormat === "function") {
+    try {
+      const formatter = new Intl.ListFormat(locale ?? undefined, {
+        style: "short",
+        type: "conjunction",
+      });
+      return formatter.format(names);
+    } catch {
+      return names.join(", ");
+    }
+  }
+  return names.join(", ");
+};
+
+const buildTitleFromTemplate = (template: string, categoriesLabel: string) =>
+  template.includes("{categories}")
+    ? applyTemplate(template, { categories: categoriesLabel })
+    : template;
+
+export default function FilterUkuran({
+  heel,
+  size,
+  values,
+  onApply,
+  onReset,
+  fullWidth = true,
+  dictionary,
+  locale,
+}: FilterUkuranProps) {
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<FilterValues>(values);
+
+  const isEnglish = (locale ?? "").startsWith("en");
+
+  const labels = {
+    trigger:
+      dictionary?.trigger ??
+      (isEnglish ? "Size Filter" : "Filter Ukuran"),
+    title:
+      dictionary?.title ?? (isEnglish ? "Filter Size" : "Filter Ukuran"),
+    close:
+      dictionary?.close ?? (isEnglish ? "Close filter" : "Tutup filter"),
+    iconAlt:
+      dictionary?.iconAlt ??
+      (isEnglish ? "Size filter icon" : "Ikon filter ukuran"),
+    heelTitleTemplate:
+      dictionary?.heelTitle ??
+      (isEnglish ? "{categories} product sizes" : "Ukuran produk {categories}"),
+    heelDefaultCategory:
+      dictionary?.heelDefaultCategory ?? (isEnglish ? "Heel" : "Hak"),
+    heelRange:
+      dictionary?.heelRange ??
+      (isEnglish ? "Available range: {range} ({unit})" : "Rentang tersedia: {range} ({unit})"),
+    sizeTitleTemplate:
+      dictionary?.sizeTitle ??
+      (isEnglish ? "Sizes for {categories}" : "Ukuran {categories}"),
+    sizeDefaultCategory:
+      dictionary?.sizeDefaultCategory ?? "Outsole & Wedges",
+    sizeRange:
+      dictionary?.sizeRange ??
+      (isEnglish ? "Available range: {range} ({unit})" : "Rentang tersedia: {range} ({unit})"),
+    min: dictionary?.min ?? (isEnglish ? "Min" : "Min"),
+    max: dictionary?.max ?? (isEnglish ? "Max" : "Maks"),
+    heelUnit: dictionary?.heelUnit ?? "cm",
+    sizeUnit: dictionary?.sizeUnit ?? "EU",
+    reset: dictionary?.reset ?? "Reset",
+    apply: dictionary?.apply ?? (isEnglish ? "Apply" : "Terapkan"),
+  };
+
+  const heelSummary = useMemo(
+    () => formatRangeValue(heel, locale),
+    [heel, locale],
+  );
+  const sizeSummary = useMemo(
+    () => formatRangeValue(size, locale),
+    [size, locale],
+  );
+
+  const heelCategoryLabel = useMemo(
+    () =>
+      formatCategoryNames(
+        heel?.categories,
+        locale,
+        labels.heelDefaultCategory,
+      ),
+    [heel, locale, labels.heelDefaultCategory],
+  );
+  const heelCategoriesDetail = useMemo(
+    () =>
+      (heel?.categories ?? [])
+        .map((category) => {
+          if (!category) return null;
+          const name =
+            (category.name ?? "").trim() || labels.heelDefaultCategory;
+          const rangeText = formatRange(category.min, category.max, locale);
+          return { name, rangeText };
+        })
+        .filter(
+          (item): item is { name: string; rangeText: string } => item !== null,
+        ),
+    [heel?.categories, labels.heelDefaultCategory, locale],
+  );
+  const sizeCategoryLabel = useMemo(
+    () =>
+      formatCategoryNames(
+        size?.categories,
+        locale,
+        labels.sizeDefaultCategory,
+      ),
+    [size, locale, labels.sizeDefaultCategory],
+  );
+  const sizeCategoriesDetail = useMemo(
+    () =>
+      (size?.categories ?? [])
+        .map((category) => {
+          if (!category) return null;
+          const name =
+            (category.name ?? "").trim() || labels.sizeDefaultCategory;
+          const rangeText = formatRange(category.min, category.max, locale);
+          return { name, rangeText };
+        })
+        .filter(
+          (item): item is { name: string; rangeText: string } => item !== null,
+        ),
+    [size?.categories, labels.sizeDefaultCategory, locale],
+  );
+
+  const heelTitle = useMemo(
+    () => buildTitleFromTemplate(labels.heelTitleTemplate, heelCategoryLabel),
+    [labels.heelTitleTemplate, heelCategoryLabel],
+  );
+  const sizeTitle = useMemo(
+    () => buildTitleFromTemplate(labels.sizeTitleTemplate, sizeCategoryLabel),
+    [labels.sizeTitleTemplate, sizeCategoryLabel],
+  );
+
+  const heelRangeText = useMemo(
+    () =>
+      applyTemplate(labels.heelRange, {
+        range: heelSummary,
+        unit: labels.heelUnit,
+      }),
+    [heelSummary, labels.heelRange, labels.heelUnit],
+  );
+  const sizeRangeText = useMemo(
+    () =>
+      applyTemplate(labels.sizeRange, {
+        range: sizeSummary,
+        unit: labels.sizeUnit,
+      }),
+    [sizeSummary, labels.sizeRange, labels.sizeUnit],
+  );
+
+  const handleInput =
+    (key: keyof FilterValues) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = event.target.value;
+      setDraft((prev) => ({
+        ...prev,
+        [key]: raw === "" ? undefined : Number(raw),
+      }));
+    };
+
+  const apply = () => {
+    onApply(draft);
+    setOpen(false);
+  };
+
+  const reset = () => {
+    setDraft({});
+    onReset();
+    setOpen(false);
+  };
+
+  const syncWithValues = () => setDraft(values);
 
   return (
     <div>
-      {/* Tombol Filter */}
       <button
-        onClick={() => setOpen(true)}
-        className="flex items-center border px-3 py-2 text-sm rounded-[4px] space-x-2 w-full lg:w-auto"
+        onClick={() => {
+          syncWithValues();
+          setOpen(true);
+        }}
+        className={`flex items-center ${fullWidth ? "w-full" : "w-auto"} border px-3 py-2 text-sm rounded-[4px] space-x-2`}
       >
         <Image
           src="/assets/images/product/filter-ukuran.svg"
-          alt="Filter Icon"
+          alt={labels.iconAlt}
           width={16}
           height={16}
         />
         <span className="font-medium text-[14px] leading-[150%]">
-          Filter Ukuran
+          {labels.trigger}
         </span>
       </button>
 
-      {/* Overlay */}
-      {open && (
+      {open ? (
         <div
           className="fixed inset-0 z-40 bg-black/40"
           onClick={() => setOpen(false)}
-        ></div>
-      )}
+        />
+      ) : null}
 
-      {/* Sidebar Filter dari kanan */}
       <div
-        className={`fixed top-0 right-0 h-full w-[320px] bg-white 
-          shadow-lg z-50 transform transition-transform 
-          duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full w-[320px] bg-white shadow-lg z-50 transform transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 ">
+        <div className="flex items-center justify-between p-4 border-b border-b-gray-200">
           <h2 className="text-lg font-semibold text-[#003663]">
-            Filter Ukuran
+            {labels.title}
           </h2>
-          <button onClick={() => setOpen(false)} className="text-xl">
+          <button
+            onClick={() => setOpen(false)}
+            className="text-xl text-gray-500 hover:text-gray-700"
+            aria-label={labels.close}
+          >
             &times;
           </button>
         </div>
 
-        {/* Isi Filter */}
-        <div className="space-y-6">
-          {/* Filter Hak */}
-          <div className="border-t border-t-[#121212]/25  p-[24px] ">
-            <h3 className="font-medium text-[#121212]">
-              Ukuran untuk produk Hak
-            </h3>
-            <p className="text-sm text-[#121212]/50 mt-[16px]">
-              Min = 10cm
-              <br />
-              Max = 35cm
-            </p>
-            <div className="flex items-center space-x-2 mt-[24px]">
-              <input
-                type="number"
-                placeholder="Dari"
-                className="w-20 border rounded px-2 py-1 rounded-[4px] text-[20px]"
-              />
-              <span>cm</span>
-              {/* Garis tengah */}
-              <div className="w-4 h-[1px] bg-[#121212]"></div>
-              <input
-                type="number"
-                placeholder="Sampai"
-                className="w-24 border rounded px-2 py-1 rounded-[4px] text-[20px]"
-              />
-              <span>cm</span>
-            </div>
+        <div className="flex flex-col h-[calc(100%-64px)] justify-between">
+          <div className="space-y-6 overflow-y-auto px-4 py-6">
+            <section className="space-y-4 border-b border-b-gray-200 pb-6">
+              <header>
+                <h3 className="font-medium text-[#121212]">
+                  {heelTitle}
+                </h3>
+                <p className="mt-2 text-sm text-[#121212]/60">
+                  {heelRangeText}
+                </p>
+              </header>
+
+              {heelCategoriesDetail.length > 0 ? (
+                <ul className="space-y-2 text-sm text-[#121212]/70">
+                  {heelCategoriesDetail.map(({ name, rangeText }) => (
+                    <li
+                      key={`heel-${name}`}
+                      className="flex items-center justify-between gap-4"
+                    >
+                      <span>{name}</span>
+                      <span className="font-medium">{rangeText}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={draft.heel_min ?? ""}
+                  onChange={handleInput("heel_min")}
+                  placeholder={labels.min}
+                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                />
+                <span className="text-sm text-[#121212]/60">
+                  {labels.heelUnit}
+                </span>
+                <div className="h-[1px] w-4 bg-[#121212]/60" />
+                <input
+                  type="number"
+                  value={draft.heel_max ?? ""}
+                  onChange={handleInput("heel_max")}
+                  placeholder={labels.max}
+                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                />
+                <span className="text-sm text-[#121212]/60">
+                  {labels.heelUnit}
+                </span>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <header>
+                <h3 className="font-medium text-[#121212]">
+                  {sizeTitle}
+                </h3>
+                <p className="mt-2 text-sm text-[#121212]/60">
+                  {sizeRangeText}
+                </p>
+              </header>
+
+              {sizeCategoriesDetail.length > 0 ? (
+                <ul className="space-y-2 text-sm text-[#121212]/70">
+                  {sizeCategoriesDetail.map(({ name, rangeText }) => (
+                    <li
+                      key={`size-${name}`}
+                      className="flex items-center justify-between gap-4"
+                    >
+                      <span>{name}</span>
+                      <span className="font-medium">{rangeText}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={draft.size_min ?? ""}
+                  onChange={handleInput("size_min")}
+                  placeholder={labels.min}
+                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                />
+                <span className="text-sm text-[#121212]/60">
+                  {labels.sizeUnit}
+                </span>
+                <div className="h-[1px] w-4 bg-[#121212]/60" />
+                <input
+                  type="number"
+                  value={draft.size_max ?? ""}
+                  onChange={handleInput("size_max")}
+                  placeholder={labels.max}
+                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                />
+                <span className="text-sm text-[#121212]/60">
+                  {labels.sizeUnit}
+                </span>
+              </div>
+            </section>
           </div>
 
-          {/* Filter Outsole */}
-          <div className="border-t border-t-[#121212]/25 p-[24px] ">
-            <h3 className="font-medium text-[#121212]">
-              Ukuran untuk produk Outsole, Wedges
-            </h3>
-            <p className="text-sm text-[#121212]/50 mt-[16px]">
-              Min = 36
-              <br />
-              Max = 40
-            </p>
-            <div className="flex items-center space-x-2 mt-[24px]">
-              <input
-                type="number"
-                placeholder="Dari"
-                className="w-20 border rounded px-2 py-1 rounded-[4px] text-[20px]"
-              />
-              <span>cm</span>
-              {/* Garis tengah */}
-              <div className="w-4 h-[1px] bg-[#121212]"></div>
-              <input
-                type="number"
-                placeholder="Sampai"
-                className="w-24 border rounded px-2 py-1 rounded-[4px] text-[20px]"
-              />
-              <span>cm</span>
-            </div>
+          <div className="flex items-center justify-between border-t border-t-gray-200 p-4">
+            <button
+              type="button"
+              onClick={reset}
+              className="text-sm font-medium text-[#003663] hover:underline"
+            >
+              {labels.reset}
+            </button>
+            <button
+              type="button"
+              onClick={apply}
+              className="rounded-md bg-[#003663] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#002a4f]"
+            >
+              {labels.apply}
+            </button>
           </div>
         </div>
       </div>

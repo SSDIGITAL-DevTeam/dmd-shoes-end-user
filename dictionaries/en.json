@@ -13,6 +13,11 @@
     "tagline": "Producing high-quality footwear components for the shoe industry since 2004",
     "address": "Address",
     "operating_hours": "Business Hours"
-  
+  },
+  "auth": {
+    "register": "Register",
+    "login": "Log In",
+    "wishlist": "Wishlist",
+    "account": "Account"
   }
 }

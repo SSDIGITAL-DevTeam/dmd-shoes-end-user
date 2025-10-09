@@ -3,11 +3,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest run"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "0.5.7",
     "@tailwindcss/postcss": "^4.1.12",
+    "@tanstack/react-query": "^5.52.1",
+    "@tanstack/react-query-devtools": "^5.52.1",
     "clsx": "^2.1.1",
     "negotiator": "1.0.0",
     "next": "latest",
@@ -23,10 +26,15 @@
     "zustand": "^4.5.7"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.1",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/user-event": "^14.5.1",
     "@types/negotiator": "0.6.3",
     "@types/node": "^22.9.0",
     "@types/react": "^18.0.23",
     "@types/react-dom": "^18.0.7",
-    "typescript": "^5.6.3"
+    "dotenv": "^16.4.5",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
   }
 }

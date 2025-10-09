@@ -11,6 +11,24 @@ import { FaUserAlt, FaRegHeart } from "react-icons/fa";
 import Logo from "./Logo";
 import { useAuthStore } from "@/store/auth-store";
 
+const AUTH_FALLBACK_LABELS: Record<
+  string,
+  { register: string; login: string; wishlist: string; account: string }
+> = {
+  id: {
+    register: "Daftar",
+    login: "Masuk",
+    wishlist: "Favorit",
+    account: "Akun",
+  },
+  en: {
+    register: "Register",
+    login: "Log In",
+    wishlist: "Wishlist",
+    account: "Account",
+  },
+};
+
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -35,7 +53,9 @@ export default function Navbar({
 
   useEffect(() => {
     if (navRef.current) {
-      setNavHeight(navRef.current.offsetHeight);
+      // gunakan getBoundingClientRect untuk hasil lebih stabil di mobile
+      const h = navRef.current.getBoundingClientRect().height || 0;
+      setNavHeight(h);
     }
   }, []);
 
@@ -51,6 +71,31 @@ export default function Navbar({
     { label: dictionary.menu.about_us, href: "/about" },
     { label: dictionary.menu.contact_us, href: "/contact" },
   ];
+
+  const fallbackAuth = AUTH_FALLBACK_LABELS[lang] ?? AUTH_FALLBACK_LABELS.en;
+  const dictionaryAuth = dictionary.auth ?? {};
+  const dictionaryHomeAuth =
+    (dictionary as {
+      home?: { auth?: Partial<typeof fallbackAuth> };
+    }).home?.auth ?? {};
+  const authLabels = {
+    register:
+      dictionaryAuth.register ??
+      dictionaryHomeAuth.register ??
+      fallbackAuth.register,
+    login:
+      dictionaryAuth.login ??
+      dictionaryHomeAuth.login ??
+      fallbackAuth.login,
+    wishlist:
+      dictionaryAuth.wishlist ??
+      dictionaryHomeAuth.wishlist ??
+      fallbackAuth.wishlist,
+    account:
+      dictionaryAuth.account ??
+      dictionaryHomeAuth.account ??
+      fallbackAuth.account,
+  };
 
   return (
     <>
@@ -84,13 +129,13 @@ export default function Navbar({
                     href={`/${lang}/auth/register`}
                     className="px-[10px] py-[6px] text-sm font-medium border border-white"
                   >
-                    Daftar
+                    {authLabels.register}
                   </Link>
                   <Link
                     className="px-[10px] py-[6px] text-sm font-medium border border-white bg-white text-primary"
                     href={`/${lang}/auth/login`}
                   >
-                    Masuk
+                    {authLabels.login}
                   </Link>
                 </>
               ) : (
@@ -128,11 +173,10 @@ export default function Navbar({
                   <Link
                     key={item.href}
                     href={`/${lang}${item.href}`}
-                    className={`relative whitespace-nowrap transition-colors group ${
-                      isActive
-                        ? "font-semibold text-white"
-                        : "font-semibold text-white/70 hover:text-white"
-                    }`}
+                    className={`relative whitespace-nowrap transition-colors group ${isActive
+                      ? "font-semibold text-white"
+                      : "font-semibold text-white/70 hover:text-white"
+                      }`}
                     style={{
                       fontSize: "20px",
                       lineHeight: "154%",
@@ -154,31 +198,33 @@ export default function Navbar({
                   href={`/${lang}/auth/register`}
                   className="px-[16px] py-[10px] text-[20px] text-white font-medium border border-white"
                 >
-                  Daftar
+                  {authLabels.register}
                 </Link>
 
                 <Link
                   className="px-[16px] py-[10px] text-[20px] font-medium border border-white bg-white text-primary"
                   href={`/${lang}/auth/login`}
                 >
-                  Masuk
+                  {authLabels.login}
                 </Link>
               </>
             ) : (
               <div className="flex items-center space-x-4 text-white">
                 <Link
                   href={`/${lang}/wishlist`}
-                  className="px-[10px] py-[16px] text-[24px] font-medium"
+                  className="px-[10px] py-[16px] text-[16px] text-white font-medium hover:underline flex items-center gap-2"
                 >
-                  <FaRegHeart size={24} />
-                </Link>
+                  <FaRegHeart size={24} aria-hidden="true" />
+                    <span>{authLabels.wishlist}</span>
+                  </Link>
 
                 <Link
                   href={`/${lang}/profile`}
-                  className="px-[10px] py-[16px] text-[24px] font-medium"
+                  className="px-[10px] py-[16px] text-[16px] text-white font-medium hover:underline flex items-center gap-2"
                 >
-                  <FaUserAlt size={24} />
-                </Link>
+                  <FaUserAlt size={24} aria-hidden="true" />
+                    <span>{authLabels.account}</span>
+                  </Link>
               </div>
             )}
           </div>
@@ -186,7 +232,7 @@ export default function Navbar({
       </nav>
 
       {/* Spacer biar konten tidak ketimpa navbar */}
-      <div style={{ height: navHeight }} />
+      <div style={{ height: Math.max(0, navHeight - 1) }} />
 
       {/* Overlay */}
       {isOpen && (
@@ -200,8 +246,7 @@ export default function Navbar({
       <div
         className={`lg:hidden fixed left-0 bg-white z-50 
           transform transition-transform 
-          duration-300 ease-in-out ${
-            isOpen ? "translate-x-0" : "-translate-x-full"
+          duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
           } w-full max-w-[250px] flex flex-col`}
         style={{
           top: navHeight,
@@ -216,11 +261,10 @@ export default function Navbar({
               <Link
                 key={item.href}
                 href={`/${lang}${item.href}`}
-                className={`block px-[25px] py-[27px] font-medium ${
-                  isActive
-                    ? "text-primary"
-                    : "text-primary hover:text-primary/80"
-                }`}
+                className={`block px-[25px] py-[27px] font-medium ${isActive
+                  ? "text-primary"
+                  : "text-primary hover:text-primary/80"
+                  }`}
                 style={{
                   fontSize: "16px",
                   lineHeight: "22px",
@@ -241,14 +285,14 @@ export default function Navbar({
                   className="px-4 py-3 text-[16px] leading-[22px] font-medium text-primary border border-primary text-center"
                   onClick={() => setIsOpen(false)}
                 >
-                  Daftar
+                  {authLabels.register}
                 </Link>
                 <Link
                   href={`/${lang}/auth/login`}
                   className="px-4 py-3 text-[16px] leading-[22px] font-medium border border-primary bg-primary text-white text-center"
                   onClick={() => setIsOpen(false)}
                 >
-                  Masuk
+                  {authLabels.login}
                 </Link>
               </>
             ) : (
@@ -258,15 +302,17 @@ export default function Navbar({
                   className="px-[10px] py-[16px]"
                   onClick={() => setIsOpen(false)}
                 >
-                  <FaRegHeart size={24} />
-                </Link>
+                  <FaRegHeart size={24} aria-hidden="true" />
+                    <span>{authLabels.wishlist}</span>
+                  </Link>
                 <Link
                   href={`/${lang}/profile`}
                   className="px-[10px] py-[16px]"
                   onClick={() => setIsOpen(false)}
                 >
-                  <FaUserAlt size={24} />
-                </Link>
+                  <FaUserAlt size={24} aria-hidden="true" />
+                    <span>{authLabels.account}</span>
+                  </Link>
               </div>
             )}
           </div>
@@ -279,3 +325,7 @@ export default function Navbar({
     </>
   );
 }
+
+
+
+

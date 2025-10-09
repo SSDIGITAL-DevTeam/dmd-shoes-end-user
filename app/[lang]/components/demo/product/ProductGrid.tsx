@@ -2,28 +2,55 @@
 
 import React from "react";
 import ProductItem from "./ProductItem";
-
-type Product = {
-  id: number;
-  name: string;
-  slug: string;
-  image: string;
-  price: number;
-  promoPrice?: number | null;
-};
+import type { ProductCard } from "@/services/types";
 
 type ProductGridProps = {
-  products: Product[];
+  products?: ProductCard[];
+  locale?: string;
+  emptyState?: React.ReactNode;
 };
 
-export default function ProductGrid({ products }: ProductGridProps) {
+const buildKey = (
+  product: ProductCard,
+  index: number,
+  locale: string,
+): string => {
+  const nameFallback =
+    product.name_text ??
+    (product.name && typeof product.name === "object"
+      ? product.name[locale] ?? product.name.id ?? product.name.en ?? "product"
+      : "product");
+  return `${product.id ?? nameFallback}-${product.slug ?? nameFallback}-${index}`;
+};
 
+export default function ProductGrid({
+  products,
+  locale = "id",
+  emptyState,
+}: ProductGridProps) {
+  const items = products ?? [];
+
+  if (items.length === 0) {
+    return (
+      <div className="container mx-auto">
+        {emptyState ?? (
+          <p className="py-12 text-center text-sm text-gray-500">
+            Produk belum tersedia.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto ">
-      <div className=" grid grid-cols-2 sm:grid-cols-4 space-x-2">
-        {products.map((product) => (
-          <ProductItem key={product.id} product={product} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {items.map((product, index) => (
+          <ProductItem
+            key={buildKey(product, index, locale)}
+            product={product}
+            locale={locale}
+          />
         ))}
       </div>
     </div>

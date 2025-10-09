@@ -1,7 +1,38 @@
 {
   "title": "Produk Kami",
-  "searchPlaceholder": "Cari Produk...",
+  "searchPlaceholder": "Cari produk...",
   "filterCategory": "Filter Kategori",
   "productCategory": "Kategori Produk",
-  "allProducts": "Semua Produk (120)"
+  "allProducts": "Semua Produk",
+  "categoriesEmpty": "Kategori belum tersedia.",
+  "sort": {
+    "label": "Urutkan :",
+    "trigger": "Urutkan",
+    "modalTitle": "Urutkan Produk",
+    "close": "Tutup sort",
+    "newest": "Produk Terpopuler",
+    "priceLow": "Harga Terendah",
+    "priceHigh": "Harga Tertinggi"
+  },
+  "sizeFilter": {
+    "trigger": "Filter Ukuran",
+    "title": "Filter Ukuran",
+    "close": "Tutup filter",
+    "iconAlt": "Ikon filter ukuran",
+    "heelTitle": "Ukuran untuk produk {categories}",
+    "sizeTitle": "Ukuran untuk produk {categories}",
+    "heelDefaultCategory": "Hak",
+    "sizeDefaultCategory": "Outsole & Wedges",
+    "heelRange": "Rentang tersedia: {range} ({unit})",
+    "sizeRange": "Rentang tersedia: {range} ({unit})",
+    "min": "Min",
+    "max": "Maks",
+    "heelUnit": "cm",
+    "sizeUnit": "EU",
+    "reset": "Reset",
+    "apply": "Terapkan"
+  },
+  "empty": "Produk tidak ditemukan.",
+  "prev": "Sebelumnya",
+  "next": "Selanjutnya"
 }

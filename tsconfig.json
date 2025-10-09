@@ -20,7 +20,14 @@
       }
     ],
     "paths": {
-      "@/*": ["./app/[lang]/*"]
+      "@/*": [
+        "./app/[lang]/*",
+        "./lib/*",
+        "./services/*",
+        "./hooks/*",
+        "./components/*",
+        "./*"
+      ]
     }
   },
   "include": [

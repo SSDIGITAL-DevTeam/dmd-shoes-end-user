@@ -1,39 +1,69 @@
 "use client";
 
 import Container from "@/components/ui-custom/Container";
-import React, { useState } from "react";
+import type { HomepageVideo } from "@/services/types";
 import Image from "next/image";
+import React, { useMemo, useState } from "react";
 
-function HomeVideo() {
+type HomeVideoProps = {
+  video?: HomepageVideo;
+  posterFallback?: string;
+};
+
+const FALLBACK_POSTER = "/assets/demo/demo-product-video.png";
+const FALLBACK_YOUTUBE = "https://www.youtube.com/embed/5h6hI7PWdAk";
+
+const toEmbedUrl = (url?: string | null) => {
+  if (!url) return FALLBACK_YOUTUBE;
+  if (url.includes("youtube.com") && url.includes("watch?v=")) {
+    return url.replace("watch?v=", "embed/");
+  }
+  return url;
+};
+
+export default function HomeVideo({
+  video,
+  posterFallback = FALLBACK_POSTER,
+}: HomeVideoProps) {
   const [open, setOpen] = useState(false);
+
+  const videoSrc = useMemo(() => {
+    if (!video) return FALLBACK_YOUTUBE;
+    if (video.mode === "youtube") {
+      return toEmbedUrl(video.url ?? FALLBACK_YOUTUBE);
+    }
+    if (video.file_url) {
+      return video.file_url;
+    }
+    return FALLBACK_YOUTUBE;
+  }, [video]);
+
+  const poster = video?.cover_url ?? posterFallback;
 
   return (
     <Container>
       <div className="w-full">
         {!open ? (
-          // Thumbnail sebelum di klik
           <button
             onClick={() => setOpen(true)}
             className="relative w-full focus:outline-none"
           >
             <Image
-              src="/assets/demo/demo-product-video.png"
-              alt="Demo Banner"
-              width={0} // dummy
-              height={0} // dummy
+              src={poster}
+              alt="Product video preview"
+              width={1280}
+              height={720}
               sizes="100vw"
-              className="w-full h-auto rounded-lg cursor-pointer"
+              className="h-auto w-full rounded-lg object-cover"
             />
-            {/* Tombol Play */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-white/70 rounded-full p-4">
+              <div className="rounded-full bg-white/70 p-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  fill="black"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
-                  stroke="black"
-                  className="w-10 h-10"
+                  className="h-10 w-10 text-black"
                 >
                   <path
                     strokeLinecap="round"
@@ -45,21 +75,17 @@ function HomeVideo() {
             </div>
           </button>
         ) : (
-          // Video muncul di tempat yang sama
-          <div className="w-full aspect-video">
+          <div className="aspect-video w-full">
             <iframe
-              className="w-full h-full rounded-lg"
-              src="https://www.youtube.com/embed/5h6hI7PWdAk?autoplay=1"
-              title="YouTube video"
-              frameBorder="0"
+              className="h-full w-full rounded-lg"
+              src={videoSrc}
+              title="Homepage video"
               allow="autoplay; encrypted-media"
               allowFullScreen
-            ></iframe>
+            />
           </div>
         )}
       </div>
     </Container>
   );
 }
-
-export default HomeVideo;

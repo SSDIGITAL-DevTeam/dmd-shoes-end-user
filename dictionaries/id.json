@@ -12,5 +12,11 @@
     "tagline": "Memproduksi komponen alas kaki berkualitas untuk industri sepatu sejak 2004",
     "address": "Alamat"  ,
     "operating_hours": "Jam Operasional"
+  },
+  "auth": {
+    "register": "Daftar",
+    "login": "Masuk",
+    "wishlist": "Favorit",
+    "account": "Akun"
   }
 }

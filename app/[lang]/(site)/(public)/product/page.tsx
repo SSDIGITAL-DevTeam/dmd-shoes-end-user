@@ -10,5 +10,10 @@ export default async function ProductPage({
 }) {
   const { lang } = await params;
   const dictionaryProduct = await getDictionaryProduct(lang);
-  return <ProductPageComponent dictionaryProduct={dictionaryProduct} />;
+  return (
+    <ProductPageComponent
+      lang={lang}
+      dictionaryProduct={dictionaryProduct}
+    />
+  );
 }
