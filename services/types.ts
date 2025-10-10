@@ -61,6 +61,7 @@ export type ProductCard = {
   cover?: string | null;
   cover_url?: string | null;
   price?: number | null;
+  variants_min_price?: number | null;
   category_id?: number | null;
   category_name?: string | null;
   featured?: boolean;
