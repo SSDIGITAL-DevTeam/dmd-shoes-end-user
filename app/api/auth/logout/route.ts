@@ -5,11 +5,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const TOKEN_COOKIE_NAME = "token";
 
 export async function DELETE() {
-  const tokenCookie = cookies().get(TOKEN_COOKIE_NAME);
+  // ✅ cookies() harus di-await (async API di Next.js 15)
+  const cookieStore = await cookies();
+  const tokenCookie = cookieStore.get(TOKEN_COOKIE_NAME);
 
   if (tokenCookie?.value && API_BASE_URL) {
     try {
-      await fetch(`${API_BASE_URL}/api/v1/logout`, {
+      const upstreamBase = API_BASE_URL.replace(/\/+$/, "");
+      await fetch(`${upstreamBase}/logout`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -21,13 +24,15 @@ export async function DELETE() {
     }
   }
 
-  cookies().delete(TOKEN_COOKIE_NAME);
-
-  return NextResponse.json(
+  // ✅ Hapus cookie via NextResponse (karena cookies() sekarang read-only)
+  const res = NextResponse.json(
     {
       status: "success",
       message: "Logged out successfully.",
     },
     { status: 200 },
   );
+
+  res.cookies.delete(TOKEN_COOKIE_NAME);
+  return res;
 }

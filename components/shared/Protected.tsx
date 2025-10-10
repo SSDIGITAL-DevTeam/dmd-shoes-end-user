@@ -13,22 +13,20 @@ export function Protected({ children, locale, fallback }: ProtectedProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { token, isAuthed, isFetchingUser } = useAuth();
+  const { isAuthed, isReady, isFetchingUser } = useAuth();
 
   useEffect(() => {
-    if (!token && !isFetchingUser) {
+    if (!isReady || isFetchingUser) return;
+
+    if (!isAuthed) {
       const search = searchParams?.toString();
       const current = search ? `${pathname}?${search}` : pathname;
       const nextParam = encodeURIComponent(current ?? "/");
       router.replace(`/${locale}/login?next=${nextParam}`);
     }
-  }, [token, isFetchingUser, pathname, router, searchParams, locale]);
+  }, [isReady, isAuthed, isFetchingUser, pathname, router, searchParams, locale]);
 
-  if (!token) {
-    return fallback ?? null;
-  }
-
-  if (!isAuthed && isFetchingUser) {
+  if (!isReady || isFetchingUser) {
     return (
       fallback ?? (
         <div className="py-16 text-center text-sm text-gray-500">

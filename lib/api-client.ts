@@ -124,14 +124,17 @@ export const apiFetch = async <T = unknown>(path: string, init?: ApiRequestInit)
 
 export const withAuth = (init: RequestInit = {}): RequestInit => {
   const token = getStoredToken();
-  if (!token) {
-    throw new ApiError(401, "Authentication token is missing.");
+  const headers = new Headers(init.headers ?? {});
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const headers = new Headers(init.headers ?? {});
-  headers.set("Authorization", `Bearer ${token}`);
-
-  return { ...init, headers };
+  return {
+    ...init,
+    headers,
+    credentials: init.credentials ?? "include",
+  };
 };
 
 export const buildQueryString = (params?: Record<string, unknown>) => {

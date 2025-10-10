@@ -50,9 +50,13 @@
     },
     "wishlist": {
       "add": "Add to Favorites",
+      "loading": "Adding...",
       "modalTitle": "Log in to add this product to your favorites",
       "login": "Log In",
-      "register": "Register"
+      "register": "Register",
+      "success": "Product added to your favorites.",
+      "error": "Unable to add this product to favorites. Please try again.",
+      "selectOptions": "Please select {label} before adding to favorites."
     }
   },
   "empty": "No products found.",

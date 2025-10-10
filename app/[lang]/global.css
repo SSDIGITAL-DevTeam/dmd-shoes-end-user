@@ -3,18 +3,18 @@
 @tailwind components;
 @tailwind utilities;
 @theme {
-  /* -color-primary: #000; */
+  /* --color-primary: #000; */
   /* --color-primary: #121063; */
-   --color-primary: #003663; /* sebelumnya #121063 */
+  --color-primary: #003663;
+  /* sebelumnya #121063 */
 
-      /* Tambahkan ukuran container */
+  /* Tambahkan ukuran container */
   /* --container-xs: 100%;
   --container-sm: 640px;
   --container-md: 768px;
   --container-lg: 1024px;
   --container-xl: 1280px;
   --container-2xl: 1536px; */
-
 }
 
 .my-container {
@@ -26,21 +26,48 @@
 }
 
 @media (min-width: 640px) {
-  .my-container { max-width: 640px; }
+  .my-container {
+    max-width: 640px;
+  }
 }
 
 @media (min-width: 768px) {
-  .my-container { max-width: 768px; }
+  .my-container {
+    max-width: 768px;
+  }
 }
 
 @media (min-width: 1024px) {
-  .my-container { max-width: 1024px; }
+  .my-container {
+    max-width: 1024px;
+  }
 }
 
 @media (min-width: 1280px) {
-  .my-container { max-width: 1280px; }
+  .my-container {
+    max-width: 1280px;
+  }
 }
 
 @media (min-width: 1536px) {
-  .my-container { max-width: 1536px; }
+  .my-container {
+    max-width: 1536px;
+  }
+}
+
+/* 🔒 FIX: Hilangkan icon "mata" ganda di Edge/Chromium untuk input password */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none;
+}
+
+input[type="password"] {
+  -webkit-appearance: none;
+  appearance: none;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   useMutation,
   useQuery,
@@ -14,20 +14,14 @@ import type {
   ResetPasswordPayload,
   User,
 } from "@/services/types";
-import {
-  clearStoredToken,
-  getStoredToken,
-  setStoredToken,
-} from "@/lib/auth";
-import { ApiError } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
-
-const isBrowser = () => typeof window !== "undefined";
+import { useAuthStore } from "@/store/auth-store";
+import { getStoredToken } from "@/lib/auth";
 
 export type UseAuthReturn = {
   user: User | null;
-  token: string | null;
   isAuthed: boolean;
+  isReady: boolean;
   isLoading: boolean;
   isFetchingUser: boolean;
   error: unknown;
@@ -42,73 +36,46 @@ export type UseAuthReturn = {
 
 export const useAuth = (): UseAuthReturn => {
   const queryClient = useQueryClient();
-  const [token, setToken] = useState<string | null>(() => getStoredToken());
-
-  useEffect(() => {
-    if (!isBrowser()) return;
-
-    const handler = (event: StorageEvent) => {
-      if (event.key === "auth_token") {
-        setToken(event.newValue);
-      }
-    };
-
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
-
-  useEffect(() => {
-    if (token) {
-      setStoredToken(token);
-    } else {
-      clearStoredToken();
-      queryClient.removeQueries({ queryKey: queryKeys.auth.me });
-    }
-  }, [token, queryClient]);
+  const { token: storeToken, user: storeUser, setAuth, clearAuth } = useAuthStore((state) => ({
+    token: state.token,
+    user: state.user,
+    setAuth: state.setAuth,
+    clearAuth: state.clearAuth,
+  }));
 
   const userQuery = useQuery({
     queryKey: queryKeys.auth.me,
     queryFn: AuthService.getMe,
-    enabled: !!token,
-    retry: (failureCount, error) => {
-      if (error instanceof ApiError && error.statusCode === 401) {
-        return false;
-      }
-      return failureCount < 2;
-    },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    onError: (error) => {
-      if (error instanceof ApiError && error.statusCode === 401) {
-        setToken(null);
-      }
-    },
   });
 
   const loginMutation = useMutation({
     mutationFn: AuthService.login,
-    onSuccess: ({ token: newToken, user }) => {
-      setToken(newToken);
+    onSuccess: ({ user }) => {
       queryClient.setQueryData(queryKeys.auth.me, user ?? null);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: AuthService.registerCustomer,
-    onSuccess: ({ token: newToken, user }) => {
-      if (newToken) {
-        setToken(newToken);
-      }
+    onSuccess: ({ user }) => {
       if (user) {
         queryClient.setQueryData(queryKeys.auth.me, user);
       }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: AuthService.logout,
     onSettled: () => {
-      setToken(null);
+      queryClient.setQueryData(queryKeys.auth.me, null);
     },
   });
 
@@ -171,21 +138,38 @@ export const useAuth = (): UseAuthReturn => {
     return data.data ?? null;
   }, [userQuery]);
 
-  const user = useMemo(() => userQuery.data ?? null, [userQuery.data]);
+  const fetchedUser = userQuery.data ?? null;
+  const user = useMemo(() => fetchedUser ?? storeUser ?? null, [fetchedUser, storeUser]);
   const error =
     loginMutation.error ??
     registerMutation.error ??
     logoutMutation.error ??
     userQuery.error;
+  const isAuthed = !!(user ?? storeUser);
+  const isReady = userQuery.isFetched || userQuery.isSuccess || userQuery.isError;
+
+  useEffect(() => {
+    if (userQuery.status === "success") {
+      if (fetchedUser) {
+        const token = getStoredToken() ?? storeToken ?? null;
+        setAuth({ token, user: fetchedUser });
+      } else {
+        clearAuth();
+      }
+    } else if (userQuery.status === "error") {
+      clearAuth();
+    }
+  }, [userQuery.status, fetchedUser, setAuth, clearAuth, storeToken]);
 
   return {
     user,
-    token,
-    isAuthed: !!token && !!user,
+    isAuthed,
+    isReady,
     isLoading:
       loginMutation.isPending ||
       registerMutation.isPending ||
-      logoutMutation.isPending,
+      logoutMutation.isPending ||
+      userQuery.isLoading,
     isFetchingUser: userQuery.isFetching,
     error,
     login,

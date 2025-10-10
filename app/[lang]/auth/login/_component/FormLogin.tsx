@@ -2,17 +2,19 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import InputPassword from "@/components/ui-custom/form/InputPassword";
 import { useAuthStore } from "@/store/auth-store";
+import { setStoredToken, setStoredUser } from "@/lib/auth";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-const LOGIN_ENDPOINT = process.env.NEXT_PUBLIC_API_URL+"/login";
+const LOGIN_ENDPOINT = "/api/auth/login";
+const PENDING_WISHLIST_KEY = "pending_wishlist";
 
 type LoginFormValues = {
   email: string;
@@ -29,7 +31,14 @@ const initialValues: LoginFormValues = {
 export default function FormLogin() {
   const router = useRouter();
   const { lang } = useParams<{ lang: string }>();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const callbackUrlParam = searchParams.get("callbackUrl") ?? "";
+  const registerLink = callbackUrlParam
+    ? `/${lang}/auth/register?callbackUrl=${encodeURIComponent(
+        callbackUrlParam,
+      )}`
+    : `/${lang}/auth/register`;
 
   const [formValues, setFormValues] = useState<LoginFormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
@@ -92,6 +101,7 @@ export default function FormLogin() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(formValues),
       });
 
@@ -109,15 +119,29 @@ export default function FormLogin() {
       const token: string | null = payload?.token ?? null;
       const user = payload?.user ?? null;
 
+      if (token) {
+        setStoredToken(token);
+      }
+
       setAuth({ token, user });
+      setStoredUser(user);
+
+      if (!token && typeof window !== "undefined") {
+        window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+      }
 
       setStatusMessage({
         type: "success",
         text: payload?.message ?? "Login successful",
       });
 
+      const redirectTarget =
+        callbackUrlParam && callbackUrlParam.startsWith("/")
+          ? decodeURIComponent(callbackUrlParam)
+          : `/${lang}`;
+
       setTimeout(() => {
-        router.replace(`/${lang}`);
+        router.replace(redirectTarget);
       }, 600);
     } catch (error) {
       console.error("Login request failed", error);
@@ -191,10 +215,11 @@ export default function FormLogin() {
       <p className="text-center text-[20px] leading-[150%]">
         Belum punya akun?
         {" "}
-        <Link className="text-[#191C42] font-semibold underline" href={`/${lang}/auth/register`}>
+        <Link className="text-[#191C42] font-semibold underline" href={registerLink}>
           Daftar
         </Link>
       </p>
     </form>
   );
 }
+

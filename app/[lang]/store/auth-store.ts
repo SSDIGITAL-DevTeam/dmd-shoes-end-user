@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { clearStoredToken, clearStoredUser } from "@/lib/auth";
 
 export type AuthUser = {
   id: number;
@@ -48,6 +49,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       console.error("Logout request failed", error);
     } finally {
+      clearStoredToken();
+      clearStoredUser();
       set({ token: null, user: null, isHydrated: true });
     }
   },

@@ -1,198 +1,271 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { FaTrash, FaWhatsapp } from "react-icons/fa";
 import Container from "@/components/ui-custom/Container";
 import { CONTACT } from "@/config/contact";
-import Link from "next/link";
+import { useFavorites } from "@/hooks/useFavorites";
+import type { FavoriteItem, MultiLangValue } from "@/services/types";
 
-interface Product {
-  id: number;
-  name: string;
-  code: string;
-  material: string;
-  color: string;
-  size: number;
-  price: number;
-  image: string;
-  checked: boolean;
-}
+const FALLBACK_IMAGE = "/assets/demo/demo-product.png";
 
-const Wishlist = () => {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 1,
-      name: "Outsole Siap Pakai",
-      code: "OS 2172",
-      material: "Grade A",
-      color: "Hitam",
-      size: 37,
-      price: 8000,
-      image: "/assets/demo/demo-product.png",
-      checked: true,
+const resolveText = (
+  value: MultiLangValue | string | null | undefined,
+  lang: string,
+): string => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object") {
+    if (lang in value && typeof value[lang] === "string") {
+      return value[lang] as string;
+    }
+    if (typeof value.id === "string") return value.id;
+  }
+
+  return "";
+};
+
+const formatCurrency = (value?: number | null) => {
+  if (typeof value !== "number") return "-";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(value);
+};
+
+const Wishlist = ({ lang = "id" }: { lang?: string }) => {
+  const {
+    favorites,
+    isLoading,
+    removeFavorite,
+    checkout,
+    isRemoving,
+    isCheckingOut,
+  } = useFavorites();
+
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!favorites.length) {
+      setSelectedIds([]);
+      return;
+    }
+
+    setSelectedIds((prev) => {
+      if (prev.length === 0) {
+        return favorites.map((fav) => fav.favorite_id);
+      }
+      const existing = new Set(prev);
+      const next = favorites
+        .filter((fav) => existing.has(fav.favorite_id))
+        .map((fav) => fav.favorite_id);
+      return next.length > 0 ? next : favorites.map((fav) => fav.favorite_id);
+    });
+  }, [favorites]);
+
+  const toggleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedIds(favorites.map((fav) => fav.favorite_id));
+      } else {
+        setSelectedIds([]);
+      }
     },
-    {
-      id: 2,
-      name: "Outsole Siap Pakai",
-      code: "OS 2172",
-      material: "Grade A",
-      color: "Hitam",
-      size: 37,
-      price: 8000,
-      image: "/assets/demo/demo-product.png",
-      checked: true,
+    [favorites],
+  );
+
+  const toggleSelect = useCallback((favoriteId: number) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(favoriteId)) {
+        return prev.filter((id) => id !== favoriteId);
+      }
+      return [...prev, favoriteId];
+    });
+  }, []);
+
+  const handleRemove = useCallback(
+    async (favorite: FavoriteItem) => {
+      await removeFavorite({
+        productId: favorite.product.id,
+        variantId: favorite.variant?.id ?? null,
+      });
+      setSelectedIds((prev) =>
+        prev.filter((id) => id !== favorite.favorite_id),
+      );
     },
-    {
-      id: 3,
-      name: "Outsole Siap Pakai",
-      code: "OS 2172",
-      material: "Grade A",
-      color: "Hitam",
-      size: 37,
-      price: 8000,
-      image: "/assets/demo/demo-product.png",
-      checked: true,
-    },
-    {
-      id: 4,
-      name: "Outsole Siap Pakai",
-      code: "OS 2172",
-      material: "Grade A",
-      color: "Hitam",
-      size: 37,
-      price: 8000,
-      image: "/assets/demo/demo-product.png",
-      checked: false,
-    },
-  ]);
+    [removeFavorite],
+  );
 
-  const toggleCheck = (id: number) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, checked: !p.checked } : p))
-    );
-  };
+  const selectedFavorites = useMemo(
+    () => favorites.filter((fav) => selectedIds.includes(fav.favorite_id)),
+    [favorites, selectedIds],
+  );
 
-  const toggleSelectAll = (checked: boolean) => {
-    setProducts((prev) => prev.map((p) => ({ ...p, checked })));
-  };
+  const whatsappMessage = useMemo(() => {
+    if (!selectedFavorites.length) {
+      return "Hi, DMD Shoes. Saya ingin bertanya mengenai produk favorit saya.";
+    }
 
-  const removeProduct = (id: number) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
+    const lines = selectedFavorites.map((fav, index) => {
+      const productName = resolveText(fav.product.name, lang) || "Produk";
+      const variantLabel = fav.variant?.label
+        ? ` (${fav.variant.label})`
+        : "";
+      const price =
+        fav.variant?.price ?? fav.product.price ?? undefined;
 
-  const selectedCount = products.filter((p) => p.checked).length;
+      return `${index + 1}. ${productName}${variantLabel} - ${formatCurrency(price)}`;
+    });
 
-  const message = `Hi, DMD Shoes. Saya tertarik dengan produk :
-OS 2138 (Grade A, cream, 40)
-WS 9089 (Grade A, 40)
-OS 2138 (Grade B, cream, 40)`;
+    return `Hi, DMD Shoes. Saya tertarik dengan produk berikut:\n\n${lines.join("\n")}\n\nMohon informasi ketersediaan dan cara pemesanan.`;
+  }, [selectedFavorites, lang]);
+
+  const handleCheckout = useCallback(async () => {
+    if (!selectedFavorites.length) return;
+    try {
+      await checkout({
+        favorite_ids: selectedFavorites.map((fav) => fav.favorite_id),
+      });
+    } catch (error) {
+      console.error("Failed to prepare checkout", error);
+    }
+  }, [checkout, selectedFavorites]);
 
   return (
     <Container className="py-8">
       <h1 className="font-inter font-semibold text-[32px] leading-[150%] text-primary">
         Favorit Saya{" "}
         <span className="text-[#121212]/50 text-[24px] font-normal">
-          ({products.length} Produk)
+          ({favorites.length} Produk)
         </span>
       </h1>
 
-      <div className="mt-[20px] flex flex-col lg:flex-row gap-6 font-sans items-start">
-        {/* Kiri: Daftar Produk */}
-        <div className="w-full lg:w-auto lg:flex-1 bg-white border border-[#EEEEEE] rounded-[16px]">
-          <h2 className="font-semibold text-lg p-[24px]">
-            Produk Di Favorit Saya
-          </h2>
+      <div className="mt-5 flex flex-col items-start gap-6 font-sans lg:flex-row">
+        <div className="w-full rounded-[16px] border border-[#EEEEEE] bg-white lg:flex-1">
+          <h2 className="p-6 text-lg font-semibold">Produk Di Favorit Saya</h2>
 
-          {/* Pilih Semua */}
-          <div className="flex items-center gap-2 px-[24px] py-[10px]">
+          <div className="flex items-center gap-2 px-6 py-2">
             <input
               type="checkbox"
-              checked={products.every((p) => p.checked)}
-              onChange={(e) => toggleSelectAll(e.target.checked)}
-              className="w-4 h-4 accent-primary"
+              disabled={isLoading || !favorites.length}
+              checked={
+                Boolean(favorites.length) &&
+                selectedIds.length === favorites.length
+              }
+              onChange={(event) => toggleSelectAll(event.target.checked)}
+              className="h-4 w-4 accent-primary"
             />
-            <span className="text-[#121212] font-semibold text-[20px] lg:text-[22px] font-inter">
+            <span className="font-inter text-[20px] font-semibold text-[#121212] lg:text-[22px]">
               Pilih Semua
             </span>
           </div>
 
-          {/* Daftar Produk */}
           <div className="bg-[#F5F5F5]">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="flex items-center py-[10px] px-[32px] space-x-[16px]"
-              >
-                {/* Checkbox */}
-                <input
-                  type="checkbox"
-                  checked={product.checked}
-                  onChange={() => toggleCheck(product.id)}
-                  className="mt-2 w-4 h-4 accent-primary"
-                />
+            {isLoading ? (
+              <p className="px-6 py-10 text-sm text-gray-500">
+                Memuat daftar favorit...
+              </p>
+            ) : favorites.length === 0 ? (
+              <p className="px-6 py-10 text-sm text-gray-500">
+                Belum ada produk di daftar favorit Anda.
+              </p>
+            ) : (
+              favorites.map((favorite) => {
+                const productName =
+                  resolveText(favorite.product.name, lang) || "Produk";
+                const productCode = favorite.product?.slug ?? "";
+                const variantLabel = favorite.variant?.label;
+                const variantParts =
+                  typeof variantLabel === "string" && variantLabel.length > 0
+                    ? variantLabel.split("|").map((part) => part.trim())
+                    : [];
+                const price =
+                  favorite.variant?.price ?? favorite.product.price ?? null;
 
-                {/* Gambar */}
-                <div>
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    width={70}
-                    height={70}
-                    className="w-[70px] h-[70px] lg:w-[60px] lg:h-[60px] object-contain border rounded"
-                  />
-                </div>
+                return (
+                  <div
+                    key={favorite.favorite_id}
+                    className="flex items-center gap-4 px-8 py-3 lg:gap-6"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(favorite.favorite_id)}
+                      onChange={() => toggleSelect(favorite.favorite_id)}
+                      className="h-4 w-4 accent-primary"
+                    />
 
-                {/* Detail + Harga */}
-                <div className="flex flex-1 flex-col lg:flex-row justify-between">
-                  {/* Kiri: Detail produk */}
-                  <div className="flex-1">
-                    <p className="text-[20px] lg:text-[24px] font-semibold font-inter leading-[150%]">
-                      {product.name}
-                    </p>
-                    <p className="font-inter text-primary text-[18px] lg:text-[22px] leading-[150%]">
-                      {product.code}
-                    </p>
-                    <p className="font-inter text-[#121212] text-[18px] lg:text-[22px] leading-[150%]">
-                      Pilihan Bahan : {product.material}
-                    </p>
-                    <p className="font-inter text-[#121212] text-[18px] lg:text-[22px] leading-[150%]">
-                      Pilihan Warna : {product.color}
-                    </p>
-                    <p className="font-inter text-[#121212] text-[18px] lg:text-[22px] leading-[150%]">
-                      Ukuran : {product.size}
-                    </p>
+                    <div>
+                      <Image
+                        src={FALLBACK_IMAGE}
+                        alt={productName}
+                        width={70}
+                        height={70}
+                        className="h-[70px] w-[70px] rounded border object-contain lg:h-[60px] lg:w-[60px]"
+                      />
+                    </div>
+
+                    <div className="flex flex-1 flex-col justify-between gap-2 lg:flex-row lg:items-center">
+                      <div>
+                        <p className="font-inter text-[20px] font-semibold leading-[150%] lg:text-[24px]">
+                          {productName}
+                        </p>
+                        {productCode ? (
+                          <p className="font-inter text-[18px] leading-[150%] text-primary lg:text-[20px]">
+                            {productCode.toUpperCase()}
+                          </p>
+                        ) : null}
+                        {variantParts.map((part) => (
+                          <p
+                            key={part}
+                            className="font-inter text-[18px] leading-[150%] text-[#121212] lg:text-[20px]"
+                          >
+                            {part}
+                          </p>
+                        ))}
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between gap-3 lg:mt-0 lg:justify-end">
+                        <span className="text-sm font-semibold lg:text-base">
+                          {formatCurrency(price)} / pasang
+                        </span>
+                        <button
+                          onClick={() => handleRemove(favorite)}
+                          disabled={isRemoving}
+                          className="rounded bg-red-600 px-3 py-2 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          aria-label="Hapus dari favorit"
+                          type="button"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Kanan: Harga + Tombol */}
-                  <div className="flex items-center justify-between lg:justify-end gap-2 lg:space-x-[24px] mt-3 lg:mt-0">
-                    <span className="font-semibold text-sm lg:text-base">
-                      {product.price.toLocaleString("id-ID")} / pasang
-                    </span>
-                    <button
-                      onClick={() => removeProduct(product.id)}
-                      className="bg-red-600 text-white px-[12px] py-[8px] hover:bg-red-800 rounded"
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Kanan: Summary */}
-        <div className="w-full h-auto lg:w-124 bg-white border border-[#EEEEEE] rounded-[16px] p-[24px]">
-          <p className="font-medium">{selectedCount} Produk Dipilih</p>
+        <div className="h-auto w-full rounded-[16px] border border-[#EEEEEE] bg-white p-6 lg:w-124">
+          <p className="font-medium">
+            {selectedFavorites.length} Produk Dipilih
+          </p>
+
           <Link
             href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
-              message
+              whatsappMessage,
             )}`}
-            className="mt-[40px] flex items-center justify-center gap-2 w-full bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition"
+            onClick={handleCheckout}
+            className="mt-10 flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <FaWhatsapp />
-            Pesan Melalui WhatsApp Sekarang
+            {isCheckingOut
+              ? "Menyiapkan..."
+              : "Pesan Melalui WhatsApp Sekarang"}
           </Link>
         </div>
       </div>

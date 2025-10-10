@@ -1,5 +1,12 @@
-import { apiFetch, withAuth } from "@/lib/api-client";
-import { clearStoredToken, setStoredToken } from "@/lib/auth";
+import { ApiError, apiFetch } from "@/lib/api-client";
+import {
+  clearStoredToken,
+  setStoredToken,
+  getStoredToken,
+  getStoredUser,
+  setStoredUser,
+  clearStoredUser,
+} from "@/lib/auth";
 import type {
   ApiResponse,
   Credentials,
@@ -9,94 +16,118 @@ import type {
   User,
 } from "@/services/types";
 
-type LoginResponse =
-  | (ApiResponse<{ user: User; token: string }> & { user?: User; token?: string })
-  | {
-      status?: string | boolean;
-      message?: string;
-      user?: User;
-      token?: string;
-      [key: string]: unknown;
-    };
-
-type RegisterResponse = ApiResponse<{ user: User; token?: string }>;
-
-const extractToken = (payload: LoginResponse | RegisterResponse): string | null => {
-  if (!payload) return null;
-
-  if ("token" in payload && typeof payload.token === "string") {
-    return payload.token;
+const parseJson = async (response: Response) => {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return response.json();
   }
-
-  if ("data" in payload && payload.data && typeof payload.data === "object") {
-    const data = payload.data as { token?: string };
-    if (typeof data.token === "string") {
-      return data.token;
-    }
-  }
-
-  return null;
-};
-
-const extractUser = (payload: LoginResponse | RegisterResponse): User | null => {
-  if (!payload) return null;
-
-  if ("user" in payload && payload.user) {
-    return payload.user as User;
-  }
-
-  if ("data" in payload && payload.data && typeof payload.data === "object") {
-    const data = payload.data as { user?: User };
-    if (data.user) {
-      return data.user;
-    }
-  }
-
-  return null;
+  const text = await response.text();
+  return text ? { message: text } : {};
 };
 
 const login = async (credentials: Credentials) => {
-  const response = await apiFetch<LoginResponse>("/login", {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
-    body: credentials,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(credentials),
   });
 
-  const token = extractToken(response);
-  const user = extractUser(response);
+  const data = await parseJson(response);
 
-  if (!token) {
-    throw new Error("Login response did not include an access token.");
+  if (!response.ok) {
+    const message =
+      (data && typeof data === "object" && "message" in data && data.message) ||
+      "Login failed.";
+    throw new ApiError(response.status, String(message), data);
   }
 
-  setStoredToken(token);
-
-  return { token, user: user ?? null, raw: response };
-};
-
-const registerCustomer = async (payload: RegisterPayload) => {
-  const response = await apiFetch<RegisterResponse>("/auth/customer/register", {
-    method: "POST",
-    body: payload,
-  });
-
-  const token = extractToken(response);
-  const user = extractUser(response);
+  const token =
+    typeof (data as any)?.token === "string"
+      ? (data as any).token
+      : typeof (data as any)?.data?.token === "string"
+        ? (data as any).data.token
+        : null;
+  const user =
+    ((data as any)?.user as User | undefined) ??
+    ((data as any)?.data?.user as User | undefined) ??
+    null;
 
   if (token) {
     setStoredToken(token);
+  } else {
+    clearStoredToken();
   }
 
-  return { token: token ?? null, user: user ?? null, raw: response };
+  if (user) {
+    setStoredUser(user);
+  } else {
+    clearStoredUser();
+  }
+
+  return { token: token ?? null, user: user ?? null, raw: data };
+};
+
+const registerCustomer = async (payload: RegisterPayload) => {
+  const response = await fetch("/api/auth/customer/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  const data = await parseJson(response);
+
+  if (!response.ok) {
+    const message =
+      (data && typeof data === "object" && "message" in data && data.message) ||
+      "Registration failed.";
+    throw new ApiError(response.status, String(message), data);
+  }
+
+  const token =
+    typeof (data as any)?.token === "string"
+      ? (data as any).token
+      : typeof (data as any)?.data?.token === "string"
+        ? (data as any).data.token
+        : null;
+  const user =
+    ((data as any)?.user as User | undefined) ??
+    ((data as any)?.data?.user as User | undefined) ??
+    null;
+
+  if (token) {
+    setStoredToken(token);
+  } else {
+    clearStoredToken();
+  }
+
+  if (user) {
+    setStoredUser(user);
+  } else {
+    clearStoredUser();
+  }
+
+  return { token: token ?? null, user: user ?? null, raw: data };
 };
 
 const logout = async () => {
   try {
-    await apiFetch<ApiResponse<null>>("/logout", {
-      method: "POST",
-      ...withAuth(),
+    await fetch("/api/auth/logout", {
+      method: "DELETE",
+      credentials: "include",
     });
+  } catch (error) {
+    console.error("Logout request failed", error);
   } finally {
     clearStoredToken();
+    clearStoredUser();
   }
 };
 
@@ -118,12 +149,73 @@ const resendVerification = async (payload: { email: string }) =>
     body: payload,
   });
 
-const getMe = async (): Promise<User> => {
-  const response = await apiFetch<User>("/user", {
+const getMe = async (): Promise<User | null> => {
+  const existingToken = getStoredToken();
+  const cachedUser = getStoredUser<User>();
+
+  if (!existingToken) {
+    clearStoredUser();
+    return null;
+  }
+
+  if (cachedUser) {
+    return cachedUser;
+  }
+
+  const response = await fetch("/api/auth/user", {
     method: "GET",
-    ...withAuth(),
+    credentials: "include",
+    headers: existingToken
+      ? {
+          Authorization: `Bearer ${existingToken}`,
+        }
+      : undefined,
+    cache: "no-store",
   });
-  return response;
+
+  const data = await parseJson(response);
+
+  if (response.status === 401) {
+    clearStoredToken();
+    clearStoredUser();
+    return null;
+  }
+
+  if (!response.ok) {
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    const message =
+      (data && typeof data === "object" && "message" in data && data.message) ||
+      "Failed to fetch authenticated user.";
+    throw new ApiError(response.status, String(message), data);
+  }
+
+  const token =
+    typeof (data as any)?.token === "string"
+      ? (data as any).token
+      : typeof (data as any)?.data?.token === "string"
+        ? (data as any).data.token
+        : null;
+
+  if (token) {
+    setStoredToken(token);
+  }
+
+  const user =
+    ((data as any)?.user as User | undefined) ??
+    ((data as any)?.data?.user as User | undefined) ??
+    ((data as any)?.data as User | undefined) ??
+    null;
+
+  if (user) {
+    setStoredUser(user);
+    return user;
+  }
+
+  const fallbackUser = getStoredUser<User>();
+  return fallbackUser ?? null;
 };
 
 export const AuthService = {

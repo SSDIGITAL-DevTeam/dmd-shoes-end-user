@@ -26,13 +26,13 @@ type RemoveFavoritePayload = {
 };
 
 export const useFavorites = () => {
-  const { token } = useAuth();
+  const { isAuthed, isReady } = useAuth();
   const queryClient = useQueryClient();
 
   const favoritesQuery = useQuery({
     queryKey: queryKeys.favorites.list,
     queryFn: FavoriteService.list,
-    enabled: !!token,
+    enabled: isReady && isAuthed,
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });

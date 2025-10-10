@@ -1,8 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { FaWhatsapp } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
 import Container from "@/components/ui-custom/Container";
@@ -12,6 +18,8 @@ import ProductItem from "@/components/demo/product/ProductItem";
 import type { ProductCard, ProductDetail } from "@/services/types";
 import { CONTACT } from "@/config/contact";
 import { inter } from "@/config/font";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
 
 type ProductSlugPageProps = {
   lang: string;
@@ -20,7 +28,43 @@ type ProductSlugPageProps = {
   related: ProductCard[];
 };
 
+type PreviewImage = {
+  id: string;
+  url: string;
+  alt: string;
+  title?: string | null;
+};
+
+type PendingFavorite = {
+  productId: number;
+  variantId?: number | null;
+  selections?: Record<string, string>;
+  lang?: string;
+  callbackUrl?: string;
+  createdAt?: number;
+};
+
+type ProductAttributeChoice = {
+  label: string;
+  options: string[];
+};
+
+// ==== Types to prevent never[] on attributes/options ====
+type AttrOption = {
+  id?: string | number;
+  value?: string | Record<string, string | undefined>;
+  value_text?: string;
+};
+
+type AttrData = {
+  name_text?: string;
+  name?: string | Record<string, string | undefined>;
+  options?: AttrOption[];
+};
+
 const FALLBACK_IMAGE = "/assets/demo/demo-product.png";
+const PENDING_WISHLIST_KEY = "pending_wishlist";
+const PENDING_WISHLIST_TTL = 15 * 60 * 1000;
 
 const formatCurrency = (value: number, lang: string) => {
   const locale = lang.startsWith("en") ? "en-US" : "id-ID";
@@ -31,51 +75,45 @@ const formatCurrency = (value: number, lang: string) => {
   }).format(value);
 };
 
-type PreviewImage = {
-  id: string;
-  url: string;
-  alt: string;
-  title?: string | null;
-};
+const formatTemplate = (template: string, replacements: Record<string, string>) =>
+  template.replace(/\{(\w+)\}/g, (_, key) => replacements[key] ?? "");
 
-// ===== Types to avoid `never[]` inference on attributes/options =====
-type AttrOption = {
-  id?: string | number;
-  value?: string | { id?: string;[k: string]: string | undefined };
-  value_text?: string;
-};
+const normalizeLabel = (value?: string | null) =>
+  (value ?? "").toString().trim();
 
-type AttrData = {
-  name_text?: string;
-  name?: string | Record<string, string>;
-  options?: AttrOption[];
-};
-
-// ===== Helpers =====
 const ensurePreviewImages = (
   product: ProductDetail,
   fallbackName: string,
 ): PreviewImage[] => {
   const gallery = (product.gallery ?? [])
     .filter((item) => item?.url)
-    .map((item, index) => ({
-      id: String((item as any)?.id ?? index),
-      url: (item as any)?.url ?? "",
-      alt:
-        (item as any)?.alt_text ??
-        (item as any)?.alt ??
-        (item as any)?.title ??
+    .map((item, index) => {
+      const id = typeof item?.id === "number" ? item.id : index;
+      const url = item?.url ?? "";
+      const alt =
+        item?.alt_text ??
+        item?.alt ??
+        item?.title_text ??
+        item?.title ??
         fallbackName ??
-        "Product image",
-      title: (item as any)?.title ?? null,
-    }));
+        "Product image";
+      const title = item?.title_text ?? item?.title ?? null;
+      return {
+        id: String(id),
+        url,
+        alt,
+        title,
+      };
+    });
 
-  if (gallery.length > 0) return gallery;
+  if (gallery.length > 0) {
+    return gallery;
+  }
 
   if (product.cover_url) {
     return [
       {
-        id: String((product as any).id ?? "cover"),
+        id: String(product.id ?? "cover"),
         url: product.cover_url,
         alt: fallbackName ?? "Product image",
         title: fallbackName ?? null,
@@ -93,48 +131,40 @@ const ensurePreviewImages = (
   ];
 };
 
-const attributeOptions = (
+const mapAttributes = (
   product: ProductDetail,
+  lang: string,
   fallbackName: string,
-): { label: string; options: string[] }[] =>
-  ((product.attributes_data ?? []) as AttrData[]).map((attribute: AttrData) => {
+): ProductAttributeChoice[] =>
+  ((product.attributes_data ?? []) as AttrData[]).map((attribute, index) => {
+    const fallbackLabel =
+      (lang.startsWith("en") ? "Option" : "Pilihan") + ` ${index + 1}`;
+
     const label =
       attribute?.name_text ??
       (typeof attribute?.name === "string"
         ? attribute.name
-        : (attribute?.name as Record<string, string> | undefined)?.id ??
-        fallbackName) ??
-      fallbackName;
+        : (attribute?.name as Record<string, string | undefined>)?.[lang] ??
+        (attribute?.name as Record<string, string | undefined>)?.id ??
+        fallbackLabel) ??
+      fallbackLabel;
 
-    const options = (attribute?.options ?? ([] as AttrOption[])).map(
-      (option: AttrOption) => {
-        const lbl =
+    const options = (attribute?.options ?? ([] as AttrOption[]))
+      .map((option: AttrOption) => {
+        const labelText =
           option?.value_text ??
           (typeof option?.value === "string"
             ? option.value
-            : option?.value?.id ?? String(option?.id ?? ""));
-        return lbl ?? "";
-      },
-    );
+            : (option?.value as Record<string, string | undefined>)?.[lang] ??
+            (option?.value as Record<string, string | undefined>)?.id ??
+            (option?.id !== undefined ? String(option.id) : ""));
+        return normalizeLabel(labelText);
+      })
+      .filter(Boolean);
 
-    return { label, options };
+    return { label: normalizeLabel(label), options };
   });
 
-const variantDisplay = (
-  product: ProductDetail,
-  lang: string,
-): { id: number; label: string; price: string | null; stock: number | null }[] =>
-  (product.variants_data ?? []).map((variant: any) => ({
-    id: typeof variant?.id === "number" ? variant.id : 0,
-    label: variant?.label_text ?? variant?.label ?? "",
-    price:
-      typeof variant?.price === "number"
-        ? formatCurrency(variant.price, lang)
-        : null,
-    stock: typeof variant?.stock === "number" ? variant.stock : null,
-  }));
-
-// ===== Component =====
 export default function ProductSlugPage({
   lang,
   dictionaryProduct,
@@ -144,23 +174,36 @@ export default function ProductSlugPage({
   const detailDict = dictionaryProduct?.detail ?? {};
   const contactLabels = detailDict.contact ?? {};
   const wishlistLabels = detailDict.wishlist ?? {};
-  const relatedProducts: ProductCard[] = Array.isArray(related) ? related : [];
+  const relatedProducts = useMemo<ProductCard[]>(
+    () => (Array.isArray(related) ? related : []),
+    [related],
+  );
+
+  const { isAuthed, isReady } = useAuth();
+  const { addFavorite, isAdding } = useFavorites();
+  useEffect(() => {
+    console.log("useAuth status", { isAuthed, isReady });
+  }, [isAuthed, isReady]);
+
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentUrl = useMemo(() => {
+    const qs = searchParams ? searchParams.toString() : "";
+    return qs ? `${pathname}?${qs}` : pathname;
+  }, [pathname, searchParams]);
 
   const fallbackName =
-    (product as any).name_text ??
+    product.name_text ??
     (typeof product.name === "string"
       ? product.name
-      : (product.name as Record<string, string> | undefined)?.[lang] ??
-      (product.name as Record<string, string> | undefined)?.id ??
+      : product.name?.[lang] ??
+      product.name?.id ??
       product.slug ??
       "Product");
 
   const breadcrumbProducts =
     detailDict.breadcrumbProducts ??
     (lang.startsWith("en") ? "Products" : "Produk");
-  const breadcrumbWishlist =
-    detailDict.breadcrumbWishlist ??
-    (lang.startsWith("en") ? "Wishlist" : "Wishlist");
   const categoryLabel =
     detailDict.category ?? (lang.startsWith("en") ? "Category" : "Kategori");
   const descriptionLabel =
@@ -179,59 +222,273 @@ export default function ProductSlugPage({
   const attributesTitle =
     detailDict.attributes ??
     (lang.startsWith("en") ? "Available Options" : "Pilihan yang tersedia");
-  const variantsTitle =
-    detailDict.variants ??
-    (lang.startsWith("en") ? "Available Variants" : "Varian tersedia");
-  const noVariantsLabel =
-    detailDict.noVariants ??
-    (lang.startsWith("en")
-      ? "Variants not available"
-      : "Varian belum tersedia");
-  const relatedTitle =
-    detailDict.related ??
-    (lang.startsWith("en")
-      ? "You may also like"
-      : "Anda mungkin juga menyukainya");
 
-  const safePreviews = useMemo<PreviewImage[]>(() => {
-    const previews = ensurePreviewImages(product, fallbackName);
-    if (previews.length > 0) return previews;
-    return [
-      {
-        id: "fallback",
-        url: FALLBACK_IMAGE,
-        alt: fallbackName,
-        title: fallbackName,
-      },
-    ];
-  }, [product, fallbackName]);
-
+  const previews = useMemo(
+    () => ensurePreviewImages(product, fallbackName),
+    [product, fallbackName],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
+  const safePreviews =
+    previews.length > 0
+      ? previews
+      : [
+        {
+          id: "fallback",
+          url: FALLBACK_IMAGE,
+          alt: fallbackName,
+          title: fallbackName,
+        },
+      ];
   const activePreview = safePreviews[activeIndex] ?? safePreviews[0];
 
+  const attributes = useMemo<ProductAttributeChoice[]>(
+    () => mapAttributes(product, lang, fallbackName),
+    [product, lang, fallbackName],
+  );
+
   const priceCandidates = [
-    typeof (product as any).price === "number" ? (product as any).price : null,
-    typeof (product as any).price_min === "number"
-      ? (product as any).price_min
-      : null,
-    typeof (product as any).variants_min_price === "number"
-      ? (product as any).variants_min_price
+    typeof product.price === "number" ? product.price : null,
+    typeof product.price_min === "number" ? product.price_min : null,
+    typeof product.variants_min_price === "number"
+      ? product.variants_min_price
       : null,
   ].filter((value): value is number => value !== null);
-
   const displayPrice =
     priceCandidates.length > 0
       ? formatCurrency(priceCandidates[0], lang)
       : null;
 
-  const attributes = useMemo(
-    () => attributeOptions(product, fallbackName),
-    [product, fallbackName],
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(
+    {},
   );
-  const variants = useMemo(
-    () => variantDisplay(product, lang),
-    [product, lang],
-  );
+  const [statusMessage, setStatusMessage] = useState<{
+    type: "success" | "error" | "info";
+    text: string;
+  } | null>(null);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+
+  const encodedCallback = encodeURIComponent(currentUrl);
+  const loginHref = `/${lang}/auth/login?callbackUrl=${encodedCallback}`;
+  const registerHref = `/${lang}/auth/register?callbackUrl=${encodedCallback}`;
+
+  const selectTemplate =
+    wishlistLabels.selectOptions ??
+    (lang.startsWith("en")
+      ? "Please select {label} before adding to favorites."
+      : "Silakan pilih {label} terlebih dahulu.");
+  const successMessage =
+    wishlistLabels.success ??
+    (lang.startsWith("en")
+      ? "Product added to your favorites."
+      : "Produk berhasil ditambahkan ke favorit.");
+  const errorMessage =
+    wishlistLabels.error ??
+    (lang.startsWith("en")
+      ? "Unable to add this product to favorites. Please try again."
+      : "Gagal menambahkan ke favorit. Silakan coba lagi.");
+  const checkingSessionMessage =
+    wishlistLabels.checkingSession ??
+    (lang.startsWith("en")
+      ? "Checking your session, please wait."
+      : "Memeriksa sesi Anda, mohon tunggu.");
+  const variantMissingMessage = lang.startsWith("en")
+    ? "Variant not available for the selected options."
+    : "Varian tidak tersedia untuk pilihan ini.";
+
+  const handleOptionSelect = useCallback((label: string, value: string) => {
+    setSelectedOptions((prev) => ({
+      ...prev,
+      [label]: value,
+    }));
+    setStatusMessage(null);
+  }, []);
+
+  const clearPendingFavorite = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+    }
+    setLoginPromptOpen(false);
+  }, []);
+
+  const handleAddToWishlist = useCallback(async () => {
+    setStatusMessage(null);
+    console.log("handleAddToWishlist auth state", { isAuthed, isReady });
+
+    if (!isReady) {
+      setStatusMessage({ type: "info", text: checkingSessionMessage });
+      return;
+    }
+
+    const requiredAttributes = attributes.filter(a => a.options.length > 0);
+    for (const attribute of requiredAttributes) {
+      const selection = selectedOptions[attribute.label];
+      if (!selection) {
+        const message = formatTemplate(selectTemplate, { label: attribute.label });
+        setStatusMessage({ type: "error", text: message });
+        return;
+      }
+    }
+
+    const variantData = product.variants_data ?? [];
+    let matchedVariantId: number | undefined;
+
+    if (variantData.length > 0) {
+      const normalizedSelections = requiredAttributes
+        .map(attribute => selectedOptions[attribute.label])
+        .filter(Boolean)
+        .map(selection => selection.toLowerCase().trim());
+
+      if (normalizedSelections.length > 0) {
+        const matchedVariant = variantData.find((variant) => {
+          const label = (variant?.label_text ?? variant?.label ?? "")
+            .toLowerCase()
+            .split("|")
+            .map(part => part.trim());
+          return normalizedSelections.every(selection => label.includes(selection));
+        });
+        matchedVariantId = typeof matchedVariant?.id === "number" ? matchedVariant.id : undefined;
+
+        if (!matchedVariant) {
+          setStatusMessage({ type: "error", text: variantMissingMessage });
+          return;
+        }
+      }
+    }
+
+    // âœ… gunakan isAuthed dari hook yang dipanggil di top-level komponen
+    if (!isAuthed) {
+      if (typeof window !== "undefined") {
+        const pending: PendingFavorite = {
+          productId: product.id,
+          variantId: matchedVariantId ?? null,
+          selections: selectedOptions,
+          lang,
+          callbackUrl: currentUrl,
+          createdAt: Date.now(),
+        };
+        window.localStorage.setItem(PENDING_WISHLIST_KEY, JSON.stringify(pending));
+      }
+      setLoginPromptOpen(true);
+      return;
+    }
+
+    try {
+      await addFavorite({ productId: product.id, variantId: matchedVariantId ?? undefined });
+      setStatusMessage({ type: "success", text: successMessage });
+    } catch (error) {
+      console.error("Failed to add favorite", error);
+      setStatusMessage({ type: "error", text: errorMessage });
+    }
+  }, [
+    addFavorite,
+    attributes,
+    checkingSessionMessage,
+    currentUrl,
+    errorMessage,
+    isAuthed,
+    isReady,
+    lang,
+    product.id,
+    product.variants_data,
+    selectTemplate,
+    selectedOptions,
+    successMessage,
+    variantMissingMessage,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(PENDING_WISHLIST_KEY);
+    if (!raw) return;
+
+    try {
+      const pending: PendingFavorite = JSON.parse(raw);
+      const isExpired =
+        typeof pending?.createdAt === "number"
+          ? Date.now() - pending.createdAt > PENDING_WISHLIST_TTL
+          : false;
+
+      if (isExpired) {
+        window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+        return;
+      }
+
+      if (pending?.productId === product.id && pending?.selections) {
+        setSelectedOptions((prev) =>
+          Object.keys(prev).length > 0 ? prev : pending.selections ?? {},
+        );
+      }
+    } catch (error) {
+      console.error("Failed to read pending wishlist", error);
+      window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+    }
+  }, [product.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isReady || !isAuthed || isAdding) return;
+
+    const raw = window.localStorage.getItem(PENDING_WISHLIST_KEY);
+    if (!raw) return;
+
+    try {
+      const pending: PendingFavorite = JSON.parse(raw);
+      if (pending?.productId !== product.id) {
+        return;
+      }
+
+      const isExpired =
+        typeof pending?.createdAt === "number"
+          ? Date.now() - pending.createdAt > PENDING_WISHLIST_TTL
+          : false;
+
+      if (isExpired) {
+        window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+        return;
+      }
+
+      const selections = pending.selections ?? {};
+      if (Object.keys(selections).length > 0) {
+        setSelectedOptions((prev) =>
+          Object.keys(prev).length > 0 ? prev : selections,
+        );
+      }
+
+      setLoginPromptOpen(false);
+      setStatusMessage(null);
+
+      const variantId =
+        typeof pending.variantId === "number" ? pending.variantId : undefined;
+
+      const resume = async () => {
+        try {
+          await addFavorite({
+            productId: pending.productId,
+            variantId,
+          });
+          setStatusMessage({ type: "success", text: successMessage });
+        } catch (error) {
+          console.error("Failed to resume pending favorite", error);
+          setStatusMessage({ type: "error", text: errorMessage });
+        } finally {
+          clearPendingFavorite();
+        }
+      };
+
+      void resume();
+    } catch (error) {
+      console.error("Failed to parse pending wishlist entry", error);
+      window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+    }
+  }, [
+    addFavorite,
+    clearPendingFavorite,
+    errorMessage,
+    isAdding,
+    isAuthed,
+    isReady,
+    product.id,
+    successMessage,
+  ]);
 
   return (
     <Container className={`${inter.className} py-10`}>
@@ -252,6 +509,7 @@ export default function ProductSlugPage({
 
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex flex-col gap-4 lg:w-1/2">
+          {/* 725 x 725 image */}
           <div className="relative h-[725px] w-[725px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
             <Image
               src={activePreview.url || FALLBACK_IMAGE}
@@ -262,6 +520,7 @@ export default function ProductSlugPage({
               priority
             />
           </div>
+
           {safePreviews.length > 1 ? (
             <div className="flex flex-wrap gap-3">
               {safePreviews.map((preview, index) => (
@@ -294,17 +553,17 @@ export default function ProductSlugPage({
               {fallbackName}
             </h1>
             <div className="space-y-1 text-sm text-gray-600">
-              {(product as any).category_name ? (
+              {product.category_name ? (
                 <p>
                   <span className="font-semibold text-gray-700">
                     {categoryLabel}:
                   </span>{" "}
-                  {(product as any).category_name}
+                  {product.category_name}
                 </p>
               ) : null}
-              {typeof (product as any).favorites_count === "number" ? (
+              {typeof product.favorites_count === "number" ? (
                 <p className="text-xs text-gray-500">
-                  ❤️ {(product as any).favorites_count}{" "}
+                  {product.favorites_count}{" "}
                   {lang.startsWith("en") ? "favorites" : "favorit"}
                 </p>
               ) : null}
@@ -328,13 +587,13 @@ export default function ProductSlugPage({
             </div>
           ) : null}
 
-          {(product as any).description_text ? (
+          {product.description_text ? (
             <section className="space-y-2">
               <h2 className="text-lg font-semibold text-[#003663]">
                 {descriptionLabel}
               </h2>
               <p className="text-sm leading-relaxed text-gray-700">
-                {(product as any).description_text}
+                {product.description_text}
               </p>
             </section>
           ) : null}
@@ -344,11 +603,15 @@ export default function ProductSlugPage({
               <h2 className="text-lg font-semibold text-[#003663]">
                 {attributesTitle}
               </h2>
-              {attributes
-                .filter(({ options }) => options.length > 0)
-                .map(({ label, options }) => (
-                  <ProductChoice key={label} label={label} options={options} />
-                ))}
+              {attributes.map(({ label, options }) => (
+                <ProductChoice
+                  key={label}
+                  label={label}
+                  options={options}
+                  value={selectedOptions[label] ?? ""}
+                  onSelect={(value) => handleOptionSelect(label, value)}
+                />
+              ))}
             </section>
           ) : null}
 
@@ -357,64 +620,49 @@ export default function ProductSlugPage({
               href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}`}
               className="flex w-full items-center justify-center gap-2 rounded-[8px] bg-green-500 px-4 py-2 text-white transition hover:bg-green-600 lg:w-auto"
             >
-              <FaWhatsapp size={22} aria-hidden />
-              {/* <span>
-                {contactLabels.whatsapp ??
-                  (lang.startsWith("en")
-                    ? "Contact via WhatsApp"
-                    : "Hubungi via WhatsApp")}
-              </span> */}
+              <FaWhatsapp size={22} aria-hidden="true" />
             </Link>
             <Link
               href={`mailto:${CONTACT.email}`}
               className="flex w-full items-center justify-center gap-2 rounded-[8px] bg-primary px-4 py-2 text-white transition hover:bg-[#04264b] lg:w-auto"
             >
-              <CiMail size={22} aria-hidden />
-              {/* <span>
-                {contactLabels.email ??
-                  (lang.startsWith("en") ? "Send Email" : "Kirim Email")}
-              </span> */}
+              <CiMail size={22} aria-hidden="true" />
             </Link>
-            <ButtonWishlist labels={wishlistLabels} />
+            <ButtonWishlist
+              labels={wishlistLabels}
+              onClick={handleAddToWishlist}
+              disabled={isAdding}
+              isLoading={isAdding}
+              isLoginPromptOpen={loginPromptOpen}
+              onCloseLoginPrompt={clearPendingFavorite}
+              loginHref={loginHref}
+              registerHref={registerHref}
+            />
           </div>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#003663]">
-              {variantsTitle}
-            </h2>
-            {variants.length > 0 ? (
-              <div className="space-y-2 rounded-lg border border-gray-200 p-4">
-                {variants.map((variant) => (
-                  <div
-                    key={variant.id}
-                    className="flex flex-col gap-1 border-b border-dashed border-gray-200 pb-2 last:border-b-0 last:pb-0"
-                  >
-                    <div className="font-medium text-[#121212]">
-                      {variant.label}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                      {variant.price ? <span>{variant.price}</span> : null}
-                      {typeof variant.stock === "number" ? (
-                        <span>
-                          {lang.startsWith("en") ? "Stock" : "Stok"}:{" "}
-                          {variant.stock}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">{noVariantsLabel}</p>
-            )}
-          </section>
+          {statusMessage ? (
+            <p
+              className={`text-sm ${
+                statusMessage.type === "error"
+                  ? "text-red-600"
+                  : statusMessage.type === "success"
+                    ? "text-green-600"
+                    : "text-blue-600"
+              }`}
+            >
+              {statusMessage.text}
+            </p>
+          ) : null}
         </div>
       </div>
 
       {relatedProducts.length > 0 ? (
         <section className="mt-16 space-y-6">
           <h2 className="text-xl font-semibold text-[#003663]">
-            {relatedTitle}
+            {detailDict.related ??
+              (lang.startsWith("en")
+                ? "You may also like"
+                : "Anda mungkin juga menyukainya")}
           </h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {relatedProducts.map((item: ProductCard) => (

@@ -2,12 +2,14 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import InputPassword from "@/components/ui-custom/form/InputPassword";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { useAuthStore } from "@/store/auth-store";
+import { setStoredToken, setStoredUser } from "@/lib/auth";
+import { FavoriteService } from "@/services/favorite.service";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -15,7 +17,13 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 //const REGISTER_ENDPOINT = "/api/auth/customer/register";
-const REGISTER_ENDPOINT = process.env.NEXT_PUBLIC_API_URL+"/auth/customer/register";
+const REGISTER_ENDPOINT = "/api/auth/customer/register";
+const PENDING_WISHLIST_KEY = "pending_wishlist";
+
+type PendingFavorite = {
+  productId: number;
+  variantId?: number | null;
+};
 type RegisterFormValues = {
   name: string;
   email: string;
@@ -37,7 +45,12 @@ const initialValues: RegisterFormValues = {
 export default function FormRegister() {
   const router = useRouter();
   const { lang } = useParams<{ lang: string }>();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const callbackUrlParam = searchParams.get("callbackUrl") ?? "";
+  const loginLink = callbackUrlParam
+    ? `/${lang}/auth/login?callbackUrl=${encodeURIComponent(callbackUrlParam)}`
+    : `/${lang}/auth/login`;
 
   const [formValues, setFormValues] = useState<RegisterFormValues>(
     initialValues,
@@ -124,6 +137,7 @@ export default function FormRegister() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(formValues),
       });
 
@@ -143,7 +157,39 @@ export default function FormRegister() {
       const token: string | null = payload?.data?.token ?? null;
       const user = payload?.data?.user ?? null;
 
+      if (token) {
+        setStoredToken(token);
+      }
+
       setAuth({ token, user });
+      setStoredUser(user);
+
+      if (token) {
+        try {
+          if (typeof window !== "undefined") {
+            const pendingRaw = window.localStorage.getItem(PENDING_WISHLIST_KEY);
+            if (pendingRaw) {
+              try {
+                const pending: PendingFavorite = JSON.parse(pendingRaw);
+                if (pending?.productId) {
+                  await FavoriteService.add(
+                    pending.productId,
+                    pending.variantId ?? undefined,
+                  );
+                }
+              } catch (wishlistError) {
+                console.error("Failed to restore wishlist", wishlistError);
+              } finally {
+                window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+              }
+            }
+          }
+        } catch (wishlistError) {
+          console.error("Wishlist processing error", wishlistError);
+        }
+      } else if (typeof window !== "undefined") {
+        window.localStorage.removeItem(PENDING_WISHLIST_KEY);
+      }
 
       setStatusMessage({
         type: "success",
@@ -152,8 +198,13 @@ export default function FormRegister() {
           "Registered successfully. Please verify your email.",
       });
 
+      const redirectTarget =
+        callbackUrlParam && callbackUrlParam.startsWith("/")
+          ? decodeURIComponent(callbackUrlParam)
+          : `/${lang}`;
+
       setTimeout(() => {
-        router.replace(`/${lang}`);
+        router.replace(redirectTarget);
       }, 800);
     } catch (error) {
       console.error("Register request failed", error);
@@ -266,7 +317,7 @@ export default function FormRegister() {
         {" "}
         <Link
           className="text-[#191C42] font-semibold underline"
-          href={`/${lang}/auth/login`}
+          href={loginLink}
         >
           Masuk
         </Link>
@@ -274,3 +325,4 @@ export default function FormRegister() {
     </form>
   );
 }
+

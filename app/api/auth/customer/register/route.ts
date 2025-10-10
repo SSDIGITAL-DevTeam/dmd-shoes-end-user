@@ -41,19 +41,16 @@ export async function POST(request: Request) {
   const { signal, clear } = withTimeout(12_000); // 12s timeout
 
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/auth/customer/register`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
-        signal,
-        // credentials: "include", // only if your API needs cookies
-      }
-    );
+    const upstreamBase = API_BASE_URL.replace(/\/+$/, "");
+    const response = await fetch(`${upstreamBase}/auth/customer/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+      signal,
+    });
 
     const data = await parseSafeJson(response);
 

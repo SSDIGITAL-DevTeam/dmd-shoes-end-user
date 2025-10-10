@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -17,8 +16,9 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const upstreamBase = API_BASE_URL.replace(/\/+$/, "");
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/login`, {
+    const response = await fetch(`${upstreamBase}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -33,9 +33,22 @@ export async function POST(request: Request) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    const token = data?.token;
+    const token =
+      data?.token ??
+      data?.data?.token ??
+      null;
+
+    const payload = {
+      status: data?.status ?? "success",
+      message: data?.message ?? "Login successful",
+      user: data?.user ?? data?.data?.user ?? null,
+      token,
+    };
+
+    const res = NextResponse.json(payload, { status: response.status });
+
     if (token) {
-      cookies().set({
+      res.cookies.set({
         name: TOKEN_COOKIE_NAME,
         value: token,
         httpOnly: true,
@@ -46,15 +59,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json(
-      {
-        status: data?.status ?? "success",
-        message: data?.message ?? "Login successful",
-        user: data?.user ?? null,
-        token,
-      },
-      { status: response.status },
-    );
+    return res;
   } catch (error) {
     console.error("Login failed", error);
     return NextResponse.json(

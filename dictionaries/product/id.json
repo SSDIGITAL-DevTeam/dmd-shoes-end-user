@@ -50,9 +50,13 @@
     },
     "wishlist": {
       "add": "Tambahkan ke Favorit",
+      "loading": "Menambahkan...",
       "modalTitle": "Masuk untuk menambahkan produk ke favorit",
       "login": "Masuk",
-      "register": "Daftar"
+      "register": "Daftar",
+      "success": "Produk berhasil ditambahkan ke favorit.",
+      "error": "Gagal menambahkan ke favorit. Silakan coba lagi.",
+      "selectOptions": "Silakan pilih {label} terlebih dahulu."
     }
   },
   "empty": "Produk tidak ditemukan.",
