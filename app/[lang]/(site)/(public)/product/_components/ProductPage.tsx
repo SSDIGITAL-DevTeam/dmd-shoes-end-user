@@ -18,6 +18,7 @@ import { CategoryService } from "@/services/category.service";
 import { queryKeys } from "@/lib/query-keys";
 import type { Category, Pagination, ProductCard } from "@/services/types";
 import { inter, lato } from "@/config/font";
+import ProductPagination from "./ProductPagination";
 
 /**
  * Props diterima dari page (server component) yang mem-pass 'lang' & dictionary terjemahan.
@@ -492,32 +493,19 @@ export default function ProductPage({
               </div>
             </ApiBoundary>
 
-            {/* Pagination compact (angka saat ini / total) */}
-            {totalPages > 1 ? (
-              <div className="mt-8 flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  className="rounded border px-3 py-2 text-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => handlePageChange(Math.max(1, filters.page - 1))}
-                  disabled={filters.page <= 1}
-                >
-                  {dictionaryProduct?.prev ?? "Sebelumnya"}
-                </button>
-                <span className="text-sm text-gray-600">
-                  {filters.page} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  className="rounded border px-3 py-2 text-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() =>
-                    handlePageChange(Math.min(totalPages, filters.page + 1))
-                  }
-                  disabled={filters.page >= totalPages}
-                >
-                  {dictionaryProduct?.next ?? "Selanjutnya"}
-                </button>
-              </div>
-            ) : null}
+            <ProductPagination
+              currentPage={filters.page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              labels={{
+                prev:
+                  dictionaryProduct?.prev ??
+                  (lang.startsWith("en") ? "Previous" : "Sebelumnya"),
+                next:
+                  dictionaryProduct?.next ??
+                  (lang.startsWith("en") ? "Next" : "Selanjutnya"),
+              }}
+            />
           </main>
         </div>
       </Container>

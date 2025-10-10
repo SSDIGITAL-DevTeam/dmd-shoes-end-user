@@ -44,8 +44,6 @@
                      "title":  "Featured Products"
                  },
     "auth":  {
-                 "account":  "Account",
-                 "wishlist":  "Wishlist",
                  "login":  "Log In",
                  "register":  "Register"
              }

@@ -28,13 +28,15 @@ const resolveText = (
   return "";
 };
 
-const formatCurrency = (value?: number | null) => {
-  if (typeof value !== "number") return "-";
+const formatCurrency = (value?: number | string | null) => {
+  if (value === null || value === undefined) return "-";
+  const numeric = typeof value === "string" ? Number(value) : value;
+  if (typeof numeric !== "number" || Number.isNaN(numeric)) return "-";
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
-  }).format(value);
+  }).format(numeric);
 };
 
 const Wishlist = ({ lang = "id" }: { lang?: string }) => {
@@ -112,9 +114,12 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
 
     const lines = selectedFavorites.map((fav, index) => {
       const productName = resolveText(fav.product.name, lang) || "Produk";
-      const variantLabel = fav.variant?.label
-        ? ` (${fav.variant.label})`
+      const variantText = fav.variant
+        ? fav.variant.label_text ??
+          resolveText(fav.variant.label, lang) ??
+          ""
         : "";
+      const variantLabel = variantText ? ` (${variantText})` : "";
       const price =
         fav.variant?.price ?? fav.product.price ?? undefined;
 
@@ -178,11 +183,18 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
                 const productName =
                   resolveText(favorite.product.name, lang) || "Produk";
                 const productCode = favorite.product?.slug ?? "";
-                const variantLabel = favorite.variant?.label;
-                const variantParts =
-                  typeof variantLabel === "string" && variantLabel.length > 0
-                    ? variantLabel.split("|").map((part) => part.trim())
-                    : [];
+                const variantLabelText =
+                  favorite.variant?.label_text ??
+                  resolveText(
+                    favorite.variant?.label ?? null,
+                    lang,
+                  );
+                const variantParts = variantLabelText
+                  ? variantLabelText
+                      .split("|")
+                      .map((part) => part.trim())
+                      .filter(Boolean)
+                  : [];
                 const price =
                   favorite.variant?.price ?? favorite.product.price ?? null;
 

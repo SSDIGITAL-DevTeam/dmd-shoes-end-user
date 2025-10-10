@@ -33,6 +33,17 @@ const callInternal = async <T>(
     headers.set("Content-Type", "application/json");
   }
 
+  if (!headers.has("Authorization") && typeof window !== "undefined") {
+    try {
+      const token = window.localStorage.getItem("auth_token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    } catch {
+      // ignore storage access issues
+    }
+  }
+
   const response = await fetch(path, {
     ...init,
     headers,

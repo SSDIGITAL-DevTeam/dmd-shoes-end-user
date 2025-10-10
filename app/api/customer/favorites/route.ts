@@ -13,7 +13,7 @@ const parseSafeJson = async (response: Response) => {
   return text ? { message: text } : null;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!API_BASE_URL) {
     return NextResponse.json(
       { message: "NEXT_PUBLIC_API_URL is not configured." },
@@ -29,6 +29,7 @@ export async function GET() {
   }
 
   const upstreamBase = API_BASE_URL.replace(/\/+$/, "");
+  const acceptLanguage = request.headers.get("accept-language") ?? undefined;
 
   try {
     const upstream = await fetch(`${upstreamBase}/favorites`, {
@@ -36,6 +37,7 @@ export async function GET() {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
+        ...(acceptLanguage ? { "Accept-Language": acceptLanguage } : {}),
       },
       cache: "no-store",
     });

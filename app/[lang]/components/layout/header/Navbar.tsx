@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import LocaleSwitcher from "./locale-switcher";
 import LocaleSwitcherList from "./local-switcher-list";
 import { usePathname } from "next/navigation";
 import { HiMenu } from "react-icons/hi";
 import Link from "next/link";
-import { FaUserAlt, FaRegHeart } from "react-icons/fa";
+import { FaUserAlt, FaRegHeart, FaHeart, FaRegUser } from "react-icons/fa";
 import Logo from "./Logo";
 import { useAuthStore } from "@/store/auth-store";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const AUTH_FALLBACK_LABELS: Record<
     string,
@@ -54,6 +55,8 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
         user: s.user,
         isHydrated: s.isHydrated,
     }));
+    const { favorites } = useFavorites();
+    const wishlistCount = useMemo(() => favorites.length, [favorites]);
 
     useEffect(() => {
         if (navRef.current) {
@@ -86,6 +89,12 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
         wishlist: dictionaryAuth.wishlist ?? dictionaryHomeAuth.wishlist ?? fallbackAuth.wishlist,
         account: dictionaryAuth.account ?? dictionaryHomeAuth.account ?? fallbackAuth.account,
     };
+    const wishlistLabelWithCount =
+        wishlistCount > 0 ? `${authLabels.wishlist} (${wishlistCount})` : authLabels.wishlist;
+    const isWishlistActive = currentPath === "/wishlist";
+    const isProfileActive = currentPath === "/profile";
+    const WishlistIcon = isWishlistActive ? FaHeart : FaRegHeart;
+    const AccountIcon = isProfileActive ? FaUserAlt : FaRegUser;
 
     return (
         <>
@@ -128,11 +137,24 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                                 </>
                             ) : (
                                 <>
-                                    <Link href={`/${lang}/wishlist`} className="w-8 text-white" aria-label="Wishlist">
-                                        <FaRegHeart size={28} aria-hidden="true" />
+                                    <Link
+                                        href={`/${lang}/wishlist`}
+                                        className="relative flex h-8 w-8 items-center justify-center"
+                                        aria-label={wishlistLabelWithCount}
+                                    >
+                                        <WishlistIcon size={26} aria-hidden="true" />
+                                        {wishlistCount > 0 ? (
+                                            <span className="absolute -top-1 -right-0.5 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
+                                                {wishlistCount > 99 ? "99+" : wishlistCount}
+                                            </span>
+                                        ) : null}
                                     </Link>
-                                    <Link href={`/${lang}/profile`} className="w-8 text-white" aria-label="Profile">
-                                        <FaUserAlt size={28} aria-hidden="true" />
+                                    <Link
+                                        href={`/${lang}/profile`}
+                                        className="flex h-8 w-8 items-center justify-center"
+                                        aria-label={authLabels.account}
+                                    >
+                                        <AccountIcon size={26} aria-hidden="true" />
                                     </Link>
                                 </>
                             )}
@@ -188,18 +210,25 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                             <div className="flex items-center space-x-4 text-white">
                                 <Link
                                     href={`/${lang}/wishlist`}
-                                    className="px-[10px] py-[16px] text-[16px] text-white font-medium hover:underline flex items-center gap-2"
+                                    className="relative flex items-center px-[10px] py-[16px] text-[16px] text-white transition hover:text-white hover:opacity-80"
+                                    aria-label={wishlistLabelWithCount}
                                 >
-                                    <FaRegHeart size={24} aria-hidden="true" />
-                                    <span>{authLabels.wishlist}</span>
+                                    <WishlistIcon size={24} aria-hidden="true" />
+                                    <span className="sr-only">{wishlistLabelWithCount}</span>
+                                    {wishlistCount > 0 ? (
+                                        <span className="absolute -top-1 -right-0.5 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
+                                            {wishlistCount > 99 ? "99+" : wishlistCount}
+                                        </span>
+                                    ) : null}
                                 </Link>
 
                                 <Link
                                     href={`/${lang}/profile`}
-                                    className="px-[10px] py-[16px] text-[16px] text-white font-medium hover:underline flex items-center gap-2"
+                                    className="flex items-center px-[10px] py-[16px] text-[16px] text-white transition hover:text-white hover:opacity-80"
+                                    aria-label={authLabels.account}
                                 >
-                                    <FaUserAlt size={24} aria-hidden="true" />
-                                    <span>{authLabels.account}</span>
+                                    <AccountIcon size={24} aria-hidden="true" />
+                                    <span className="sr-only">{authLabels.account}</span>
                                 </Link>
                             </div>
                         )}
@@ -257,13 +286,28 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                             </>
                         ) : (
                             <div className="flex items-center gap-4 text-primary text-[24px]">
-                                <Link href={`/${lang}/wishlist`} className="px-[10px] py-[16px]" onClick={() => setIsOpen(false)}>
-                                    <FaRegHeart size={24} aria-hidden="true" />
-                                    <span>{authLabels.wishlist}</span>
+                                <Link
+                                    href={`/${lang}/wishlist`}
+                                    className="relative px-[10px] py-[16px]"
+                                    onClick={() => setIsOpen(false)}
+                                    aria-label={wishlistLabelWithCount}
+                                >
+                                    <WishlistIcon size={24} aria-hidden="true" />
+                                    <span className="sr-only">{wishlistLabelWithCount}</span>
+                                    {wishlistCount > 0 ? (
+                                        <span className="absolute -top-1 -right-0.5 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
+                                            {wishlistCount > 99 ? "99+" : wishlistCount}
+                                        </span>
+                                    ) : null}
                                 </Link>
-                                <Link href={`/${lang}/profile`} className="px-[10px] py-[16px]" onClick={() => setIsOpen(false)}>
-                                    <FaUserAlt size={24} aria-hidden="true" />
-                                    <span>{authLabels.account}</span>
+                                <Link
+                                    href={`/${lang}/profile`}
+                                    className="px-[10px] py-[16px]"
+                                    onClick={() => setIsOpen(false)}
+                                    aria-label={authLabels.account}
+                                >
+                                    <AccountIcon size={24} aria-hidden="true" />
+                                    <span className="sr-only">{authLabels.account}</span>
                                 </Link>
                             </div>
                         )}

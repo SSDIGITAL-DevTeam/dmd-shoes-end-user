@@ -61,5 +61,7 @@
   },
   "empty": "Produk tidak ditemukan.",
   "prev": "Sebelumnya",
-  "next": "Selanjutnya"
+  "next": "Selanjutnya",
+  "first": "Pertama",
+  "last": "Terakhir"
 }

@@ -12,7 +12,7 @@ import {
 import "./global.css";
 
 export const metadata = {
-  title: "i18n within app router - Vercel Examples",
+  title: "DMD ShoeParts Manufacturing",
   description: "How to do i18n in Next.js 15 within app router",
 };
 

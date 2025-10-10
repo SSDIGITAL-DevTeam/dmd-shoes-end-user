@@ -41,6 +41,7 @@ export async function POST(request: Request, context: Params) {
     return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
   }
 
+  const acceptLanguage = request.headers.get("accept-language") ?? undefined;
   let payload: { variant_id?: number | null } = {};
   try {
     const json = await request.json();
@@ -61,6 +62,7 @@ export async function POST(request: Request, context: Params) {
         Accept: "application/json",
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        ...(acceptLanguage ? { "Accept-Language": acceptLanguage } : {}),
       },
       body: JSON.stringify(payload),
     });
@@ -98,7 +100,7 @@ export async function DELETE(request: Request, context: Params) {
   const url = new URL(request.url);
   const variantId = url.searchParams.get("variant_id");
   const query = variantId ? `?variant_id=${encodeURIComponent(variantId)}` : "";
-
+  const acceptLanguage = request.headers.get("accept-language") ?? undefined;
   const upstreamBase = API_BASE_URL!.replace(/\/+$/, "");
 
   try {
@@ -109,6 +111,7 @@ export async function DELETE(request: Request, context: Params) {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
+          ...(acceptLanguage ? { "Accept-Language": acceptLanguage } : {}),
         },
       },
     );

@@ -177,7 +177,8 @@ export type FavoriteItem = {
   };
   variant: {
     id: number;
-    label: string;
+    label: MultiLangValue | string | null;
+    label_text?: string | null;
     price?: number | null;
     stock?: number | null;
     active?: boolean;

@@ -61,5 +61,7 @@
   },
   "empty": "No products found.",
   "prev": "Previous",
-  "next": "Next"
+  "next": "Next",
+  "first": "First",
+  "last": "Last"
 }

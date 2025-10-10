@@ -44,8 +44,6 @@
                      "title":  "Produk Unggulan"
                  },
     "auth":  {
-                 "account":  "Akun",
-                 "wishlist":  "Favorit",
                  "login":  "Masuk",
                  "register":  "Daftar"
              }
