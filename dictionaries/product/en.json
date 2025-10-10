@@ -32,6 +32,29 @@
     "reset": "Reset",
     "apply": "Apply"
   },
+  "detail": {
+    "breadcrumbProducts": "Products",
+    "breadcrumbWishlist": "Wishlist",
+    "category": "Category",
+    "description": "Description",
+    "price": "Price",
+    "priceNote": "Price excludes shipping",
+    "priceSuffix": "per pair",
+    "attributes": "Available Options",
+    "variants": "Available Variants",
+    "noVariants": "Variants not available",
+    "related": "You may also like",
+    "contact": {
+      "whatsapp": "Contact via WhatsApp",
+      "email": "Send Email"
+    },
+    "wishlist": {
+      "add": "Add to Favorites",
+      "modalTitle": "Log in to add this product to your favorites",
+      "login": "Log In",
+      "register": "Register"
+    }
+  },
   "empty": "No products found.",
   "prev": "Previous",
   "next": "Next"

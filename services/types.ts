@@ -27,13 +27,16 @@ export type ProductGalleryImage = {
   id: number;
   url: string;
   title?: string | null;
+  title_text?: string | null;
   alt?: string | null;
+  alt_text?: string | null;
   sort?: number | null;
 };
 
 export type ProductVariant = {
   id: number;
   label: string;
+  label_text?: string | null;
   price?: number | null;
   price_min?: number | null;
   stock?: number | null;
@@ -43,12 +46,14 @@ export type ProductVariant = {
 export type ProductAttributeOption = {
   id: number;
   value: string;
+  value_text?: string | null;
   sort?: number | null;
 };
 
 export type ProductAttribute = {
   id: number;
   name: MultiLangValue | string;
+  name_text?: string | null;
   sort?: number | null;
   options: ProductAttributeOption[];
 };

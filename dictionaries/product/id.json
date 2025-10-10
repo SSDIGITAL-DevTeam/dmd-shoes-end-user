@@ -32,6 +32,29 @@
     "reset": "Reset",
     "apply": "Terapkan"
   },
+  "detail": {
+    "breadcrumbProducts": "Produk",
+    "breadcrumbWishlist": "Wishlist",
+    "category": "Kategori",
+    "description": "Deskripsi",
+    "price": "Harga",
+    "priceNote": "Harga belum termasuk ongkir",
+    "priceSuffix": "per pasang",
+    "attributes": "Pilihan yang tersedia",
+    "variants": "Varian tersedia",
+    "noVariants": "Varian belum tersedia",
+    "related": "Anda mungkin juga menyukainya",
+    "contact": {
+      "whatsapp": "Hubungi via WhatsApp",
+      "email": "Kirim Email"
+    },
+    "wishlist": {
+      "add": "Tambahkan ke Favorit",
+      "modalTitle": "Masuk untuk menambahkan produk ke favorit",
+      "login": "Masuk",
+      "register": "Daftar"
+    }
+  },
   "empty": "Produk tidak ditemukan.",
   "prev": "Sebelumnya",
   "next": "Selanjutnya"

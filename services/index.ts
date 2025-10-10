@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./auth.service";
 export * from "./product.service";
+export * from "./product-detail.service";
 export * from "./category.service";
 export * from "./article.service";
 export * from "./meta.service";
