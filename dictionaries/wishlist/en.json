@@ -1,0 +1,20 @@
+{
+  "pageTitle": "My Favorites",
+  "pageTitleCount": "({count} Products)",
+  "sectionTitle": "Products in My Favorites",
+  "selectAll": "Select All",
+  "loading": "Loading favorites...",
+  "empty": "You don't have any favorites yet.",
+  "fallbackProductName": "Product",
+  "priceUnit": "/ pair",
+  "removeLabel": "Remove from favorites",
+  "selectedCount": "{count} Products Selected",
+  "whatsapp": {
+    "emptyMessage": "Hi, DMD Shoes. I'd like to ask about my favorite products.",
+    "intro": "Hi, DMD Shoes. I'm interested in the following products:",
+    "outro": "Please share availability and how to place an order.",
+    "line": "{index}. {product}{variant} - {price}",
+    "button": "Order via WhatsApp Now",
+    "preparing": "Preparing..."
+  }
+}

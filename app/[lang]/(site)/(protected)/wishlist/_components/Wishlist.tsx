@@ -11,6 +11,62 @@ import type { FavoriteItem, MultiLangValue } from "@/services/types";
 
 const FALLBACK_IMAGE = "/assets/demo/demo-product.png";
 
+type WishlistDictionary = {
+  pageTitle?: string;
+  pageTitleCount?: string;
+  sectionTitle?: string;
+  selectAll?: string;
+  loading?: string;
+  empty?: string;
+  fallbackProductName?: string;
+  priceUnit?: string;
+  removeLabel?: string;
+  selectedCount?: string;
+  whatsapp?: {
+    emptyMessage?: string;
+    intro?: string;
+    outro?: string;
+    line?: string;
+    button?: string;
+    preparing?: string;
+  };
+};
+
+const formatTemplate = (template: string, replacements: Record<string, string>) =>
+  template.replace(/\{(\w+)\}/g, (_, key) => replacements[key] ?? "");
+
+const createFallbackDictionary = (lang: string): Required<WishlistDictionary> & {
+  whatsapp: Required<NonNullable<WishlistDictionary["whatsapp"]>>;
+} => {
+  const isEnglish = lang.startsWith("en");
+  return {
+    pageTitle: isEnglish ? "My Favorites" : "Favorit Saya",
+    pageTitleCount: isEnglish ? "({count} Products)" : "({count} Produk)",
+    sectionTitle: isEnglish ? "Products in My Favorites" : "Produk Di Favorit Saya",
+    selectAll: isEnglish ? "Select All" : "Pilih Semua",
+    loading: isEnglish ? "Loading favorites..." : "Memuat daftar favorit...",
+    empty: isEnglish ? "You don't have any favorites yet." : "Belum ada produk di daftar favorit Anda.",
+    fallbackProductName: isEnglish ? "Product" : "Produk",
+    priceUnit: isEnglish ? "/ pair" : "/ pasang",
+    removeLabel: isEnglish ? "Remove from favorites" : "Hapus dari favorit",
+    selectedCount: isEnglish ? "{count} Products Selected" : "{count} Produk Dipilih",
+    whatsapp: {
+      emptyMessage: isEnglish
+        ? "Hi, DMD Shoes. I'd like to ask about my favorite products."
+        : "Hi, DMD Shoes. Saya ingin bertanya mengenai produk favorit saya.",
+      intro: isEnglish
+        ? "Hi, DMD Shoes. I'm interested in the following products:"
+        : "Hi, DMD Shoes. Saya tertarik dengan produk berikut:",
+      outro: isEnglish
+        ? "Please share availability and how to place an order."
+        : "Mohon informasi ketersediaan dan cara pemesanan.",
+      line: "{index}. {product}{variant} - {price}",
+      button: isEnglish ? "Order via WhatsApp Now" : "Pesan Melalui WhatsApp Sekarang",
+      preparing: isEnglish ? "Preparing..." : "Menyiapkan...",
+    },
+  };
+};
+
 const resolveText = (
   value: MultiLangValue | string | null | undefined,
   lang: string,
@@ -28,18 +84,13 @@ const resolveText = (
   return "";
 };
 
-const formatCurrency = (value?: number | string | null) => {
-  if (value === null || value === undefined) return "-";
-  const numeric = typeof value === "string" ? Number(value) : value;
-  if (typeof numeric !== "number" || Number.isNaN(numeric)) return "-";
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(numeric);
-};
-
-const Wishlist = ({ lang = "id" }: { lang?: string }) => {
+const Wishlist = ({
+  lang = "id",
+  dictionary,
+}: {
+  lang?: string;
+  dictionary?: WishlistDictionary;
+}) => {
   const {
     favorites,
     isLoading,
@@ -50,6 +101,41 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
   } = useFavorites();
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const locale = lang.startsWith("en") ? "en-US" : "id-ID";
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+      }),
+    [locale],
+  );
+
+  const baseDict = useMemo(() => createFallbackDictionary(lang), [lang]);
+  const mergedDict = useMemo(() => {
+    const incomingWhatsApp = dictionary?.whatsapp ?? {};
+    return {
+      ...baseDict,
+      ...dictionary,
+      whatsapp: {
+        ...baseDict.whatsapp,
+        ...incomingWhatsApp,
+      },
+    };
+  }, [baseDict, dictionary]);
+
+  const formatCurrency = useCallback(
+    (value?: number | string | null) => {
+      if (value === null || value === undefined) return "-";
+      const numeric = typeof value === "string" ? Number(value) : value;
+      if (typeof numeric !== "number" || Number.isNaN(numeric)) return "-";
+      return currencyFormatter.format(numeric);
+    },
+    [currencyFormatter],
+  );
 
   useEffect(() => {
     if (!favorites.length) {
@@ -109,49 +195,57 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
 
   const whatsappMessage = useMemo(() => {
     if (!selectedFavorites.length) {
-      return "Hi, DMD Shoes. Saya ingin bertanya mengenai produk favorit saya.";
+      return mergedDict.whatsapp.emptyMessage;
     }
 
     const lines = selectedFavorites.map((fav, index) => {
-      const productName = resolveText(fav.product.name, lang) || "Produk";
+      const productName =
+        resolveText(fav.product.name, lang) || mergedDict.fallbackProductName;
       const variantText = fav.variant
-        ? fav.variant.label_text ??
-          resolveText(fav.variant.label, lang) ??
-          ""
+        ? fav.variant.label_text ?? resolveText(fav.variant.label, lang) ?? ""
         : "";
       const variantLabel = variantText ? ` (${variantText})` : "";
-      const price =
-        fav.variant?.price ?? fav.product.price ?? undefined;
+      const price = fav.variant?.price ?? fav.product.price ?? undefined;
 
-      return `${index + 1}. ${productName}${variantLabel} - ${formatCurrency(price)}`;
+      return formatTemplate(mergedDict.whatsapp.line, {
+        index: String(index + 1),
+        product: productName,
+        variant: variantLabel,
+        price: formatCurrency(price),
+      });
     });
 
-    return `Hi, DMD Shoes. Saya tertarik dengan produk berikut:\n\n${lines.join("\n")}\n\nMohon informasi ketersediaan dan cara pemesanan.`;
-  }, [selectedFavorites, lang]);
+    return `${mergedDict.whatsapp.intro}\n\n${lines.join("\n")}\n\n${mergedDict.whatsapp.outro}`;
+  }, [selectedFavorites, lang, mergedDict, formatCurrency]);
 
   const handleCheckout = useCallback(async () => {
     if (!selectedFavorites.length) return;
+
     try {
       await checkout({
-        favorite_ids: selectedFavorites.map((fav) => fav.favorite_id),
+        favorite_ids: selectedFavorites.map((item) => item.favorite_id),
       });
     } catch (error) {
-      console.error("Failed to prepare checkout", error);
+      console.error("Checkout favorites failed", error);
     }
   }, [checkout, selectedFavorites]);
 
   return (
-    <Container className="py-8">
-      <h1 className="font-inter font-semibold text-[32px] leading-[150%] text-primary">
-        Favorit Saya{" "}
-        <span className="text-[#121212]/50 text-[24px] font-normal">
-          ({favorites.length} Produk)
-        </span>
-      </h1>
+    <Container className="py-10">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <h1 className="text-2xl font-semibold text-[#003663] lg:text-[32px]">
+          {mergedDict.pageTitle}{" "}
+          <span className="text-base font-normal text-gray-500 lg:text-lg">
+            {formatTemplate(mergedDict.pageTitleCount, {
+              count: numberFormatter.format(favorites.length),
+            })}
+          </span>
+        </h1>
+      </div>
 
-      <div className="mt-5 flex flex-col items-start gap-6 font-sans lg:flex-row">
-        <div className="w-full rounded-[16px] border border-[#EEEEEE] bg-white lg:flex-1">
-          <h2 className="p-6 text-lg font-semibold">Produk Di Favorit Saya</h2>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="w-full rounded-[16px] border border-[#EEEEEE] bg-white lg:w-[65%]">
+          <h2 className="p-6 text-lg font-semibold">{mergedDict.sectionTitle}</h2>
 
           <div className="flex items-center gap-2 px-6 py-2">
             <input
@@ -165,30 +259,28 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
               className="h-4 w-4 accent-primary"
             />
             <span className="font-inter text-[20px] font-semibold text-[#121212] lg:text-[22px]">
-              Pilih Semua
+              {mergedDict.selectAll}
             </span>
           </div>
 
           <div className="bg-[#F5F5F5]">
             {isLoading ? (
               <p className="px-6 py-10 text-sm text-gray-500">
-                Memuat daftar favorit...
+                {mergedDict.loading}
               </p>
             ) : favorites.length === 0 ? (
               <p className="px-6 py-10 text-sm text-gray-500">
-                Belum ada produk di daftar favorit Anda.
+                {mergedDict.empty}
               </p>
             ) : (
               favorites.map((favorite) => {
                 const productName =
-                  resolveText(favorite.product.name, lang) || "Produk";
+                  resolveText(favorite.product.name, lang) ||
+                  mergedDict.fallbackProductName;
                 const productCode = favorite.product?.slug ?? "";
                 const variantLabelText =
                   favorite.variant?.label_text ??
-                  resolveText(
-                    favorite.variant?.label ?? null,
-                    lang,
-                  );
+                  resolveText(favorite.variant?.label ?? null, lang);
                 const variantParts = variantLabelText
                   ? variantLabelText
                       .split("|")
@@ -197,6 +289,17 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
                   : [];
                 const price =
                   favorite.variant?.price ?? favorite.product.price ?? null;
+
+                const coverSrc =
+                  (typeof favorite.product.cover_url === "string" &&
+                  favorite.product.cover_url.length > 0
+                    ? favorite.product.cover_url
+                    : undefined) ??
+                  (typeof favorite.product.cover === "string" &&
+                  favorite.product.cover.length > 0
+                    ? favorite.product.cover
+                    : undefined) ??
+                  FALLBACK_IMAGE;
 
                 return (
                   <div
@@ -212,7 +315,7 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
 
                     <div>
                       <Image
-                        src={FALLBACK_IMAGE}
+                        src={coverSrc}
                         alt={productName}
                         width={70}
                         height={70}
@@ -242,13 +345,13 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
 
                       <div className="mt-2 flex items-center justify-between gap-3 lg:mt-0 lg:justify-end">
                         <span className="text-sm font-semibold lg:text-base">
-                          {formatCurrency(price)} / pasang
+                          {`${formatCurrency(price)} ${mergedDict.priceUnit}`}
                         </span>
                         <button
                           onClick={() => handleRemove(favorite)}
                           disabled={isRemoving}
                           className="rounded bg-red-600 px-3 py-2 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          aria-label="Hapus dari favorit"
+                          aria-label={mergedDict.removeLabel}
                           type="button"
                         >
                           <FaTrash />
@@ -264,7 +367,9 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
 
         <div className="h-auto w-full rounded-[16px] border border-[#EEEEEE] bg-white p-6 lg:w-124">
           <p className="font-medium">
-            {selectedFavorites.length} Produk Dipilih
+            {formatTemplate(mergedDict.selectedCount, {
+              count: numberFormatter.format(selectedFavorites.length),
+            })}
           </p>
 
           <Link
@@ -276,8 +381,8 @@ const Wishlist = ({ lang = "id" }: { lang?: string }) => {
           >
             <FaWhatsapp />
             {isCheckingOut
-              ? "Menyiapkan..."
-              : "Pesan Melalui WhatsApp Sekarang"}
+              ? mergedDict.whatsapp.preparing
+              : mergedDict.whatsapp.button}
           </Link>
         </div>
       </div>

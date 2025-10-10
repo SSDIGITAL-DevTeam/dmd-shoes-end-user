@@ -53,6 +53,16 @@ export default function CategoriesList({
 
   const safeCategories = categories ?? [];
 
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale ?? undefined),
+    [locale],
+  );
+
+  const formatCount = (value?: number | null) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return null;
+    return numberFormatter.format(value);
+  };
+
   const groups = useMemo(
     () => buildGroups(safeCategories),
     [safeCategories],
@@ -66,10 +76,7 @@ export default function CategoriesList({
 
   const handleToggle = (id: number) => () => onToggle(id);
 
-  const formattedTotal =
-    typeof totalCount === "number" && Number.isFinite(totalCount)
-      ? new Intl.NumberFormat(locale ?? undefined).format(totalCount)
-      : null;
+  const formattedTotal = formatCount(totalCount);
   const allLabel = dictionary?.allProducts ?? "Semua Produk";
   const allProductsDisplay = formattedTotal
     ? `${allLabel} (${formattedTotal})`
@@ -100,7 +107,13 @@ export default function CategoriesList({
                   onChange={handleToggle(parent.id)}
                   className="accent-[#003663]"
                 />
-                <span>{parent.name_text ?? parent.name?.id ?? parent.slug}</span>
+                <span>
+                  {(() => {
+                    const base = parent.name_text ?? parent.name?.id ?? parent.slug;
+                    const countText = formatCount(parent.products_count);
+                    return countText ? `${base} (${countText})` : base;
+                  })()}
+                </span>
               </label>
               {hasChildren ? (
                 <button
@@ -125,7 +138,11 @@ export default function CategoriesList({
                         className="accent-[#003663]"
                       />
                       <span>
-                        {child.name_text ?? child.name?.id ?? child.slug}
+                        {(() => {
+                          const base = child.name_text ?? child.name?.id ?? child.slug;
+                          const countText = formatCount(child.products_count);
+                          return countText ? `${base} (${countText})` : base;
+                        })()}
                       </span>
                     </label>
                   </li>

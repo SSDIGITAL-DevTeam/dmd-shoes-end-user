@@ -34,7 +34,7 @@ export default function Footer({
 }) {
   const menu = [
     { label: dictionary.menu.home, href: "/" },
-    { label: dictionary.menu.products, href: "/produk" },
+    { label: dictionary.menu.products, href: "/product" },
     { label: dictionary.menu.articles, href: "/article" },
     { label: dictionary.menu.about_us, href: "/about" },
     { label: dictionary.menu.faq, href: "/faq" },

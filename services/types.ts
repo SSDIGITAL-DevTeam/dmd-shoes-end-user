@@ -111,6 +111,7 @@ export type Category = {
   status?: boolean;
   parent_id?: number | null;
   parent_brief?: CategoryBrief | null;
+   products_count?: number | null;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;
@@ -174,6 +175,8 @@ export type FavoriteItem = {
     slug?: string | null;
     price?: number | null;
     status?: boolean;
+    cover?: string | null;
+    cover_url?: string | null;
   };
   variant: {
     id: number;

@@ -1,0 +1,20 @@
+{
+  "pageTitle": "Favorit Saya",
+  "pageTitleCount": "({count} Produk)",
+  "sectionTitle": "Produk Di Favorit Saya",
+  "selectAll": "Pilih Semua",
+  "loading": "Memuat daftar favorit...",
+  "empty": "Belum ada produk di daftar favorit Anda.",
+  "fallbackProductName": "Produk",
+  "priceUnit": "/ pasang",
+  "removeLabel": "Hapus dari favorit",
+  "selectedCount": "{count} Produk Dipilih",
+  "whatsapp": {
+    "emptyMessage": "Hi, DMD Shoes. Saya ingin bertanya mengenai produk favorit saya.",
+    "intro": "Hi, DMD Shoes. Saya tertarik dengan produk berikut:",
+    "outro": "Mohon informasi ketersediaan dan cara pemesanan.",
+    "line": "{index}. {product}{variant} - {price}",
+    "button": "Pesan Melalui WhatsApp Sekarang",
+    "preparing": "Menyiapkan..."
+  }
+}

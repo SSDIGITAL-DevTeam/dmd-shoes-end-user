@@ -101,11 +101,10 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
             {/* Navbar Fixed */}
             <nav
                 ref={navRef}
-                className="fixed top-0 left-0 w-full bg-primary p-6 z-50"
-                // gunakan font dari layout via CSS var --font-poppins (sudah diset di <body>)
+                className="fixed top-0 left-0 z-50 w-full bg-primary"
                 style={{ fontFamily: "var(--font-poppins)" }}
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 md:px-6 py-2.5">
                     {/* Mobile: Hamburger kiri + Logo tengah */}
                     <div className="flex items-center justify-between w-full lg:hidden">
                         <button
