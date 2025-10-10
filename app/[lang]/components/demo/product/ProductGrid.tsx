@@ -32,7 +32,7 @@ export default function ProductGrid({
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto">
+      <div className="mx-auto max-w-[1200px] px-4 md:px-6">
         {emptyState ?? (
           <p className="py-12 text-center text-sm text-gray-500">
             Produk belum tersedia.
@@ -43,8 +43,8 @@ export default function ProductGrid({
   }
 
   return (
-    <div className="container mx-auto ">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="mx-auto max-w-[1200px] px-4 md:px-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
         {items.map((product, index) => (
           <ProductItem
             key={buildKey(product, index, locale)}

@@ -1,12 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
-type SortOption = {
-  label: string;
-  value: string;
-};
+type SortOption = { label: string; value: string };
 
 type ProductSortMobileProps = {
   value: string;
@@ -27,55 +23,67 @@ export default function ProductSortMobile({
   dictionary,
 }: ProductSortMobileProps) {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const handleChange = (nextValue: string) => {
-    onChange(nextValue);
+  const triggerLabel = dictionary?.trigger ?? "Sort";
+  const modalTitle = dictionary?.modalTitle ?? "Sort Products";
+  const labelText = dictionary?.label ?? "Sort :";
+  const closeLabel = dictionary?.close ?? "Close sort";
+  const selectId = "product-sort-mobile";
+
+  // simple focus trap on open
+  useEffect(() => {
+    if (!open) return;
+    const prevActive = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    return () => prevActive?.focus();
+  }, [open]);
+
+  const handleChange = (next: string) => {
+    onChange(next);
     setOpen(false);
   };
-
-  const triggerLabel = dictionary?.trigger ?? "Urutkan";
-  const modalTitle = dictionary?.modalTitle ?? "Urutkan Produk";
-  const labelText = dictionary?.label ?? "Urutkan :";
-  const closeLabel = dictionary?.close ?? "Tutup sort";
-  const iconAlt = dictionary?.trigger
-    ? `${dictionary.trigger} icon`
-    : "Sort icon";
 
   return (
     <div className="lg:hidden">
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1 text-[12px] leading-[150%]"
+        className="inline-flex items-center gap-1 text-[13px] underline"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="mobile-sort-panel"
       >
-        <u>{triggerLabel}</u>
-        <span>
-          <Image
-            src="/assets/svg/icon/icon-filter.svg"
-            alt={iconAlt}
-            width={16}
-            height={16}
-            className="object-contain"
-          />
-        </span>
+        {triggerLabel}
+        <span aria-hidden>⚙️</span>
       </button>
 
-      {open ? (
-        <div
+      {/* overlay */}
+      {open && (
+        <button
+          aria-label="Close overlay"
           className="fixed inset-0 z-40 bg-black/40"
           onClick={() => setOpen(false)}
         />
-      ) : null}
+      )}
 
+      {/* panel */}
       <div
-        className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white shadow-lg transition-transform duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        id="mobile-sort-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-sort-title"
+        ref={panelRef}
+        tabIndex={-1}
+        className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white shadow-lg outline-none transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between border-b p-4">
-          <h2 className="text-lg font-semibold text-[#003663]">
+          <h2 id="mobile-sort-title" className="text-lg font-semibold text-[#003663]">
             {modalTitle}
           </h2>
           <button
+            type="button"
             onClick={() => setOpen(false)}
             className="text-xl"
             aria-label={closeLabel}
@@ -84,35 +92,30 @@ export default function ProductSortMobile({
           </button>
         </div>
 
-        <div className="space-y-[8px] p-4">
-          <div className="text-[24px] leading-[130%] text-primary">
+        <div className="space-y-3 p-4">
+          <label htmlFor={selectId} className="text-[15px] font-medium text-[#003663]">
             {labelText}
-          </div>
-          <div className="relative flex">
+          </label>
+          <div className="relative">
             <select
-              className="w-full appearance-none border border-[#E0E0E0] bg-white px-3 py-2 pr-8 text-sm"
+              id={selectId}
+              className="w-full appearance-none rounded border border-[#E0E0E0] bg-white px-3 py-2 pr-8 text-sm leading-none focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
               value={value}
-              onChange={(event) => handleChange(event.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
             >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
             <svg
               className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
               xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              aria-hidden="true"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>

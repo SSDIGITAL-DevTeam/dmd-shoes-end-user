@@ -41,8 +41,9 @@ export default function HomeVideo({
   const poster = video?.cover_url ?? posterFallback;
 
   return (
-    <Container>
-      <div className="w-full">
+    <section className="py-12">
+      <Container>
+        <div className="w-full">
         {!open ? (
           <button
             onClick={() => setOpen(true)}
@@ -57,13 +58,13 @@ export default function HomeVideo({
               className="h-auto w-full rounded-lg object-cover"
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-white/70 p-4">
+              <div className="rounded-full bg-white/70 p-3 md:p-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
-                  className="h-10 w-10 text-black"
+                  className="h-8 w-8 text-black md:h-10 md:w-10"
                 >
                   <path
                     strokeLinecap="round"
@@ -85,7 +86,8 @@ export default function HomeVideo({
             />
           </div>
         )}
-      </div>
-    </Container>
+        </div>
+      </Container>
+    </section>
   );
 }

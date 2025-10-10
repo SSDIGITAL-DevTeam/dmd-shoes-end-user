@@ -49,7 +49,7 @@ export default function HomePageClient({
     <>
       <HomeHero lang={lang} dict={homeDictionary} hero={homepage?.hero} />
 
-      <div className="bg-[#F5F5F5] py-[80px]">
+      <div className="bg-[#F5F5F5] py-12">
         <ProductPromo
           lang={lang}
           products={featuredProducts}

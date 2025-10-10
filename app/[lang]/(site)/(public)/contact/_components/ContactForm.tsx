@@ -1,175 +1,212 @@
-// components/ContactForm.tsx
 "use client";
-import Image from "next/image";
-import Container from "@/components/ui-custom/Container";
+
 import { useState } from "react";
 import { Inter } from "next/font/google";
+import { Controller, useForm } from "react-hook-form";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { Controller, useForm } from "react-hook-form";
+import Container from "@/components/ui-custom/Container";
 import { plusJakartaSans } from "@/config/font";
+import { usePathname } from "next/navigation"; // <-- IMPORT INI
+
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter", // buat variable agar bisa dipakai di Tailwind
+  variable: "--font-inter",
+  weight: ["400", "600"],
   display: "swap",
 });
 
-export default function ContactForm({ dictionaryContact }: { dictionaryContact: any }) {
+type FormState = {
+  nama: string;
+  email: string;
+  whatsapp: string;
+  pesan: string;
+};
+
+type Props = {
+  dictionaryContact: any;
+  lang?: string; // opsional
+};
+
+export default function ContactForm({ dictionaryContact, lang }: Props) {
+  const pathname = usePathname();
+  const locale = (lang || pathname?.split("/")[1] || "en").toLowerCase();
+
+  // helper terjemahan & placeholder
+  const t = (k: string, fb: string) => (dictionaryContact?.[k] ?? fb) as string;
+  const ph = (key: string, fallbackLabel: string) => {
+    const dictPH =
+      dictionaryContact?.[`${key}_placeholder`] ||
+      dictionaryContact?.placeholders?.[key];
+    if (dictPH) return String(dictPH);
+    const label = t(key, fallbackLabel);
+    return locale.startsWith("id") ? `Masukkan ${label}` : `Enter ${label}`;
+  };
+
+  const eyebrow =
+    dictionaryContact?.eyebrow ??
+    (locale.startsWith("id") ? "Kirim Kami Pesan" : "Send Us a Message");
+
   const { control } = useForm();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     nama: "",
     email: "",
     whatsapp: "",
     pesan: "",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form Data:", form);
-    // Di sini bisa tambahkan logic untuk kirim ke API / email service
   };
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row justify-between gap-10 bg-gray-50 p-8 ">
-        {/* Bagian Kiri */}
-        <Container className="flex flex-col lg:flex-row space-x-[40px] items-center space-y-8">
-          <div className={`w-full lg:w-1/2 space-y-6 ${inter.className}`}>
-            <h3 className="text-primary font-semibold text-[32px] text-bold mb-2">
-              - Kirim Kami Pesan 📩
-            </h3>
-            <h2 className="mt-[32px] text-2xl font-semibold leading-[150%] lg:text-[44px] font-bold mb-4">
-              {dictionaryContact?.description}
+    <section className="bg-gray-50">
+      <Container className="mx-auto max-w-[1200px] px-4 md:px-6 py-10 md:py-14">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+          {/* Kiri */}
+          <div className={inter.className}>
+            <p className="text-[15px] md:text-base lg:text-[17px] font-semibold text-primary tracking-wide">
+              — {eyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#121212] md:text-4xl">
+              {dictionaryContact?.description ??
+                "Have questions about sizes or want a custom order? Our team is ready to help."}
             </h2>
-            <p className="mt-[16px] text-gray-700 text-[20px] leading-[150%]">
-              {dictionaryContact?.contact_info_description}
+            <p className="mt-4 text-sm leading-relaxed text-gray-600 md:text-base">
+              {dictionaryContact?.contact_info_description ??
+                "We believe every step starts with the right pair of shoes, so don't hesitate to chat with us directly!"}
             </p>
           </div>
 
-          {/* Bagian Kanan (Form) */}
-          <div className={` ${plusJakartaSans.className} w-full lg:w-1/2 bg-white rounded-lg   `}>
-            <form onSubmit={handleSubmit} className="w-full space-y-4 p-6">
-              {/* Nama */}
-              <div className="space-y-2">
-                <label className="block text-[#121212] mb-1">{dictionaryContact?.full_name}</label>
+          {/* Kanan: Form */}
+          <div className={`${plusJakartaSans.className} rounded-lg bg-white shadow-sm ring-1 ring-black/5`}>
+            <form onSubmit={handleSubmit} className="space-y-4 p-6">
+              {/* Full Name */}
+              <div>
+                <label htmlFor="nama" className="mb-1 block text-sm font-medium text-[#121212]">
+                  {t("full_name", "Full Name")}
+                </label>
                 <input
-                  type="text"
+                  id="nama"
                   name="nama"
+                  type="text"
                   value={form.nama}
                   onChange={handleChange}
-                  placeholder={dictionaryContact?.full_name}
-                  className={`w-full border rounded-md p-2 border-[#121212]/30 ${inter.className}`}
+                  placeholder={ph("full_name", "Full Name")}
+                  autoComplete="name"
                   required
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 
               {/* Email */}
-              <div className="space-y-2">
-                <label className="block text-[#121212] mb-1">{dictionaryContact?.email}</label>
+              <div>
+                <label htmlFor="email" className="mb-1 block text-sm font-medium text-[#121212]">
+                  {t("email", "Email Address")}
+                </label>
                 <input
-                  type="email"
+                  id="email"
                   name="email"
+                  type="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder={dictionaryContact?.email}
-                  className={`w-full border border-[#121212]/30 rounded-md p-2 ${inter.className}`}
+                  placeholder={ph("email", "Email Address")}
+                  autoComplete="email"
                   required
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 
-              {/* WhatsApp pakai PhoneInput */}
-              <div className="space-y-2">
-                <label className="block text-[#121212] mb-1">
-                  {dictionaryContact?.whatsapp}
+              {/* WhatsApp */}
+              <div>
+                <label htmlFor="whatsapp" className="mb-1 block text-sm font-medium text-[#121212]">
+                  {t("whatsapp", "WhatsApp Number (Optional)")}
                 </label>
                 <Controller
-                  name="phone"
+                  name="whatsapp"
                   control={control}
                   render={({ field }) => (
                     <PhoneInput
                       {...field}
-                      placeholder={dictionaryContact?.whatsapp}
+                      id="whatsapp"
+                      placeholder={ph("whatsapp", "WhatsApp Number (Optional)")}
                       defaultCountry="ID"
                       international
                       countryCallingCodeEditable={false}
-                      className={`profile-phone w-full ${inter.className}`}
+                      className="contact-phone w-full"
                     />
                   )}
                 />
               </div>
 
-              {/* Pesan */}
-              <div className="space-y-2">
-                <label className="block text-[#121212] mb-1">{dictionaryContact?.message}</label>
+              {/* Message */}
+              <div>
+                <label htmlFor="pesan" className="mb-1 block text-sm font-medium text-[#121212]">
+                  {t("message", "Message")}
+                </label>
                 <textarea
+                  id="pesan"
                   name="pesan"
                   value={form.pesan}
                   onChange={handleChange}
-                  placeholder={dictionaryContact?.message}
-                  className={`w-full border border-[#121212]/30 rounded-md p-2 h-28 ${inter.className}`}
+                  placeholder={ph("message", "Message")}
+                  rows={5}
                   required
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 
-              {/* Tombol */}
               <button
                 type="submit"
-                className="w-full bg-blue-900 text-white py-2 rounded-md hover:bg-blue-800 transition bg-primary"
+                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
-                {dictionaryContact?.submit}
+                {dictionaryContact?.submit ?? "Send Message"}
               </button>
             </form>
           </div>
-        </Container>
-      </div>
+        </div>
+      </Container>
 
-      {/* Style khusus PhoneInput hanya di form ini */}
+      {/* Style khusus PhoneInput */}
       <style jsx global>{`
-        .profile-phone {
+        .contact-phone {
           display: flex;
           align-items: center;
-          width: 100%;
-          font-family: var(--font-inter), sans-serif; /* konsisten */
+          font-family: var(--font-inter), ui-sans-serif, system-ui;
         }
-        .profile-phone input {
+        .contact-phone input {
           flex: 1;
           min-width: 0;
-          border: 1px solid #d1d5db; /* gray-300 */
-          border-radius: 0.5rem; /* rounded */
-          padding: 0.75rem; /* p-3 */
+          border: 1px solid #d1d5db;
+          border-radius: 0.375rem;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
           outline: none;
-          transition: 0.2s;
-          font-size: 1rem;
-          font-family: var(--font-inter), sans-serif; /* konsisten */
         }
-        .profile-phone input:focus {
-          border-color: #2563eb; /* primary */
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4); /* focus:ring-2 */
+        .contact-phone input:focus {
+          border-color: #003663;
+          box-shadow: 0 0 0 2px rgba(0, 54, 99, 0.3);
         }
-        .profile-phone .PhoneInputCountry {
+        .contact-phone .PhoneInputCountry {
           margin-right: 0.5rem;
           border: 1px solid #d1d5db;
-          border-radius: 0.5rem;
-          padding: 0.75rem;
+          border-radius: 0.375rem;
+          padding: 0.5rem 0.625rem;
           background: white;
           display: flex;
           align-items: center;
-          flex-shrink: 0; /* flag tidak mengecil */
+          flex-shrink: 0;
         }
-        .profile-phone .PhoneInputCountrySelect {
+        .contact-phone .PhoneInputCountrySelect {
           outline: none;
-          font-family: var(--font-inter), sans-serif;
+          font-family: var(--font-inter), ui-sans-serif, system-ui;
         }
       `}</style>
-    </>
+    </section>
   );
 }

@@ -19,10 +19,7 @@ export default function Container({
   return (
     <div
       className={`
-        mx-auto w-full px-4
-        max-w-3xl sm:max-w-4xl md:max-w-5xl
-
-        lg:max-w-7xl mx-auto   justify-between
+        mx-auto w-full max-w-[1200px] px-4 md:px-6
         ${className}
       `}
       style={style}

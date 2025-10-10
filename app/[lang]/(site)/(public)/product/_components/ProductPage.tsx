@@ -303,21 +303,22 @@ export default function ProductPage({
            - Baris 1: H1 "Produk Kami" "Urutkan :" + Sort + Filter Ukuran + Search (rata kanan)
            ========================================= */}
         {/* ===== Header (Title kiri, controls kanan) ===== */}
-                <div className="mb-6 space-y-4">
+        {/* Header */}
+        <header className="mb-6 space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-[32px] font-bold leading-none text-[#003663] lg:text-[44px]">
-              {dictionaryProduct?.title || "Produk Kami"}
+              {dictionaryProduct?.title || "Our Products"}
             </h1>
+
+            {/* Desktop controls */}
             <div className="hidden items-center gap-3 text-[#003663] lg:flex">
               <ProductSortDesktop
-                label={
-                  sortDictionary.label ??
-                  (lang === "en" ? "Sort :" : "Urutkan :")
-                }
+                label={sortDictionary.label ?? (lang === "en" ? "Sort :" : "Urutkan :")}
                 value={selectedSortValue}
                 options={sortOptions}
                 onChange={handleSortChange}
               />
+
               <FilterUkuran
                 heel={filterMeta?.heel_height_cm}
                 size={filterMeta?.size_eu}
@@ -333,17 +334,33 @@ export default function ProductPage({
                 dictionary={sizeFilterDictionary}
                 locale={lang}
               />
+
+              {/* Search with label (screen reader) */}
               <div className="relative">
-                <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]" />
+                <label htmlFor="product-search" className="sr-only">
+                  {dictionaryProduct?.searchPlaceholder || "Search products"}
+                </label>
+                <FaSearch
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
+                />
                 <input
-                  type="text"
-                  placeholder={dictionaryProduct?.searchPlaceholder || "Cari Produk..."}
+                  id="product-search"
+                  type="search"
+                  inputMode="search"
+                  placeholder={dictionaryProduct?.searchPlaceholder || "Search products..."}
                   value={filters.search}
                   onChange={handleSearchChange}
-                  className="w-64 rounded border border-[#003663] px-3 py-2 pl-9 text-sm"
+                  className="w-64 rounded border border-[#003663] px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
+                  aria-describedby="search-help"
                 />
+                <span id="search-help" className="sr-only">
+                  Type to filter products, results update automatically.
+                </span>
               </div>
             </div>
+
+            {/* Mobile sort trigger */}
             <div className="lg:hidden">
               <ProductSortMobile
                 value={selectedSortValue}
@@ -359,32 +376,41 @@ export default function ProductPage({
             </div>
           </div>
 
+          {/* Mobile search + filter buttons */}
           <div className="space-y-3 lg:hidden">
             <div className="relative">
-              <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]" />
+              <label htmlFor="product-search-mobile" className="sr-only">
+                {dictionaryProduct?.searchPlaceholder || "Search products"}
+              </label>
+              <FaSearch
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
+              />
               <input
-                type="text"
-                placeholder={dictionaryProduct?.searchPlaceholder || "Cari Produk..."}
+                id="product-search-mobile"
+                type="search"
+                inputMode="search"
+                placeholder={dictionaryProduct?.searchPlaceholder || "Search products..."}
                 value={filters.search}
                 onChange={handleSearchChange}
-                className="w-full rounded border border-[#003663] px-3 py-2 pl-9 text-sm"
+                className="w-full rounded border border-[#003663] px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
               />
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setOpenCategory(true)}
                 className="flex items-center justify-center gap-2 rounded border border-[#003663] px-3 py-2 text-sm text-[#003663] transition hover:border-[#002a4f] hover:text-[#002a4f]"
+                aria-haspopup="dialog"
+                aria-expanded={openCategory}
+                aria-controls="mobile-category-panel"
               >
-                <Image
-                  src="/assets/svg/icon/icon-category-filter.svg"
-                  alt="Filter Icon"
-                  width={16}
-                  height={16}
-                />
+                <Image src="/assets/svg/icon/icon-category-filter.svg" alt="" width={16} height={16} />
                 <span className="font-medium">
-                  {dictionaryProduct?.filterCategory || "Filter Kategori"}
+                  {dictionaryProduct?.filterCategory || "Filter Category"}
                 </span>
               </button>
+
               <FilterUkuran
                 heel={filterMeta?.heel_height_cm}
                 size={filterMeta?.size_eu}
@@ -401,7 +427,8 @@ export default function ProductPage({
               />
             </div>
           </div>
-        </div>        {/* =========================================
+        </header>
+        {/* =========================================
             Layout 2 kolom:
             - Sidebar kategori (kiri)
             - Grid produk (kanan)

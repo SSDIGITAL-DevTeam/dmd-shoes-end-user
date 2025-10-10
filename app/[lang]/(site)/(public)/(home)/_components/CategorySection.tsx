@@ -74,16 +74,16 @@ export default function CategorySection({
       : FALLBACK_CATEGORIES;
 
   return (
-    <div className={`py-[60px] ${inter.className}`}>
+    <div className={`py-12 ${inter.className}`}>
       <Container>
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <BannerSkeleton key={index} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             {items.map((cat) => {
               const name = resolveName(cat, lang);
               return (
@@ -92,31 +92,31 @@ export default function CategorySection({
                   key={`${cat.id}-${cat.slug}`}
                   className="flex flex-col"
                 >
-                  <div className="w-full">
+                  <div className="w-full overflow-hidden rounded-md">
                     <Image
                       src={cat.cover_url ?? "/assets/demo/product-category-demo.webp"}
                       alt={name || "Category"}
                       width={800}
                       height={600}
-                      className="h-auto w-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   </div>
 
-                  <div className="mt-8 w-full">
-                    <h2 className="mt-4 text-[18px] font-semibold uppercase tracking-wide">
+                  <div className="mt-6 w-full">
+                    <h2 className="mt-2 text-base font-semibold uppercase tracking-wide md:text-[15px]">
                       {name || cat.slug}
                     </h2>
 
                     <div>
                       <button
-                        className={`mt-2 inline-block rounded-[40px] bg-primary px-4 py-2 text-[14px] text-white transition hover:bg-primary/90 ${assistant.className}`}
+                        className={`mt-2 inline-block rounded-full bg-primary px-4 py-2 text-sm text-white transition hover:bg-primary/90 ${assistant.className}`}
                       >
                         {dict?.category?.more ?? "Lihat Produk"} &gt;
                       </button>
                     </div>
 
                     <div>
-                      <button className="mt-4 text-sm text-gray-600 transition hover:text-primary">
+                      <button className="mt-3 text-xs text-gray-600 transition hover:text-primary md:text-sm">
                         {name || cat.slug} &rarr;
                       </button>
                     </div>

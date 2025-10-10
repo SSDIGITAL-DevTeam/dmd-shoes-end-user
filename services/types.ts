@@ -35,7 +35,7 @@ export type ProductGalleryImage = {
 
 export type ProductVariant = {
   id: number;
-  label: string;
+  label: MultiLangValue | string;
   label_text?: string | null;
   price?: number | null;
   price_min?: number | null;

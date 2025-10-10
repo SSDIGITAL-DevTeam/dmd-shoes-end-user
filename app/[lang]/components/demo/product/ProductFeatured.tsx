@@ -87,13 +87,15 @@ export default function ProductPromo({
   const resolvedViewAllLabel = viewAllLabel ?? fallbackLabels.viewAll;
 
   return (
-    <Container className="space-y-[28px]">
-      <h2 className="text-center text-[32px] font-bold leading-[130%] text-primary">
-        {resolvedTitle}
-      </h2>
+    <Container className="space-y-6">
+      <div className="mx-auto max-w-[1200px] text-center">
+        <h2 className="text-xl font-semibold text-primary md:text-2xl">
+          {resolvedTitle}
+        </h2>
+      </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <ProductCardSkeleton key={index} />
           ))}
@@ -110,10 +112,10 @@ export default function ProductPromo({
         />
       )}
 
-      <div className="flex">
+      <div className="mx-auto flex max-w-[1200px] justify-center">
         <Link
           href={viewAllHref}
-          className={`${assistant.className} inline-block w-full text-center text-[24px] font-normal leading-[150%] tracking-[0.6px] underline`}
+          className={`${assistant.className} inline-flex items-center justify-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/5 md:px-5 md:py-2.5 md:text-[15px]`}
         >
           {resolvedViewAllLabel}
         </Link>

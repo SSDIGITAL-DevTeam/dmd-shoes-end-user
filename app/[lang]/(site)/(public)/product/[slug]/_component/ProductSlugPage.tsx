@@ -15,7 +15,7 @@ import Container from "@/components/ui-custom/Container";
 import ProductChoice from "./ProductChoice";
 import ButtonWishlist from "./ButtonWishlist";
 import ProductItem from "@/components/demo/product/ProductItem";
-import type { ProductCard, ProductDetail } from "@/services/types";
+import type { ProductCard, ProductDetail, ProductVariant } from "@/services/types";
 import { CONTACT } from "@/config/contact";
 import { inter } from "@/config/font";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -80,6 +80,34 @@ const formatTemplate = (template: string, replacements: Record<string, string>) 
 
 const normalizeLabel = (value?: string | null) =>
   (value ?? "").toString().trim();
+
+const extractVariantTokens = (variant: ProductVariant): string[] => {
+  const tokens = new Set<string>();
+
+  const pushTokensFromValue = (value: unknown) => {
+    if (!value) return;
+    if (typeof value === "string") {
+      value
+        .split("|")
+        .map((part) => part.split(":").pop() ?? part)
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean)
+        .forEach((token) => tokens.add(token));
+      return;
+    }
+
+    if (typeof value === "object") {
+      Object.values(value as Record<string, unknown>).forEach((inner) =>
+        pushTokensFromValue(inner),
+      );
+    }
+  };
+
+  pushTokensFromValue(variant.label_text);
+  pushTokensFromValue(variant.label);
+
+  return Array.from(tokens);
+};
 
 const ensurePreviewImages = (
   product: ProductDetail,
@@ -340,11 +368,11 @@ export default function ProductSlugPage({
 
       if (normalizedSelections.length > 0) {
         const matchedVariant = variantData.find((variant) => {
-          const label = (variant?.label_text ?? variant?.label ?? "")
-            .toLowerCase()
-            .split("|")
-            .map(part => part.trim());
-          return normalizedSelections.every(selection => label.includes(selection));
+          const tokens = extractVariantTokens(variant);
+          if (!tokens.length) return false;
+          return normalizedSelections.every((selection) =>
+            tokens.some((token) => token.includes(selection)),
+          );
         });
         matchedVariantId = typeof matchedVariant?.id === "number" ? matchedVariant.id : undefined;
 

@@ -105,34 +105,38 @@ export default function ProductItem({
   const href = `/${locale}/product/${product.slug ?? product.id}`;
 
   return (
-    <div className={`${assistant.className} bg-white flex flex-col rounded-lg shadow-sm transition hover:shadow-lg`}>
-      <Link href={href} className="block relative">
-        <div className="relative aspect-square w-full overflow-hidden rounded-t-lg">
+    <div
+      className={`${assistant.className} mx-auto flex w-full max-w-[280px] flex-col rounded-lg bg-white p-2 shadow-sm transition hover:shadow-lg md:p-3`}
+    >
+      <Link href={href} className="block">
+        <div className="relative aspect-square w-full overflow-hidden rounded-md">
           <Image
             src={imageUrl}
             alt={displayName}
             fill
-            sizes="(max-width:768px) 50vw, (max-width:1024px) 25vw, 20vw"
+            sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 20vw"
             className="object-cover"
           />
         </div>
 
-        <div className="p-[16px] space-y-2">
-          <div className={`${inter.className} mt-2 text-[18px] font-semibold leading-[130%] text-[#121212]`}>
+        <div className="space-y-2 pt-3">
+          <div
+            className={`${inter.className} text-sm font-semibold leading-[130%] text-[#121212] md:text-[15px]`}
+          >
             {displayName}
           </div>
 
           {product.category_name ? (
-            <div className="text-[14px] text-[#121212]/70 leading-[130%]">
+            <div className="text-xs text-[#121212]/70 md:text-sm">
               {product.category_name}
             </div>
           ) : null}
 
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[#121212]">
-            <span className="text-[14px] leading-[130%]">
-              <b className="text-[16px]">{priceLabel}</b>
+          <div className="flex flex-wrap items-center gap-2 text-[#121212]">
+            <span className="text-sm font-semibold">
+              {priceLabel}
             </span>
-            <span className="text-[14px] leading-[130%] text-[#121212]/70">
+            <span className="text-xs text-[#121212]/70 md:text-sm">
               / {locale === "en" ? "pair" : "pasang"}
             </span>
           </div>

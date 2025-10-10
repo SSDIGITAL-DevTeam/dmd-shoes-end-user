@@ -12,11 +12,11 @@ function Logo({ lang }: LogoProps) {
       <Image
         src="/assets/logo-dmd.svg"
         alt="DMD Logo"
-        width={54}
-        height={54}
+        width={50}
+        height={50}
         priority
       />
-      <span className="font-bold text-white leading-tight text-[20px]">
+      <span className="font-bold text-white leading-tight text-[16px]">
         DMD ShoeParts
         <br />
         Manufacturing

@@ -21,7 +21,7 @@ export default function ProductSlider2({ images, isLoading }: ProductSlider2Prop
   const displayImages = images?.length ? mapImages(images) : mapImages(FALLBACK_IMAGES);
 
   return (
-    <div className="px-8">
+    <div className="px-4 md:px-6">
       <ProductSliderListOne
         images={displayImages}
         autoPlayInterval={4000}

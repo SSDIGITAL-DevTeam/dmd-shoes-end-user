@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import LocaleSwitcher from "./locale-switcher";
-import LocaleSwitcherList from "./local-switcher-list";
+import LocaleSwitcher from "./LocaleSwitcher";
+import LocaleSwitcherList from "./LocaleSwitcherList";
 import { usePathname } from "next/navigation";
 import { HiMenu } from "react-icons/hi";
 import Link from "next/link";
@@ -141,9 +141,9 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                                         className="relative flex h-8 w-8 items-center justify-center"
                                         aria-label={wishlistLabelWithCount}
                                     >
-                                        <WishlistIcon size={26} aria-hidden="true" />
+                                        <WishlistIcon size={20} aria-hidden="true" />
                                         {wishlistCount > 0 ? (
-                                            <span className="absolute -top-1 -right-0.5 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
+                                            <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
                                                 {wishlistCount > 99 ? "99+" : wishlistCount}
                                             </span>
                                         ) : null}
@@ -153,7 +153,7 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                                         className="flex h-8 w-8 items-center justify-center"
                                         aria-label={authLabels.account}
                                     >
-                                        <AccountIcon size={26} aria-hidden="true" />
+                                        <AccountIcon size={20} aria-hidden="true" />
                                     </Link>
                                 </>
                             )}
@@ -167,16 +167,15 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
 
                     {/* Middle: Menu (desktop only) */}
                     <div className="hidden lg:flex flex-1 justify-center">
-                        <div className="flex space-x-8">
+                        <div className="flex items-center gap-4">
                             {menu.map((item) => {
                                 const isActive = currentPath === item.href;
                                 return (
                                     <Link
                                         key={item.href}
                                         href={`/${lang}${item.href}`}
-                                        className={`relative whitespace-nowrap transition-colors group ${isActive ? "font-semibold text-white" : "font-semibold text-white/70 hover:text-white"
+                                        className={`relative whitespace-nowrap text-[14px] md:text-[15px] font-medium transition-colors ${isActive ? "text-white" : "text-white/70 hover:text-white"
                                             }`}
-                                        style={{ fontSize: "20px", lineHeight: "154%" }}
                                     >
                                         {item.label}
                                     </Link>
@@ -186,36 +185,36 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                     </div>
 
                     {/* Right: LocaleSwitcher + Auth (desktop only) */}
-                    <div className="hidden lg:flex items-center space-x-4">
+                    <div className="hidden lg:flex items-center gap-4">
                         {/* Pastikan LocaleSwitcher tidak auto-redirect di mount */}
                         <LocaleSwitcher />
                         {showGuestView ? (
                             <>
                                 <Link
                                     href={`/${lang}/auth/register`}
-                                    className="px-[16px] py-[10px] text-[20px] text-white font-medium border border-white"
+                                    className="rounded border border-white px-4 py-2 text-sm md:text-[15px] font-medium text-white transition hover:bg-white/10"
                                 >
                                     {authLabels.register}
                                 </Link>
 
                                 <Link
-                                    className="px-[16px] py-[10px] text-[20px] font-medium border border-white bg-white text-primary"
+                                    className="rounded border border-white bg-white px-4 py-2 text-sm md:text-[15px] font-medium text-primary transition hover:bg-white/90"
                                     href={`/${lang}/auth/login`}
                                 >
                                     {authLabels.login}
                                 </Link>
                             </>
                         ) : (
-                            <div className="flex items-center space-x-4 text-white">
+                            <div className="flex items-center gap-4 text-white">
                                 <Link
                                     href={`/${lang}/wishlist`}
-                                    className="relative flex items-center px-[10px] py-[16px] text-[16px] text-white transition hover:text-white hover:opacity-80"
+                                    className="relative inline-flex items-center px-2.5 py-2 text-[15px] text-white transition hover:text-white hover:opacity-80"
                                     aria-label={wishlistLabelWithCount}
                                 >
-                                    <WishlistIcon size={24} aria-hidden="true" />
+                                    <WishlistIcon size={20} aria-hidden="true" />
                                     <span className="sr-only">{wishlistLabelWithCount}</span>
                                     {wishlistCount > 0 ? (
-                                        <span className="absolute -top-1 -right-0.5 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
+                                        <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-600 px-[5px] text-center text-[11px] font-semibold leading-[18px] text-white">
                                             {wishlistCount > 99 ? "99+" : wishlistCount}
                                         </span>
                                     ) : null}
@@ -223,10 +222,10 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
 
                                 <Link
                                     href={`/${lang}/profile`}
-                                    className="flex items-center px-[10px] py-[16px] text-[16px] text-white transition hover:text-white hover:opacity-80"
+                                    className="inline-flex items-center px-2.5 py-2 text-[15px] text-white transition hover:text-white hover:opacity-80"
                                     aria-label={authLabels.account}
                                 >
-                                    <AccountIcon size={24} aria-hidden="true" />
+                                    <AccountIcon size={20} aria-hidden="true" />
                                     <span className="sr-only">{authLabels.account}</span>
                                 </Link>
                             </div>
@@ -236,7 +235,7 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
             </nav>
 
             {/* Spacer biar konten tidak ketimpa navbar */}
-            <div style={{ height: Math.max(0, navHeight - 1) }} />
+            <div style={{ height: navHeight }} />
 
             {/* Overlay */}
             {isOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsOpen(false)} />}
