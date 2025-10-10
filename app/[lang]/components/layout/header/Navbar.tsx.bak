@@ -134,10 +134,8 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
 
     const handleLogout = useCallback(async () => {
         setAccountMenuOpen(false);
-        setIsOpen(false);
         await logout();
-        await router.push(`/${lang}`);
-    }, [lang, logout, router]);
+    }, [logout]);
 
     return (
         <>
@@ -191,35 +189,13 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                                             </span>
                                         ) : null}
                                     </Link>
-                                    <div ref={mobileAccountRef} className="relative lg:hidden">
-                                        <button
-                                            type="button"
-                                            onClick={handleAccountToggle}
-                                            aria-label={authLabels.account}
-                                            aria-expanded={isAccountMenuOpen}
-                                            className="flex h-8 w-8 items-center justify-center transition hover:text-white/80"
-                                        >
-                                            <AccountIcon size={20} aria-hidden="true" />
-                                        </button>
-                                        {isAccountMenuOpen ? (
-                                            <div className="absolute right-0 top-full mt-2 w-40 rounded-md bg-white text-sm text-gray-700 shadow-lg ring-1 ring-black/5 lg:hidden">
-                                                <button
-                                                    type="button"
-                                                    onClick={handleNavigateProfile}
-                                                    className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-                                                >
-                                                    Profile
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleLogout}
-                                                    className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-100"
-                                                >
-                                                    Logout
-                                                </button>
-                                            </div>
-                                        ) : null}
-                                    </div>
+                                    <Link
+                                        href={`/${lang}/profile`}
+                                        className="flex h-8 w-8 items-center justify-center"
+                                        aria-label={authLabels.account}
+                                    >
+                                        <AccountIcon size={20} aria-hidden="true" />
+                                    </Link>
                                 </>
                             )}
                         </div>
@@ -285,36 +261,14 @@ export default function Navbar({ lang, dictionary }: NavbarProps) {
                                     ) : null}
                                 </Link>
 
-                                <div ref={desktopAccountRef} className="relative">
-                                    <button
-                                        type="button"
-                                        onClick={handleAccountToggle}
-                                        aria-label={authLabels.account}
-                                        aria-expanded={isAccountMenuOpen}
-                                        className="inline-flex items-center px-2.5 py-2 text-[15px] text-white transition hover:text-white/80"
-                                    >
-                                        <AccountIcon size={20} aria-hidden="true" />
-                                        <span className="sr-only">{authLabels.account}</span>
-                                    </button>
-                                    {isAccountMenuOpen ? (
-                                        <div className="absolute right-0 top-full mt-2 w-44 rounded-md bg-white text-sm text-gray-700 shadow-lg ring-1 ring-black/5">
-                                            <button
-                                                type="button"
-                                                onClick={handleNavigateProfile}
-                                                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-                                            >
-                                                Profile
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={handleLogout}
-                                                className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-100"
-                                            >
-                                                Logout
-                                            </button>
-                                        </div>
-                                    ) : null}
-                                </div>
+                                <Link
+                                    href={`/${lang}/profile`}
+                                    className="inline-flex items-center px-2.5 py-2 text-[15px] text-white transition hover:text-white hover:opacity-80"
+                                    aria-label={authLabels.account}
+                                >
+                                    <AccountIcon size={20} aria-hidden="true" />
+                                    <span className="sr-only">{authLabels.account}</span>
+                                </Link>
                             </div>
                         )}
                     </div>

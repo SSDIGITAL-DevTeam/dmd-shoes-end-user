@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { Inter, Assistant } from "next/font/google";
+import { FaHeart } from "react-icons/fa";
 import type { ProductCard } from "@/services/types";
 
 const inter = Inter({
@@ -103,6 +104,10 @@ export default function ProductItem({
 
   const priceLabel = formatCurrency(lowestPrice) ?? "-";
   const href = `/${locale}/product/${product.slug ?? product.id}`;
+  const favoritesCount =
+    typeof product.favorites_count === "number"
+      ? product.favorites_count
+      : null;
 
   return (
     <div
@@ -140,6 +145,13 @@ export default function ProductItem({
               / {locale === "en" ? "pair" : "pasang"}
             </span>
           </div>
+
+          {favoritesCount !== null ? (
+            <div className="mt-1 inline-flex items-center gap-1 text-xs text-[#F97316] md:text-sm">
+              <FaHeart className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />
+              <span>{favoritesCount}</span>
+            </div>
+          ) : null}
         </div>
       </Link>
     </div>
