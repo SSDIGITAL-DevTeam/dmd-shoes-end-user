@@ -158,64 +158,64 @@ const getMe = async (): Promise<User | null> => {
     return null;
   }
 
-  if (cachedUser) {
-    return cachedUser;
-  }
+  try {
+    const response = await fetch("/api/auth/user", {
+      method: "GET",
+      credentials: "include",
+      headers: existingToken
+        ? {
+            Authorization: `Bearer ${existingToken}`,
+          }
+        : undefined,
+      cache: "no-store",
+    });
 
-  const response = await fetch("/api/auth/user", {
-    method: "GET",
-    credentials: "include",
-    headers: existingToken
-      ? {
-          Authorization: `Bearer ${existingToken}`,
-        }
-      : undefined,
-    cache: "no-store",
-  });
+    const data = await parseJson(response);
 
-  const data = await parseJson(response);
+    if (response.status === 401) {
+      clearStoredToken();
+      clearStoredUser();
+      return null;
+    }
 
-  if (response.status === 401) {
-    clearStoredToken();
+    if (!response.ok) {
+      const message =
+        (data && typeof data === "object" && "message" in data && data.message) ||
+        "Failed to fetch authenticated user.";
+      throw new ApiError(response.status, String(message), data);
+    }
+
+    const token =
+      typeof (data as any)?.token === "string"
+        ? (data as any).token
+        : typeof (data as any)?.data?.token === "string"
+          ? (data as any).data.token
+          : null;
+
+    if (token) {
+      setStoredToken(token);
+    }
+
+    const user =
+      ((data as any)?.user as User | undefined) ??
+      ((data as any)?.data?.user as User | undefined) ??
+      ((data as any)?.data as User | undefined) ??
+      null;
+
+    if (user) {
+      setStoredUser(user);
+      return user;
+    }
+
     clearStoredUser();
     return null;
-  }
-
-  if (!response.ok) {
+  } catch (error) {
     if (cachedUser) {
       return cachedUser;
     }
 
-    const message =
-      (data && typeof data === "object" && "message" in data && data.message) ||
-      "Failed to fetch authenticated user.";
-    throw new ApiError(response.status, String(message), data);
+    throw error;
   }
-
-  const token =
-    typeof (data as any)?.token === "string"
-      ? (data as any).token
-      : typeof (data as any)?.data?.token === "string"
-        ? (data as any).data.token
-        : null;
-
-  if (token) {
-    setStoredToken(token);
-  }
-
-  const user =
-    ((data as any)?.user as User | undefined) ??
-    ((data as any)?.data?.user as User | undefined) ??
-    ((data as any)?.data as User | undefined) ??
-    null;
-
-  if (user) {
-    setStoredUser(user);
-    return user;
-  }
-
-  const fallbackUser = getStoredUser<User>();
-  return fallbackUser ?? null;
 };
 
 export const AuthService = {

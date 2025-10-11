@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FaTrash, FaWhatsapp } from "react-icons/fa";
+import { FaTrash, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import Container from "@/components/ui-custom/Container";
 import { CONTACT } from "@/config/contact";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -30,6 +30,14 @@ type WishlistDictionary = {
     button?: string;
     preparing?: string;
   };
+  email?: {
+    emptyMessage?: string;
+    intro?: string;
+    outro?: string;
+    subject?: string;
+    line?: string;
+    button?: string;
+  };
 };
 
 const formatTemplate = (template: string, replacements: Record<string, string>) =>
@@ -37,6 +45,7 @@ const formatTemplate = (template: string, replacements: Record<string, string>) 
 
 const createFallbackDictionary = (lang: string): Required<WishlistDictionary> & {
   whatsapp: Required<NonNullable<WishlistDictionary["whatsapp"]>>;
+  email: Required<NonNullable<WishlistDictionary["email"]>>;
 } => {
   const isEnglish = lang.startsWith("en");
   return {
@@ -63,6 +72,22 @@ const createFallbackDictionary = (lang: string): Required<WishlistDictionary> & 
       line: "{index}. {product}{variant} - {price}",
       button: isEnglish ? "Order via WhatsApp Now" : "Pesan Melalui WhatsApp Sekarang",
       preparing: isEnglish ? "Preparing..." : "Menyiapkan...",
+    },
+    email: {
+      emptyMessage: isEnglish
+        ? "Hello, I’d like to ask about my favorite products."
+        : "Halo, saya ingin bertanya mengenai produk favorit saya.",
+      intro: isEnglish
+        ? "Hello, I’m interested in the following products:"
+        : "Halo, saya tertarik dengan produk berikut:",
+      outro: isEnglish
+        ? "Please let me know the availability and how to proceed with the order."
+        : "Mohon informasikan ketersediaan dan langkah pemesanan selanjutnya.",
+      subject: isEnglish
+        ? "Order Inquiry - {count} Products"
+        : "Permintaan Pesanan - {count} Produk",
+      line: "{index}. {product}{variant} - {price}",
+      button: isEnglish ? "Order via Email Now" : "Pesan Melalui Email Sekarang",
     },
   };
 };
@@ -117,12 +142,17 @@ const Wishlist = ({
   const baseDict = useMemo(() => createFallbackDictionary(lang), [lang]);
   const mergedDict = useMemo(() => {
     const incomingWhatsApp = dictionary?.whatsapp ?? {};
+    const incomingEmail = dictionary?.email ?? {};
     return {
       ...baseDict,
       ...dictionary,
       whatsapp: {
         ...baseDict.whatsapp,
         ...incomingWhatsApp,
+      },
+      email: {
+        ...baseDict.email,
+        ...incomingEmail,
       },
     };
   }, [baseDict, dictionary]);
@@ -193,12 +223,12 @@ const Wishlist = ({
     [favorites, selectedIds],
   );
 
-  const whatsappMessage = useMemo(() => {
+  const orderItems = useMemo(() => {
     if (!selectedFavorites.length) {
-      return mergedDict.whatsapp.emptyMessage;
+      return [];
     }
 
-    const lines = selectedFavorites.map((fav, index) => {
+    return selectedFavorites.map((fav, index) => {
       const productName =
         resolveText(fav.product.name, lang) || mergedDict.fallbackProductName;
       const variantText = fav.variant
@@ -206,17 +236,68 @@ const Wishlist = ({
         : "";
       const variantLabel = variantText ? ` (${variantText})` : "";
       const price = fav.variant?.price ?? fav.product.price ?? undefined;
+      const priceFormatted = formatCurrency(price);
+      const priceText =
+        priceFormatted === "-"
+          ? "-"
+          : `${priceFormatted} ${mergedDict.priceUnit}`.trim();
 
-      return formatTemplate(mergedDict.whatsapp.line, {
+      return {
         index: String(index + 1),
-        product: productName,
-        variant: variantLabel,
-        price: formatCurrency(price),
-      });
+        productName,
+        variantLabel,
+        priceText,
+      };
     });
+  }, [
+    selectedFavorites,
+    lang,
+    mergedDict.fallbackProductName,
+    mergedDict.priceUnit,
+    formatCurrency,
+  ]);
 
-    return `${mergedDict.whatsapp.intro}\n\n${lines.join("\n")}\n\n${mergedDict.whatsapp.outro}`;
-  }, [selectedFavorites, lang, mergedDict, formatCurrency]);
+  const whatsappMessage = useMemo(() => {
+    if (!orderItems.length) {
+      return mergedDict.whatsapp.emptyMessage;
+    }
+
+    const whatsappLines = orderItems.map((item) =>
+      formatTemplate(mergedDict.whatsapp.line, {
+        index: item.index,
+        product: item.productName,
+        variant: item.variantLabel,
+        price: item.priceText,
+      }),
+    );
+
+    return `${mergedDict.whatsapp.intro}\n\n${whatsappLines.join("\n")}\n\n${mergedDict.whatsapp.outro}`;
+  }, [orderItems, mergedDict.whatsapp]);
+
+  const emailBody = useMemo(() => {
+    if (!orderItems.length) {
+      return mergedDict.email.emptyMessage;
+    }
+
+    const emailLines = orderItems.map((item) =>
+      formatTemplate(mergedDict.email.line, {
+        index: item.index,
+        product: item.productName,
+        variant: item.variantLabel,
+        price: item.priceText,
+      }),
+    );
+
+    return `${mergedDict.email.intro}\n\n${emailLines.join("\n")}\n\n${mergedDict.email.outro}`;
+  }, [orderItems, mergedDict.email]);
+
+  const emailSubject = useMemo(
+    () =>
+      formatTemplate(mergedDict.email.subject, {
+        count: numberFormatter.format(selectedFavorites.length),
+      }),
+    [mergedDict.email.subject, numberFormatter, selectedFavorites.length],
+  );
 
   const handleCheckout = useCallback(async () => {
     if (!selectedFavorites.length) return;
@@ -283,20 +364,20 @@ const Wishlist = ({
                   resolveText(favorite.variant?.label ?? null, lang);
                 const variantParts = variantLabelText
                   ? variantLabelText
-                      .split("|")
-                      .map((part) => part.trim())
-                      .filter(Boolean)
+                    .split("|")
+                    .map((part) => part.trim())
+                    .filter(Boolean)
                   : [];
                 const price =
                   favorite.variant?.price ?? favorite.product.price ?? null;
 
                 const coverSrc =
                   (typeof favorite.product.cover_url === "string" &&
-                  favorite.product.cover_url.length > 0
+                    favorite.product.cover_url.length > 0
                     ? favorite.product.cover_url
                     : undefined) ??
                   (typeof favorite.product.cover === "string" &&
-                  favorite.product.cover.length > 0
+                    favorite.product.cover.length > 0
                     ? favorite.product.cover
                     : undefined) ??
                   FALLBACK_IMAGE;
@@ -372,21 +453,57 @@ const Wishlist = ({
             })}
           </p>
 
-          <Link
-            href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
-              whatsappMessage,
-            )}`}
-            onClick={handleCheckout}
-            className="mt-10 flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <FaWhatsapp />
-            {isCheckingOut
-              ? mergedDict.whatsapp.preparing
-              : mergedDict.whatsapp.button}
-          </Link>
+          <div className="mt-10 flex flex-col gap-3">
+            <a
+              href={selectedFavorites.length
+                ? `https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
+                  whatsappMessage,
+                )}`
+                : undefined}
+              onClick={(event) => {
+                if (!selectedFavorites.length) {
+                  event.preventDefault();
+                  return;
+                }
+                handleCheckout();
+              }}
+              className={`flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 ${selectedFavorites.length ? "" : "pointer-events-none opacity-60"
+                }`}
+              aria-disabled={!selectedFavorites.length}
+              rel="noopener noreferrer"
+            >
+              <FaWhatsapp />
+              {isCheckingOut
+                ? mergedDict.whatsapp.preparing
+                : mergedDict.whatsapp.button}
+            </a>
+
+            <a
+              href={
+                selectedFavorites.length
+                  ? `mailto:${CONTACT.email}?subject=${encodeURIComponent(
+                    emailSubject,
+                  )}&body=${encodeURIComponent(emailBody)}`
+                  : undefined
+              }
+              onClick={(e) => {
+                if (!selectedFavorites.length) {
+                  e.preventDefault();
+                  return;
+                }
+              }}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex w-full items-center justify-center gap-2 rounded border border-primary px-4 py-2 text-primary transition hover:bg-primary hover:text-white ${selectedFavorites.length ? "" : "pointer-events-none opacity-60"
+                }`}
+            >
+              <FaEnvelope />
+              {mergedDict.email.button}
+            </a>
+          </div>
         </div>
       </div>
-    </Container>
+    </Container >
   );
 };
 

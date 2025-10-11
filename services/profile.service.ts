@@ -1,6 +1,8 @@
+// services/profile.service.ts
 "use client";
 
 import { ApiError } from "@/lib/api-client";
+import { getStoredToken } from "@/lib/auth";
 
 type ApiClientErrorShape = {
   message?: string;
@@ -30,51 +32,45 @@ type PasswordChangePayload = {
   new_password_confirmation: string;
 };
 
-const isFormData = (value: unknown): value is FormData =>
-  typeof FormData !== "undefined" && value instanceof FormData;
+const isFormData = (v: unknown): v is FormData =>
+  typeof FormData !== "undefined" && v instanceof FormData;
 
 const callInternal = async <T>(
   path: string,
   init: RequestInit & { json?: Record<string, unknown> | null } = {},
 ): Promise<T> => {
   const { json, ...rest } = init;
+
   const headers = new Headers(rest.headers ?? {});
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
+  // Siapkan body + Content-Type bila perlu
   let body: BodyInit | undefined = rest.body as BodyInit | undefined;
-
   if (json !== undefined) {
-    const jsonString = json ? JSON.stringify(json) : null;
-    body = jsonString ?? undefined;
-    if (!headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
+    const stringified = json ? JSON.stringify(json) : null;
+    body = stringified ?? undefined;
+    if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   } else if (body && !headers.has("Content-Type") && !isFormData(body)) {
     headers.set("Content-Type", "application/json");
   }
 
-  if (!headers.has("Authorization") && typeof window !== "undefined") {
-    try {
-      const token = window.localStorage.getItem("auth_token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-    } catch {
-      // ignore storage issues
-    }
+  // Sertakan Bearer token dari storage bila ada (membantu selain cookie httpOnly)
+  if (!headers.has("Authorization")) {
+    const token = getStoredToken(); // pastikan helper ini membaca key yang sama saat login menyimpan token
+    if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(path, {
     ...rest,
     headers,
     body,
-    credentials: rest.credentials ?? "include",
+    credentials: rest.credentials ?? "include", // supaya cookie httpOnly ikut
     cache: rest.cache ?? "no-store",
   });
 
+  // Parse payload aman (JSON / text / kosong)
   let payload: unknown = null;
   const contentType = response.headers.get("content-type") ?? "";
-
   try {
     if (contentType.includes("application/json")) {
       payload = await response.json();
@@ -91,11 +87,12 @@ const callInternal = async <T>(
       (payload &&
         typeof payload === "object" &&
         "message" in payload &&
-        typeof (payload as any).message === "string"
-        ? (payload as any).message
-        : response.statusText) || "Request failed";
+        typeof (payload as any).message === "string" &&
+        (payload as any).message) ||
+      response.statusText ||
+      "Request failed";
 
-    const details =
+    const details: ApiClientErrorShape | string | null =
       typeof payload === "string"
         ? payload
         : payload && typeof payload === "object"
@@ -107,6 +104,10 @@ const callInternal = async <T>(
 
   return payload as T;
 };
+
+/* =========================
+ * Public API Service
+ * ========================= */
 
 const updateProfile = (payload: UpdateProfilePayload) =>
   callInternal<{ message?: string; data?: { full_name?: string; whatsapp_e164?: string | null } }>(
@@ -135,7 +136,7 @@ const resendEmailVerification = (payload?: EmailResendPayload) =>
     "/api/me/email/resend",
     {
       method: "POST",
-      json: payload ?? {},
+      json: payload ?? {}, // backend boleh butuh new_email, kirim jika ada
     },
   );
 

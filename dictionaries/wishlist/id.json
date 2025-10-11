@@ -16,5 +16,13 @@
     "line": "{index}. {product}{variant} - {price}",
     "button": "Pesan Melalui WhatsApp Sekarang",
     "preparing": "Menyiapkan..."
+  },
+  "email": {
+    "emptyMessage": "Halo, saya ingin bertanya mengenai produk favorit saya.",
+    "intro": "Halo, saya tertarik dengan produk berikut:",
+    "outro": "Mohon informasikan ketersediaan dan cara pemesanan selanjutnya.",
+    "subject": "Permintaan Pesanan - {count} Produk",
+    "line": "{index}. {product}{variant} - {price}",
+    "button": "Pesan Melalui Email Sekarang"
   }
 }

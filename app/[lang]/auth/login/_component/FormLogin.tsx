@@ -7,6 +7,8 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import InputPassword from "@/components/ui-custom/form/InputPassword";
 import { useAuthStore } from "@/store/auth-store";
 import { setStoredToken, setStoredUser } from "@/lib/auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -33,6 +35,7 @@ export default function FormLogin() {
   const { lang } = useParams<{ lang: string }>();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const queryClient = useQueryClient();
   const callbackUrlParam = searchParams.get("callbackUrl") ?? "";
   const registerLink = callbackUrlParam
     ? `/${lang}/auth/register?callbackUrl=${encodeURIComponent(
@@ -125,6 +128,7 @@ export default function FormLogin() {
 
       setAuth({ token, user });
       setStoredUser(user);
+      queryClient.setQueryData(queryKeys.auth.me, user ?? null);
 
       if (!token && typeof window !== "undefined") {
         window.localStorage.removeItem(PENDING_WISHLIST_KEY);

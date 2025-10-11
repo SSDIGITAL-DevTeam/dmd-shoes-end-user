@@ -10,6 +10,8 @@ import "react-phone-number-input/style.css";
 import { useAuthStore } from "@/store/auth-store";
 import { setStoredToken, setStoredUser } from "@/lib/auth";
 import { FavoriteService } from "@/services/favorite.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -47,6 +49,7 @@ export default function FormRegister() {
   const { lang } = useParams<{ lang: string }>();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const queryClient = useQueryClient();
   const callbackUrlParam = searchParams.get("callbackUrl") ?? "";
   const loginLink = callbackUrlParam
     ? `/${lang}/auth/login?callbackUrl=${encodeURIComponent(callbackUrlParam)}`
@@ -92,6 +95,8 @@ export default function FormRegister() {
 
     if (!formValues.phone.trim()) {
       errors.phone = ["Phone is required."];
+    } else if (!/^\+\d{8,15}$/.test(formValues.phone)) {
+      errors.phone = ["Phone must be in E.164 format (e.g. +62812...)."];
     }
 
     return errors;
@@ -103,7 +108,7 @@ export default function FormRegister() {
   };
 
   const handlePhoneChange = (value?: string) => {
-    setFormValues((prev) => ({ ...prev, phone: value ?? "" }));
+    setFormValues((prev) => ({ ...prev, phone: value ?? prev.phone }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -203,6 +208,8 @@ export default function FormRegister() {
           ? decodeURIComponent(callbackUrlParam)
           : `/${lang}`;
 
+      queryClient.setQueryData(queryKeys.auth.me, user ?? null);
+
       setTimeout(() => {
         router.replace(redirectTarget);
       }, 800);
@@ -225,7 +232,8 @@ export default function FormRegister() {
     ));
 
   return (
-    <form
+    <>
+      <form
       className="space-y-3 font-['Plus_Jakarta_Sans']"
       onSubmit={handleSubmit}
       noValidate
@@ -284,15 +292,9 @@ export default function FormRegister() {
         value={formValues.phone}
         onChange={handlePhoneChange}
         defaultCountry="ID"
-        className="w-full"
-        inputComponent={(props) => (
-          <input
-            {...props}
-            className={`w-full text-[#121212]/75 text-[20px] font-medium border-b 
-                  border-[#1212124D] px-[10px] py-[10px] focus:outline-none 
-                  focus:border-blue-500 placeholder-gray-400 ${jakartaSans.className}`}
-          />
-        )}
+        international
+        countryCallingCodeEditable={false}
+        className={`register-phone w-full ${jakartaSans.className}`}
       />
       {renderFieldErrors("phone")}
 
@@ -322,7 +324,42 @@ export default function FormRegister() {
           Masuk
         </Link>
       </p>
-    </form>
+      </form>
+      <style jsx global>{`
+      .register-phone {
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+      .register-phone input {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        outline: none;
+        transition: 0.2s;
+      }
+      .register-phone input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+      }
+      .register-phone .PhoneInputCountry {
+        margin-right: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background: white;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .register-phone .PhoneInputCountrySelect {
+        outline: none;
+      }
+    `}</style>
+    </>
   );
 }
+
 
