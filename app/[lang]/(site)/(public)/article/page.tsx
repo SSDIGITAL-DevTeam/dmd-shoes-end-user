@@ -13,35 +13,35 @@ const inter = Inter({
 });
 
 function page() {
-  
+
 
   return (
     <div className={` ${inter.className} bg-gray-100 min-h-screen`}>
       {/* Konten Artikel Terbaru */}
       <Container className="py-[40px]">
         <div className=" flex justify-between items-center">
-          <h1 className="text-xl font-bold">Artikel Terbaru</h1>
+          <h1 className="text-primary font-semibold text-[32px] leading-[140%]">Artikel Terbaru</h1>
           <div className="relative">
-  <input
-    type="text"
-    placeholder="Cari Artikel..."
-    className="
+            <input
+              type="text"
+              placeholder="Cari Artikel..."
+              className="
         w-full border text-[20px] 
         py-4 pr-4 pl-8
       "
-    style={{
-      borderColor: "rgba(18,18,18,0.25)",
-      borderRadius: "0px",
-    
-      lineHeight: "20px",
-    
-    }}
-  />
-   <AiOutlineSearch
-    className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-    size={18}
-  />
-</div>
+              style={{
+                borderColor: "rgba(18,18,18,0.25)",
+                borderRadius: "0px",
+
+                lineHeight: "20px",
+
+              }}
+            />
+            <AiOutlineSearch
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              size={18}
+            />
+          </div>
 
         </div>
       </Container>

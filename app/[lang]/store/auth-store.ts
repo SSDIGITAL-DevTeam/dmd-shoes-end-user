@@ -3,12 +3,17 @@ import { clearStoredToken, clearStoredUser } from "@/lib/auth";
 
 export type AuthUser = {
   id: number;
-  name: string;
+  name?: string | null;
+  full_name?: string | null;
   email: string;
+  whatsapp_e164?: string | null;
   phone?: string | null;
   role: string;
   status?: boolean;
+  email_verified?: boolean;
   email_verified_at?: string | null;
+  pending_email?: string | null;
+  pending_email_requested_at?: string | null;
   created_at?: string;
   updated_at?: string;
 };

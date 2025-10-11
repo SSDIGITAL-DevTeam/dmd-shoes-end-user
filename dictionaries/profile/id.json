@@ -1,0 +1,80 @@
+{
+  "title": "Profil Saya",
+  "badge": {
+    "verified": "Terverifikasi",
+    "unverified": "Belum Terverifikasi"
+  },
+  "labels": {
+    "fullName": "Nama Lengkap",
+    "email": "Alamat Email",
+    "whatsapp": "Nomor WhatsApp",
+    "pendingEmail": "Menunggu verifikasi ke {{email}}."
+  },
+  "placeholders": {
+    "fullName": "Nama Lengkap",
+    "whatsapp": "Nomor WhatsApp",
+    "email": "contoh@domain.com"
+  },
+  "buttons": {
+    "changeEmail": "Ubah Alamat Email",
+    "changePassword": "Ubah Kata Sandi",
+    "save": "Simpan Perubahan",
+    "saving": "Menyimpan...",
+    "cancel": "Batalkan",
+    "close": "Tutup",
+    "retry": "Coba lagi"
+  },
+  "messages": {
+    "emailVerified": "Email berhasil diverifikasi.",
+    "emailAlreadyVerified": "Email sudah terverifikasi.",
+    "emailInvalid": "Tautan verifikasi tidak valid atau sudah kedaluwarsa.",
+    "profileSaved": "Perubahan disimpan.",
+    "profileSaveError": "Gagal menyimpan perubahan profil.",
+    "profileLoadError": "Profil tidak dapat dimuat.",
+    "emailChangeRequested": "Kami telah mengirimkan tautan verifikasi ke email baru Anda.",
+    "emailChangeError": "Gagal mengajukan perubahan email.",
+    "emailResent": "Tautan verifikasi dikirim ulang.",
+    "emailResendError": "Gagal mengirim ulang tautan verifikasi.",
+    "emailNoPending": "Tidak ada pengajuan email baru untuk dikirim ulang.",
+    "passwordChanged": "Kata sandi berhasil diubah.",
+    "passwordChangeError": "Gagal mengubah kata sandi.",
+    "passwordIncorrect": "Kata sandi saat ini salah.",
+    "passwordMatch": "Konfirmasi sesuai."
+  },
+  "validation": {
+    "fullNameRequired": "Nama tidak boleh kosong.",
+    "fullNameMin": "Nama minimal 2 karakter.",
+    "fullNameMax": "Nama maksimal 80 karakter.",
+    "fullNameAlpha": "Nama harus mengandung huruf.",
+    "whatsappFormat": "Nomor WhatsApp harus menggunakan format E.164 (contoh +62812...).",
+    "passwordRequired": "Password wajib diisi.",
+    "emailRequired": "Email wajib diisi.",
+    "emailFormat": "Format email tidak valid.",
+    "emailDifferent": "Email baru harus berbeda dari email saat ini.",
+    "newPasswordRequired": "Kata sandi baru wajib diisi.",
+    "newPasswordMin": "Kata sandi minimal 8 karakter.",
+    "confirmPasswordRequired": "Konfirmasi kata sandi wajib diisi.",
+    "passwordConfirm": "Konfirmasi harus sama."
+  },
+  "emailModal": {
+    "title": "Ubah alamat email",
+    "passwordLabel": "Masukkan Kata Sandi",
+    "emailLabel": "Masukkan Alamat Email Baru",
+    "submit": "Ubah alamat email",
+    "submitting": "Mengirim...",
+    "successTitle": "Periksa email baru Anda!",
+    "successBody": "Kami telah mengirimkan tautan verifikasi ke {{email}}. Klik tautan tersebut untuk mengonfirmasi perubahan email Anda.",
+    "resendPrompt": "Tidak menerima email? Periksa folder spam atau ",
+    "resendLink": "kirim ulang tautannya.",
+    "resending": "Mengirim ulang...",
+    "resendCooldown": "Kirim ulang ({{seconds}}s)"
+  },
+  "passwordModal": {
+    "title": "Ubah kata sandi",
+    "current": "Kata sandi terkini",
+    "new": "Kata sandi baru",
+    "confirm": "Konfirmasi kata sandi baru",
+    "submit": "Ubah kata sandi",
+    "saving": "Menyimpan..."
+  }
+}

@@ -1,6 +1,7 @@
 import { getDictionary } from "../../dictionaries/get-dictionary";
 import { i18n, type Locale } from "../../i18n-config";
 import AuthInitializer from "@/components/providers/AuthInitializer";
+import ToastProvider from "@/components/providers/ToastProvider";
 import { ReactQueryProvider } from "../../components/providers/ReactQueryProvider";
 import {
   inter,
@@ -35,6 +36,7 @@ export default async function Root(props: {
       >
         <ReactQueryProvider>
           <AuthInitializer />
+          <ToastProvider />
           {children}
         </ReactQueryProvider>
       </body>

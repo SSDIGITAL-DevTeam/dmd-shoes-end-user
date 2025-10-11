@@ -1,17 +1,20 @@
-import Container from '@/components/ui-custom/Container'
-import React from 'react'
-import ProfileForm from './_component/ProfileForm'
+import Container from "@/components/ui-custom/Container";
+import ProfileForm from "./_component/ProfileForm";
+import type { Locale } from "../../../../../i18n-config";
+import { getDictionaryProfile } from "../../../../../dictionaries/profile/get-dictionary-profile";
 
-function page() {
+export default async function ProfilePage(props: {
+  params: Promise<{ lang: Locale }>;
+}) {
+  const { lang } = await props.params;
+  const dictionary = await getDictionaryProfile(lang);
+
   return (
-    <Container className='py-[68px] space-y'>
-        <h1 className='text-primary font-semibold text-[40px] leading-[150%] '>
-            Profile Saya
-        </h1>
-        <ProfileForm></ProfileForm>
-
+    <Container className="py-16 space-y-12">
+      <h1 className="text-primary font-semibold text-[32px] leading-[140%]">
+        {dictionary.title}
+      </h1>
+      <ProfileForm dictionary={dictionary} />
     </Container>
-  )
+  );
 }
-
-export default page

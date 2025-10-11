@@ -92,13 +92,16 @@ export default function CategorySection({
                   key={`${cat.id}-${cat.slug}`}
                   className="flex flex-col"
                 >
-                  <div className="w-full overflow-hidden rounded-md">
+                  <div
+                    className="relative w-full overflow-hidden rounded-md"
+                    style={{ aspectRatio: "750 / 580" }}
+                  >
                     <Image
                       src={cat.cover_url ?? "/assets/demo/product-category-demo.webp"}
                       alt={name || "Category"}
-                      width={800}
-                      height={600}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 1024px) 375px, (min-width: 640px) 50vw, 100vw"
                     />
                   </div>
 

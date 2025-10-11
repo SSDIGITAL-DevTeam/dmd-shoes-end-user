@@ -306,7 +306,7 @@ export default function ProductPage({
         {/* Header */}
         <header className="mb-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-[32px] font-bold leading-none text-[#003663] lg:text-[44px]">
+            <h1 className="text-primary font-semibold text-[32px] leading-[140%]">
               {dictionaryProduct?.title || "Our Products"}
             </h1>
 

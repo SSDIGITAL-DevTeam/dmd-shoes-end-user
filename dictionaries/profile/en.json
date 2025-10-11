@@ -1,0 +1,80 @@
+{
+  "title": "My Profile",
+  "badge": {
+    "verified": "Verified",
+    "unverified": "Unverified"
+  },
+  "labels": {
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "whatsapp": "WhatsApp Number",
+    "pendingEmail": "Awaiting verification for {{email}}."
+  },
+  "placeholders": {
+    "fullName": "Full Name",
+    "whatsapp": "WhatsApp Number",
+    "email": "name@example.com"
+  },
+  "buttons": {
+    "changeEmail": "Change Email Address",
+    "changePassword": "Change Password",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Try again"
+  },
+  "messages": {
+    "emailVerified": "Email verified successfully.",
+    "emailAlreadyVerified": "Email is already verified.",
+    "emailInvalid": "Verification link is invalid or has expired.",
+    "profileSaved": "Changes saved.",
+    "profileSaveError": "Failed to save profile changes.",
+    "profileLoadError": "Profile could not be loaded.",
+    "emailChangeRequested": "We sent a verification link to your new email address.",
+    "emailChangeError": "Failed to request email change.",
+    "emailResent": "Verification link resent.",
+    "emailResendError": "Failed to resend verification link.",
+    "emailNoPending": "There is no pending email change request.",
+    "passwordChanged": "Password changed successfully.",
+    "passwordChangeError": "Failed to change password.",
+    "passwordIncorrect": "Current password is incorrect.",
+    "passwordMatch": "Looks good — passwords match."
+  },
+  "validation": {
+    "fullNameRequired": "Full name is required.",
+    "fullNameMin": "Full name must be at least 2 characters.",
+    "fullNameMax": "Full name must be at most 80 characters.",
+    "fullNameAlpha": "Full name must contain letters.",
+    "whatsappFormat": "WhatsApp number must be in E.164 format (e.g. +62812...).",
+    "passwordRequired": "Password is required.",
+    "emailRequired": "Email is required.",
+    "emailFormat": "Email format is invalid.",
+    "emailDifferent": "New email must be different from the current email.",
+    "newPasswordRequired": "New password is required.",
+    "newPasswordMin": "New password must be at least 8 characters.",
+    "confirmPasswordRequired": "Confirmation is required.",
+    "passwordConfirm": "Confirmation must match the new password."
+  },
+  "emailModal": {
+    "title": "Change email address",
+    "passwordLabel": "Enter Password",
+    "emailLabel": "Enter New Email Address",
+    "submit": "Change email address",
+    "submitting": "Sending...",
+    "successTitle": "Check your new email!",
+    "successBody": "We have sent a verification link to {{email}}. Please confirm the change via that email.",
+    "resendPrompt": "Didn't receive the email? Check your spam folder or ",
+    "resendLink": "resend the link.",
+    "resending": "Resending...",
+    "resendCooldown": "Resend ({{seconds}}s)"
+  },
+  "passwordModal": {
+    "title": "Change password",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "submit": "Change password",
+    "saving": "Saving..."
+  }
+}

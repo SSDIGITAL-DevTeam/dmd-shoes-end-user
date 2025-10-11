@@ -233,7 +233,7 @@ const Wishlist = ({
   return (
     <Container className="py-10">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-semibold text-[#003663] lg:text-[32px]">
+        <h1 className="text-primary font-semibold text-[32px] leading-[140%]">
           {mergedDict.pageTitle}{" "}
           <span className="text-base font-normal text-gray-500 lg:text-lg">
             {formatTemplate(mergedDict.pageTitleCount, {
