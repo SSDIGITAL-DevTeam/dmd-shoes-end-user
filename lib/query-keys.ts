@@ -14,7 +14,10 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => ["categories", "list", params ?? {}] as const,
   },
   articles: {
-    list: (params?: Record<string, unknown>) => ["articles", "list", params ?? {}] as const,
+    list: (params: { page?: number; per_page?: number; search?: string; lang?: string } = {}) =>
+      ["articles", "list", params] as const,
+    detail: (id: number) => ["articles", "detail", id] as const,
+    detailBySlug: (slug: string, lang?: string) => ["articles", "detail", "slug", slug, lang ?? ""] as const,
   },
   favorites: {
     list: ["favorites", "list"] as const,
@@ -38,6 +41,8 @@ export type QueryKey =
   | ReturnType<typeof queryKeys.products.filters>
   | ReturnType<typeof queryKeys.categories.list>
   | ReturnType<typeof queryKeys.articles.list>
+  | ReturnType<typeof queryKeys.articles.detail>
+  | ReturnType<typeof queryKeys.articles.detailBySlug>
   | typeof queryKeys.favorites.list
   | typeof queryKeys.meta.pages
   | ReturnType<typeof queryKeys.meta.pageTags>

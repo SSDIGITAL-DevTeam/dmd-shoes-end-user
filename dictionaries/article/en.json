@@ -1,0 +1,23 @@
+{
+  "title": "Articles",
+  "hero_title": "Latest Articles",
+  "hero_subtitle": "Don't miss the hottest shoe trends this season",
+  "hero_cta": "Read more",
+  "search_label": "Search articles",
+  "search_placeholder": "Search articles...",
+  "read_more": "Read more",
+  "empty": "No articles found.",
+  "error": "We could not load the articles.",
+  "retry": "Try again",
+  "loading": "Loading articles...",
+  "prev": "Previous",
+  "next": "Next",
+  "breadcrumb_home": "Home",
+  "breadcrumb_articles": "Articles",
+  "related": "Related Articles",
+  "read_more_button": "Read more",
+  "published_on": "Published {{date}}",
+  "by_author": "By {{author}}",
+  "content_empty": "Content will be available soon.",
+  "back_to_articles": "Back to articles"
+}

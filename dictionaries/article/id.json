@@ -1,0 +1,23 @@
+{
+  "title": "Artikel",
+  "hero_title": "Artikel Terbaru",
+  "hero_subtitle": "Jangan ketinggalan tren sepatu terpanas musim ini",
+  "hero_cta": "Baca selengkapnya",
+  "search_label": "Cari artikel",
+  "search_placeholder": "Cari artikel...",
+  "read_more": "Baca selengkapnya",
+  "empty": "Artikel tidak ditemukan.",
+  "error": "Tidak dapat memuat artikel.",
+  "retry": "Coba lagi",
+  "loading": "Memuat artikel...",
+  "prev": "Sebelumnya",
+  "next": "Berikutnya",
+  "breadcrumb_home": "Beranda",
+  "breadcrumb_articles": "Artikel",
+  "related": "Artikel Lainnya",
+  "read_more_button": "Baca Selengkapnya",
+  "published_on": "Diterbitkan {{date}}",
+  "by_author": "Oleh {{author}}",
+  "content_empty": "Konten akan segera tersedia.",
+  "back_to_articles": "Kembali ke artikel"
+}

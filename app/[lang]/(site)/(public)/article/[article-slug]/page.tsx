@@ -1,176 +1,213 @@
-import React from "react";
-import { Inter } from "next/font/google";
-import Container from "@/components/ui-custom/Container";
-import Image from "next/image";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import ArticleSlider from "../_components/ArticleSlider";
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
+"use client";
 
-function ArtikelPost() {
-  
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Container from "@/components/ui-custom/Container";
+import ArticleSlider from "../_components/ArticleSlider";
+import { useArticleDetail } from "@/hooks/useArticleDetail";
+import { useArticles } from "@/hooks/useArticles";
+import enDictionary from "@/dictionaries/article/en.json";
+import idDictionary from "@/dictionaries/article/id.json";
+import type { Article } from "@/services/types";
+
+const FALLBACK_COVER = "/assets/demo/article/article-item.webp";
+
+// ---- helpers ---------------------------------------------------------------
+const resolveLang = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && value.length > 0) return String(value[0]);
+  return "id";
+};
+
+const resolveDictionary = (lang: string) =>
+  lang.startsWith("id") ? idDictionary : enDictionary;
+
+const asString = (v: unknown): string | undefined =>
+  typeof v === "string" && v.trim() ? v : undefined;
+
+const formatPublishedDate = (value?: string, locale = "id") => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  try {
+    return new Intl.DateTimeFormat(
+      locale.startsWith("id") ? "id-ID" : "en-US",
+      { year: "numeric", month: "long", day: "numeric" },
+    ).format(date);
+  } catch {
+    return value;
+  }
+};
+
+const formatContent = (raw?: string | null) => {
+  if (!raw) return "";
+  const escaped = raw.trim();
+  if (!escaped) return "";
+
+  const paragraphs = escaped
+    .split(/\n{2,}/)
+    .map((p) => p.replace(/\n/g, "<br />").trim())
+    .filter(Boolean);
+
+  if (!paragraphs.length) return `<p>${escaped}</p>`;
+  return paragraphs.map((p) => `<p>${p}</p>`).join("");
+};
+
+const filterRelatedArticles = (articles: Article[], current: Article | null) => {
+  if (!articles.length) return [];
+  const currentKey = current ? current.slug ?? current.id : null;
+  return articles
+    .filter((a) => (a.slug ?? a.id) !== currentKey)
+    .slice(0, 6);
+};
+
+// ---- page ------------------------------------------------------------------
+export default function ArticleDetailPage() {
+  const params = useParams<{ lang?: string; "article-slug"?: string }>();
+  const router = useRouter();
+  const lang = resolveLang(params?.lang);
+  const dictionary = resolveDictionary(lang);
+
+  const slugParam = params?.["article-slug"] ?? "";
+  const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam;
+
+  const { data: article, isLoading, isError } = useArticleDetail(slug, lang);
+
+  const relatedParams = useMemo(
+    () => ({ page: 1, per_page: 6, lang }),
+    [lang],
+  );
+  const relatedQuery = useArticles(relatedParams);
+  const relatedArticles = useMemo(
+    () => filterRelatedArticles(relatedQuery.data?.data ?? [], article ?? null),
+    [relatedQuery.data, article],
+  );
+
+  if (!slug) {
+    router.replace(`/${lang}/article`);
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Container className="py-16 text-center text-gray-500">
+          {dictionary.loading}
+        </Container>
+      </div>
+    );
+  }
+
+  if (isError || !article) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Container className="py-16 text-center text-gray-500">
+          {dictionary.error}
+        </Container>
+      </div>
+    );
+  }
+
+  // ---- SAFE derived values -------------------------------------------------
+  const titleText =
+    asString(article.title_text) ?? asString(article.title) ?? "";
+
+  const contentText = asString(article.content_text) ?? "";
+  const contentHtml = formatContent(contentText);
+
+  const cover =
+    asString(article.cover_url) ??
+    asString(article.cover) ??
+    FALLBACK_COVER;
+
+  const rawDateTime =
+    asString(article.published_at) ?? asString(article.created_at);
+
+  const publishedLabel = formatPublishedDate(rawDateTime, lang);
 
   return (
-    <div className={` ${inter.className} bg-white min-h-screen`}>
-      {/* Header Artikel */}
-
-      {/* Konten Utama Artikel */}
-      <div
-      className={`
-        mx-auto w-full px-4
-        max-w-2xl sm:max-w-3xl md:max-w-4x
-        py-[38px]
-      
-      `}
-     
-    >
-      
-        {/* Baris pertama */}
-        <div className="flex items-center mb-4">
-          <a
-            href="/artikel"
-            className="text-[20px] leading-[120%] font-medium text-primary flex items-center gap-2"
-          >
-            Artikel
-          </a>
-          <span className="mx-2 text-[20px] leading-[120%] font-medium text-[#9E9E9E] flex">
-            <FaChevronRight className="text-[18px]" /> Cara Memilih Sepatu Yang
-            Cocok Dengan Vibes Kamu
-          </span>
-        </div>
-
-        {/* Baris kedua - Heading */}
-        <h1 className="text-[36px] leading-[150%] font-bold text-primary mb-3">
-          Cara Memilih Sepatu Yang Cocok Dengan Vibes Kamu
-        </h1>
-
-        {/* Baris ketiga */}
-        <p className="text-[18px] leading-[24px] text-[#003663]">
-          Admin - 28 April 2025
-        </p>
-        <div className="bg-white p-6 md:p-2 ">
-          <div className="relative w-full h-[400px]  overflow-hidden mb-8">
-            <Image
-              src="/assets/demo/article/article-item.webp"
-              alt="Sepatu Sneakers"
-              layout="fill"
-              objectFit="cover"
-            />
-          </div>
-
-          <div className="prose max-w-none text-gray-700">
-            <p className="mb-6">
-              Memilih sepatu yang tepat adalah investasi penting untuk kesehatan
-              kaki dan penampilan. Salah pilih sepatu bisa menyebabkan lecet,
-              pegal, bahkan cedera postur. Itulah mengapa penting untuk meninjau
-              berbagai fungsinya, kenyamanan, dan reputasi sebelum membeli.
-            </p>
-            <p className="mb-6">
-              Berikut adalah panduan lengkap memilih sepatu yang cocok untuk
-              berbagai kebutuhan:
-            </p>
-
-            <ol className="list-decimal pl-6 space-y-4">
+    <div className="min-h-screen bg-white">
+      <main>
+        <Container className="mx-auto w-full max-w-2xl px-4 py-8 sm:max-w-3xl md:max-w-4xl sm:py-10">
+          {/* breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex flex-wrap items-center gap-2 text-sm">
               <li>
-                <h2 className="text-xl font-bold mb-2">
-                  Perhatikan Kebutuhan Pemakaian
-                </h2>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>
-                    <span className="font-semibold">
-                      Untuk Kasual / Jalan Santai:
-                    </span>{" "}
-                    Pilih sepatu berbahan ringan dan breathable seperti kanvas,
-                    mesh. Model slip-on atau sneakers low-cut cocok untuk
-                    kenyamanan harian.
-                  </li>
-                  <li>
-                    <span className="font-semibold">
-                      Untuk Olahraga / Formal:
-                    </span>{" "}
-                    Gunakan sepatu bermotif kulit asli atau sintetis yang
-                    disesuaikan dengan acara formal atau bisnis. Pilihan seperti
-                    sneakers atau oxford shoes klasik bisa jadi pilihan tepat.
-                  </li>
-                  <li>
-                    <span className="font-semibold">
-                      Untuk Aktivitas Outdoor:
-                    </span>{" "}
-                    Pilih sepatu dengan sol anti-slip dan bahan tahan air agar
-                    tidak mudah licin atau basah.
-                  </li>
-                </ul>
+                <Link href={`/${lang}`} className="font-medium text-primary hover:opacity-80">
+                  {dictionary.breadcrumb_home}
+                </Link>
               </li>
+              <li aria-hidden="true" className="text-gray-400">/</li>
               <li>
-                <h2 className="text-xl font-bold mb-2">
-                  Pilih Ukuran yang Tepat
-                </h2>
-                <p>
-                  Ukuran sepatu yang salah bisa menimbulkan banyak masalah.
-                  Pastikan ada jarak sekitar 1 cm di ujung sepatu untuk
-                  menghindari tekanan berlebih pada jari kaki.
-                </p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>
-                    Ukur kaki pada sore hari, karena kaki cenderung mengembang
-                    di siang hari.
-                  </li>
-                  <li>Coba dua sepatu sekaligus dan rasakan perbedaannya.</li>
-                  <li>
-                    Pastikan ukuran sepatu yang dipilih benar-benar nyaman dan
-                    tidak terlalu ketat.
-                  </li>
-                </ul>
+                <Link href={`/${lang}/article`} className="font-medium text-primary hover:opacity-80">
+                  {dictionary.breadcrumb_articles}
+                </Link>
               </li>
-              <li>
-                <h2 className="text-xl font-bold mb-2">
-                  Utamakan Kualitas & Daya Tahan
-                </h2>
-                <p>
-                  Sepatu berkualitas memang penting, sebab lebih mahal, tapi
-                  biasanya masa pakainya lebih lama dan nyaman dipakai dalam
-                  jangka panjang.
-                </p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>Periksa kualitas jahitan dan perekat yang kuat.</li>
-                  <li>
-                    Pilih bahan yang breathable agar kaki tidak mudah bau dan
-                    tidak berkeringat berlebihan.
-                  </li>
-                  <li>Bandingkan review kualitas dari pembeli.</li>
-                </ul>
+              <li aria-hidden="true" className="text-gray-400">/</li>
+              <li className="text-gray-500">
+                <span aria-current="page" className="line-clamp-1">
+                  {titleText}
+                </span>
               </li>
             </ol>
+          </nav>
 
-            <div className="mt-8 border-l-4 border-blue-500 pl-4">
-              <h2 className="text-xl font-bold mb-2">Tips Tambahan:</h2>
-              <ul className="list-disc pl-5 space-y-2">
-                <li>
-                  Gunakan insole tambahan untuk meningkatkan kenyamanan jika
-                  diperlukan.
-                </li>
-                <li>
-                  Simpan sepatu di tempat yang sejuk dan kering agar tidak cepat
-                  rusak.
-                </li>
-                <li>
-                  Bersihkan sepatu secara rutin untuk menjaga kualitasnya.
-                </li>
-              </ul>
+          {/* article */}
+          <article>
+            <header className="mb-3">
+              <h1 className="text-[28px] font-bold leading-tight text-[#003663] sm:text-[34px]">
+                {titleText}
+              </h1>
+
+              <p className="mt-2 flex flex-wrap gap-2 text-sm text-[#003663]/90">
+                {asString(article.author_name) ? (
+                  <span className="font-medium">
+                    {dictionary.by_author.replace("{{author}}", article.author_name as string)}
+                  </span>
+                ) : null}
+                {asString(article.author_name) && publishedLabel ? <span>·</span> : null}
+                {publishedLabel ? (
+                  <time dateTime={rawDateTime}>{publishedLabel}</time>
+                ) : null}
+              </p>
+            </header>
+
+            <figure className="relative mb-6 h-[240px] overflow-hidden rounded-lg bg-black/5 sm:h-[320px] md:h-[420px]">
+              <Image
+                src={cover}
+                alt={titleText || "Article cover"}
+                fill
+                priority
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 100vw, 768px"
+              />
+            </figure>
+
+            <div className="prose prose-neutral max-w-none text-gray-700 prose-h2:mt-6 prose-h2:text-xl prose-h2:font-bold">
+              {contentHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+              ) : (
+                <p>{dictionary.content_empty}</p>
+              )}
             </div>
-          </div>
-        </div>
+          </article>
 
-        {/* Artikel Lainnya */}
-        <div className="py-8">
-          <h2 className="text-xl font-bold mb-4">Artikel Lainnya :</h2>
-          <ArticleSlider></ArticleSlider>
-        </div>
-        </div>
+          {/* related */}
+          <section aria-labelledby="related-articles" className="pt-10">
+            <h2 id="related-articles" className="mb-4 text-lg font-bold text-[#121212]">
+              {dictionary.related}
+            </h2>
+            <ArticleSlider
+              articles={relatedArticles}
+              lang={lang}
+              readMoreLabel={dictionary.read_more_button}
+            />
+          </section>
+        </Container>
+      </main>
     </div>
   );
 }
-
-export default ArtikelPost;

@@ -17,6 +17,24 @@ export type PaginationMeta = {
   [key: string]: unknown;
 };
 
+export type Article = {
+  id: number;
+  slug?: string | null;
+  slug_id?: string | null;
+  title: string;
+  title_text?: string | null;
+  excerpt?: string | null;
+  cover?: string | null;
+  cover_url?: string | null;
+  author_name?: string | null;
+  content?: MultiLangValue | string | null;
+  content_text?: string | null;
+  status?: string | null;
+  published?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+};
 export type Pagination<T> = PaginationMeta & {
   data: T[];
 };
@@ -112,23 +130,6 @@ export type Category = {
   parent_id?: number | null;
   parent_brief?: CategoryBrief | null;
    products_count?: number | null;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: unknown;
-};
-
-export type Article = {
-  id: number;
-  title: MultiLangValue;
-  title_text?: string | null;
-  slug?: string;
-  excerpt?: string | null;
-  cover?: string | null;
-  cover_url?: string | null;
-  author_name?: string | null;
-  content?: MultiLangValue;
-  content_text?: string | null;
-  status?: string;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import { useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
@@ -7,57 +7,38 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import Container from "@/components/ui-custom/Container";
-import ArticleItem, { Article } from "./ArticleItem";
+import ArticleItem from "./ArticleItem";
+import type { Article } from "@/services/types";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-const articles: Article[] = [
-  {
-    date: "28 April 2025",
-    title: "Cara Memilih Sepatu yang Cocok Dengan Vibes Kamu",
-    slug: "cara-memilih-sepatu-yang-cocok-dengan-vibes-kamu",
-    image: "/assets/demo/article/article-item.webp",
-  },
-  {
-    date: "28 April 2025",
-    title: "Cara Memilih Sepatu yang Cocok Dengan Vibes Kamu",
-    slug: "cara-memilih-sepatu-yang-cocok-dengan-vibes-kamu",
-    image: "/assets/demo/article/article-item.webp",
-  },
-  {
-    date: "28 April 2025",
-    title: "Cara Memilih Sepatu yang Cocok Dengan Vibes Kamu",
-    slug: "cara-memilih-sepatu-yang-cocok-dengan-vibes-kamu",
-    image: "/assets/demo/article/article-item.webp",
-  },
-  {
-    date: "28 April 2025",
-    title: "Cara Memilih Sepatu yang Cocok Dengan Vibes Kamu",
-    slug: "cara-memilih-sepatu-yang-cocok-dengan-vibes-kamu",
-    image: "/assets/demo/article/article-item.webp",
-  },
-];
+type ArticleSliderProps = {
+  articles: Article[];
+  lang: string;
+  readMoreLabel: string;
+};
 
-function ArticleSlider() {
+function ArticleSlider({ articles, lang, readMoreLabel }: ArticleSliderProps) {
+  const items = useMemo(
+    () => articles.filter((article) => Boolean(article.slug ?? article.slug_id)),
+    [articles],
+  );
+
+  if (!items.length) {
+    return null;
+  }
+
   return (
     <Container>
-      {/* Scoped wrapper */}
       <div
-        className="relative article-slider 
-        [&_.swiper-button-prev::after]:hidden 
-        [&_.swiper-button-next::after]:hidden 
-        [&_.swiper-button-prev]:!text-[#003663] 
-        [&_.swiper-button-next]:!text-[#003663]
-        [&_.swiper-pagination-bullet]:bg-[#003663] 
-        [&_.swiper-pagination-bullet-active]:!bg-[#003663]"
+        className="relative article-slider [&_.swiper-button-prev::after]:hidden [&_.swiper-button-next::after]:hidden [&_.swiper-button-prev]:!text-[#003663] [&_.swiper-button-next]:!text-[#003663] [&_.swiper-pagination-bullet]:bg-[#003663] [&_.swiper-pagination-bullet-active]:!bg-[#003663]"
       >
-        {/* Tombol navigasi custom */}
         <div className="absolute top-1/2 -left-14 z-10 -translate-y-1/2">
-          <button className="swiper-button-prev flex items-center justify-center size-[20px] !text-[#003663]">
+          <button className="swiper-button-prev flex items-center justify-center size-[20px] !text-[#003663]" aria-label="Previous">
             <FaChevronLeft size={10} />
           </button>
         </div>
         <div className="absolute top-1/2 -right-14 z-10 -translate-y-1/2">
-          <button className="swiper-button-next flex items-center justify-center size-[20px] !text-[#003663]">
+          <button className="swiper-button-next flex items-center justify-center size-[20px] !text-[#003663]" aria-label="Next">
             <FaChevronRight size={10} />
           </button>
         </div>
@@ -76,9 +57,9 @@ function ArticleSlider() {
           }}
           className="py-40"
         >
-          {articles.map((article, index) => (
-            <SwiperSlide key={index} className="pb-20">
-              <ArticleItem article={article} />
+          {items.map((article) => (
+            <SwiperSlide key={article.slug ?? article.id} className="pb-20">
+              <ArticleItem article={article} lang={lang} readMoreLabel={readMoreLabel} />
             </SwiperSlide>
           ))}
         </Swiper>
