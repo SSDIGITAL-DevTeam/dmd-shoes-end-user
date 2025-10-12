@@ -8,38 +8,26 @@ import About from "./_component/About";
 import FeaturesSection from "./_component/FeaturesSection";
 import HelpSection from "./_component/HelpSection";
 
-// Next.js Google font
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400"],
 });
 
-// Props type for App Router
-
-
-// Optional: static revalidate (if you fetch dynamic data)
 export const revalidate = 0;
 
-// Generate metadata dynamically based on `params.lang`
-// **Static manual metadata**
-
-// Page component (server component)
 export default async function IndexPage({
   params,
 }: {
-  params: { lang: Locale }; // inline, jangan pakai PageProps
+  params: Promise<{ lang: Locale }>;
 }) {
-
-  const { lang } = params;
-
-  // Fetch dictionary (async OK in server component)
-  const dictionaryAbout = await getDictionaryAbout(params.lang);
+  const { lang } = await params;
+  const dictionaryAbout = await getDictionaryAbout(lang);
 
   return (
     <div className={inter.className}>
       <About dictionaryAbout={dictionaryAbout} lang={lang} />
       <FeaturesSection dictionaryAbout={dictionaryAbout} lang={lang} />
-      <HelpSection  dictionaryAbout={dictionaryAbout} lang={lang} />
+      <HelpSection dictionaryAbout={dictionaryAbout} lang={lang} />
     </div>
   );
 }
@@ -47,5 +35,4 @@ export default async function IndexPage({
 export const metadata = {
   title: "About Our Company",
   description: "Learn more about our company",
-  
 };

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Inter } from "next/font/google";
 import { Controller, useForm } from "react-hook-form";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import Container from "@/components/ui-custom/Container";
 import { plusJakartaSans } from "@/config/font";
-import { usePathname } from "next/navigation"; // <-- IMPORT INI
+import { usePathname } from "next/navigation";
+import { CONTACT } from "@/app/[lang]/config/contact";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,10 +18,10 @@ const inter = Inter({
 });
 
 type FormState = {
-  nama: string;
+  name: string;
   email: string;
-  whatsapp: string;
-  pesan: string;
+  whatsapp: string | undefined;
+  message: string;
 };
 
 type Props = {
@@ -32,7 +33,6 @@ export default function ContactForm({ dictionaryContact, lang }: Props) {
   const pathname = usePathname();
   const locale = (lang || pathname?.split("/")[1] || "en").toLowerCase();
 
-  // helper terjemahan & placeholder
   const t = (k: string, fb: string) => (dictionaryContact?.[k] ?? fb) as string;
   const ph = (key: string, fallbackLabel: string) => {
     const dictPH =
@@ -47,21 +47,80 @@ export default function ContactForm({ dictionaryContact, lang }: Props) {
     dictionaryContact?.eyebrow ??
     (locale.startsWith("id") ? "Kirim Kami Pesan" : "Send Us a Message");
 
-  const { control } = useForm();
-  const [form, setForm] = useState<FormState>({
-    nama: "",
-    email: "",
-    whatsapp: "",
-    pesan: "",
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, errors },
+  } = useForm<FormState>({
+    defaultValues: {
+      name: "",
+      email: "",
+      whatsapp: "",
+      message: "",
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  const [status, setStatus] = useState<{ type: "idle" | "success" | "error"; message?: string }>({
+    type: "idle",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form Data:", form);
+  const submitLabel = dictionaryContact?.submit ?? "Send Message";
+  const successMessage =
+    dictionaryContact?.success ??
+    (locale.startsWith("id")
+      ? "Pesan Anda sudah kami terima. Kami akan menghubungi Anda segera."
+      : "Your message has been sent. We'll get back to you shortly.");
+  const errorMessage =
+    dictionaryContact?.error ??
+    (locale.startsWith("id")
+      ? "Kami tidak dapat mengirim pesan. Silakan coba lagi."
+      : "We could not send your message. Please try again.");
+
+  const recipient = useMemo(() => CONTACT.email ?? "info@dmdshoeparts.com", []);
+
+  const onSubmit = async (values: FormState) => {
+    setStatus({ type: "idle" });
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          whatsapp: values.whatsapp ?? "",
+          message: values.message,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message =
+          (payload &&
+            typeof payload === "object" &&
+            "message" in payload &&
+            typeof (payload as any).message === "string" &&
+            (payload as any).message) ||
+          errorMessage;
+        throw new Error(message);
+      }
+
+      setStatus({ type: "success", message: successMessage });
+      reset();
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : errorMessage,
+      });
+    }
   };
 
   return (
@@ -85,23 +144,26 @@ export default function ContactForm({ dictionaryContact, lang }: Props) {
 
           {/* Kanan: Form */}
           <div className={`${plusJakartaSans.className} rounded-lg bg-white shadow-sm ring-1 ring-black/5`}>
-            <form onSubmit={handleSubmit} className="space-y-4 p-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-6">
               {/* Full Name */}
               <div>
-                <label htmlFor="nama" className="mb-1 block text-sm font-medium text-[#121212]">
+                <label htmlFor="name" className="mb-1 block text-sm font-medium text-[#121212]">
                   {t("full_name", "Full Name")}
                 </label>
                 <input
-                  id="nama"
-                  name="nama"
+                  id="name"
                   type="text"
-                  value={form.nama}
-                  onChange={handleChange}
                   placeholder={ph("full_name", "Full Name")}
-                  autoComplete="name"
                   required
+                  autoComplete="name"
+                  {...register("name", { required: true })}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
+                {errors.name ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {locale.startsWith("id") ? "Nama wajib diisi." : "Name is required."}
+                  </p>
+                ) : null}
               </div>
 
               {/* Email */}
@@ -111,15 +173,18 @@ export default function ContactForm({ dictionaryContact, lang }: Props) {
                 </label>
                 <input
                   id="email"
-                  name="email"
                   type="email"
-                  value={form.email}
-                  onChange={handleChange}
                   placeholder={ph("email", "Email Address")}
                   autoComplete="email"
                   required
+                  {...register("email", { required: true })}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
+                {errors.email ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {locale.startsWith("id") ? "Email wajib diisi." : "Email is required."}
+                  </p>
+                ) : null}
               </div>
 
               {/* WhatsApp */}
@@ -130,6 +195,9 @@ export default function ContactForm({ dictionaryContact, lang }: Props) {
                 <Controller
                   name="whatsapp"
                   control={control}
+                  rules={{
+                    maxLength: 50,
+                  }}
                   render={({ field }) => (
                     <PhoneInput
                       {...field}
@@ -146,27 +214,52 @@ export default function ContactForm({ dictionaryContact, lang }: Props) {
 
               {/* Message */}
               <div>
-                <label htmlFor="pesan" className="mb-1 block text-sm font-medium text-[#121212]">
+                <label htmlFor="message" className="mb-1 block text-sm font-medium text-[#121212]">
                   {t("message", "Message")}
                 </label>
                 <textarea
-                  id="pesan"
-                  name="pesan"
-                  value={form.pesan}
-                  onChange={handleChange}
+                  id="message"
                   placeholder={ph("message", "Message")}
                   rows={5}
                   required
+                  {...register("message", { required: true })}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
+                {errors.message ? (
+                  <p className="mt-1 text-xs text-red-600">
+                    {locale.startsWith("id") ? "Pesan wajib diisi." : "Message is required."}
+                  </p>
+                ) : null}
               </div>
+
+              {status.type === "success" ? (
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  {status.message}
+                </div>
+              ) : null}
+              {status.type === "error" ? (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {status.message}
+                </div>
+              ) : null}
 
               <button
                 type="submit"
-                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                disabled={isSubmitting}
+                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {dictionaryContact?.submit ?? "Send Message"}
+                {isSubmitting
+                  ? locale.startsWith("id")
+                    ? "Mengirim..."
+                    : "Sending..."
+                  : submitLabel}
               </button>
+
+              <p className="text-xs text-gray-500">
+                {locale.startsWith("id")
+                  ? `Pesan ini akan dikirim ke ${recipient}.`
+                  : `This message will be sent to ${recipient}.`}
+              </p>
             </form>
           </div>
         </div>

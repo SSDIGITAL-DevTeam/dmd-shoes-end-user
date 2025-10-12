@@ -33,6 +33,17 @@ type ArticleResponse = {
 
 const BASE_PATH = "/api/articles";
 
+const toNumber = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
 const buildQueryString = (params?: Record<string, unknown>) => {
   if (!params) return "";
   const searchParams = new URLSearchParams();
@@ -190,37 +201,27 @@ export const ArticleService = {
     const meta = payload?.meta ?? {};
 
     const perPageCandidate =
-      typeof payload?.per_page === "number"
-        ? payload.per_page
-        : typeof meta.per_page === "number"
-          ? meta.per_page
-          : typeof params.per_page === "number"
-            ? params.per_page
-            : 12;
+      toNumber(payload?.per_page) ??
+      toNumber(meta.per_page) ??
+      toNumber(params.per_page) ??
+      12;
 
     return {
       data: dataRaw.map(normalizeArticle),
       current_page:
-        typeof payload?.current_page === "number"
-          ? payload.current_page
-          : typeof meta.current_page === "number"
-            ? meta.current_page
-            : typeof params.page === "number"
-              ? params.page
-              : 1,
+      toNumber(payload?.current_page) ??
+      toNumber(meta.current_page) ??
+      toNumber(params.page) ??
+      1,
       last_page:
-        typeof payload?.last_page === "number"
-          ? payload.last_page
-          : typeof meta.last_page === "number"
-            ? meta.last_page
-            : 1,
+      toNumber(payload?.last_page) ??
+      toNumber(meta.last_page) ??
+      1,
       per_page: perPageCandidate,
       total:
-        typeof payload?.total === "number"
-          ? payload.total
-          : typeof meta.total === "number"
-            ? meta.total
-            : dataRaw.length,
+        toNumber(payload?.total) ??
+        toNumber(meta.total) ??
+        dataRaw.length,
     };
   },
 
@@ -278,5 +279,7 @@ export const ArticleService = {
 };
 
 export type ArticleServiceType = typeof ArticleService;
+
+
 
 

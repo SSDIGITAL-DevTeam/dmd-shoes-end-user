@@ -7,6 +7,7 @@ import { FaTrash, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import Container from "@/components/ui-custom/Container";
 import { CONTACT } from "@/config/contact";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
 import type { FavoriteItem, MultiLangValue } from "@/services/types";
 
 const FALLBACK_IMAGE = "/assets/demo/demo-product.png";
@@ -116,16 +117,15 @@ const Wishlist = ({
   lang?: string;
   dictionary?: WishlistDictionary;
 }) => {
-  const {
-    favorites,
-    isLoading,
-    removeFavorite,
-    checkout,
-    isRemoving,
-    isCheckingOut,
-  } = useFavorites();
+  const { favorites, isLoading, removeFavorite, checkout, isRemoving, isCheckingOut } =
+    useFavorites();
+  const { user } = useAuth();
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailFeedback, setEmailFeedback] = useState<
+    { type: "success" | "error"; message: string } | null
+  >(null);
 
   const locale = lang.startsWith("en") ? "en-US" : "id-ID";
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale), [locale]);
@@ -274,6 +274,16 @@ const Wishlist = ({
     return `${mergedDict.whatsapp.intro}\n\n${whatsappLines.join("\n")}\n\n${mergedDict.whatsapp.outro}`;
   }, [orderItems, mergedDict.whatsapp]);
 
+  const userName = useMemo(
+    () => (user?.full_name ?? user?.name ?? "").trim(),
+    [user?.full_name, user?.name],
+  );
+  const userEmail = useMemo(() => (user?.email ?? "").trim(), [user?.email]);
+  const userWhatsapp = useMemo(
+    () => (user?.whatsapp_e164 ?? user?.phone ?? "").trim(),
+    [user?.whatsapp_e164, user?.phone],
+  );
+
   const emailBody = useMemo(() => {
     if (!orderItems.length) {
       return mergedDict.email.emptyMessage;
@@ -288,16 +298,26 @@ const Wishlist = ({
       }),
     );
 
-    return `${mergedDict.email.intro}\n\n${emailLines.join("\n")}\n\n${mergedDict.email.outro}`;
-  }, [orderItems, mergedDict.email]);
+    const base = `${mergedDict.email.intro}\n\n${emailLines.join("\n")}\n\n${mergedDict.email.outro}`;
+    const infoHeader = lang.startsWith("en") ? "Customer details" : "Detail pelanggan";
+    const nameLabel = lang.startsWith("en") ? "Name" : "Nama";
+    const emailLabel = lang.startsWith("en") ? "Email" : "Email";
+    const whatsappLabel = "WhatsApp";
 
-  const emailSubject = useMemo(
-    () =>
-      formatTemplate(mergedDict.email.subject, {
-        count: numberFormatter.format(selectedFavorites.length),
-      }),
-    [mergedDict.email.subject, numberFormatter, selectedFavorites.length],
-  );
+    return `${base}\n\n${infoHeader}:\n${nameLabel}: ${userName || "-"}\n${emailLabel}: ${
+      userEmail || "-"
+    }\n${whatsappLabel}: ${userWhatsapp || "-"}`;
+  }, [orderItems, mergedDict.email, userEmail, userName, userWhatsapp, lang]);
+
+  const emailSuccessText = lang.startsWith("en")
+    ? "Your request has been sent. We'll contact you via email."
+    : "Permintaan Anda telah terkirim. Kami akan menghubungi Anda melalui email.";
+  const emailGenericErrorText = lang.startsWith("en")
+    ? "We could not send your request. Please try again."
+    : "Kami tidak dapat mengirim permintaan Anda. Silakan coba lagi.";
+  const emailMissingEmailText = lang.startsWith("en")
+    ? "Please add your email address in profile before sending."
+    : "Mohon lengkapi alamat email Anda di profil sebelum mengirim.";
 
   const handleCheckout = useCallback(async () => {
     if (!selectedFavorites.length) return;
@@ -310,6 +330,64 @@ const Wishlist = ({
       console.error("Checkout favorites failed", error);
     }
   }, [checkout, selectedFavorites]);
+
+  const handleEmailOrder = useCallback(async () => {
+    if (!selectedFavorites.length || !orderItems.length) return;
+
+    if (!userEmail) {
+      setEmailFeedback({ type: "error", message: emailMissingEmailText });
+      return;
+    }
+
+    setIsSendingEmail(true);
+    setEmailFeedback(null);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          name: userName || "Customer",
+          email: userEmail,
+          whatsapp: userWhatsapp,
+          message: emailBody,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message =
+          (payload &&
+            typeof payload === "object" &&
+            "message" in payload &&
+            typeof (payload as any).message === "string" &&
+            (payload as any).message) ||
+          emailGenericErrorText;
+        throw new Error(message);
+      }
+
+      setEmailFeedback({ type: "success", message: emailSuccessText });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : emailGenericErrorText;
+      setEmailFeedback({ type: "error", message });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }, [
+    emailBody,
+    emailGenericErrorText,
+    emailMissingEmailText,
+    emailSuccessText,
+    orderItems.length,
+    selectedFavorites.length,
+    userEmail,
+    userName,
+    userWhatsapp,
+  ]);
 
   return (
     <Container className="py-10">
@@ -478,28 +556,28 @@ const Wishlist = ({
                 : mergedDict.whatsapp.button}
             </a>
 
-            <a
-              href={
-                selectedFavorites.length
-                  ? `mailto:${CONTACT.email}?subject=${encodeURIComponent(
-                    emailSubject,
-                  )}&body=${encodeURIComponent(emailBody)}`
-                  : undefined
-              }
-              onClick={(e) => {
-                if (!selectedFavorites.length) {
-                  e.preventDefault();
-                  return;
-                }
-              }}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex w-full items-center justify-center gap-2 rounded border border-primary px-4 py-2 text-primary transition hover:bg-primary hover:text-white ${selectedFavorites.length ? "" : "pointer-events-none opacity-60"
-                }`}
+            <button
+              type="button"
+              onClick={handleEmailOrder}
+              disabled={!selectedFavorites.length || isSendingEmail}
+              className="flex w-full items-center justify-center gap-2 rounded border border-primary px-4 py-2 text-primary transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               <FaEnvelope />
-              {mergedDict.email.button}
-            </a>
+              {isSendingEmail
+                ? locale.startsWith("en")
+                  ? "Sending..."
+                  : "Mengirim..."
+                : mergedDict.email.button}
+            </button>
+            {emailFeedback ? (
+              <p
+                className={`text-sm ${
+                  emailFeedback.type === "success" ? "text-emerald-600" : "text-red-600"
+                }`}
+              >
+                {emailFeedback.message}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
