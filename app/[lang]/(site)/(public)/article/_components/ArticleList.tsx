@@ -6,7 +6,14 @@ import type { ListArticlesParams } from "@/services/article.service";
 import type { Article, Pagination } from "@/services/types";
 import ArticleItem from "./ArticleItem";
 
-const buildParams = (params: { page: number; perPage: number; search?: string; lang: string }): ListArticlesParams => {
+/* -------------------------------- helpers -------------------------------- */
+
+const buildParams = (params: {
+  page: number;
+  perPage: number;
+  search?: string;
+  lang: string;
+}): ListArticlesParams => {
   const normalized: ListArticlesParams = {
     page: params.page,
     per_page: params.perPage,
@@ -46,15 +53,78 @@ const SkeletonCard = () => (
   </div>
 );
 
-// helper: bandingkan daftar artikel via id
+// bandingkan daftar artikel via id/slug
 function shallowEqualById(a: Article[], b: Article[]) {
   if (a === b) return true;
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
-    if ((a[i]?.id ?? a[i]?.slug) !== (b[i]?.id ?? b[i]?.slug)) return false;
+    if ((a[i]?.id ?? (a[i] as any)?.slug) !== (b[i]?.id ?? (b[i] as any)?.slug)) return false;
   }
   return true;
 }
+
+const toNumber = (v: unknown, fb = 0) => {
+  const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
+  return Number.isFinite(n) ? n : fb;
+};
+
+// apakah object tampak seperti carrier paginator
+const hasPaginatorKeys = (o: any) =>
+  o &&
+  (o.current_page !== undefined ||
+    o.currentPage !== undefined ||
+    o.last_page !== undefined ||
+    o.lastPage !== undefined ||
+    o.total !== undefined ||
+    o.totalItems !== undefined ||
+    o.per_page !== undefined ||
+    o.perPage !== undefined ||
+    o.limit !== undefined);
+
+// Ambil objek meta: root, .meta, .pagination, atau .data (objek paginator Laravel)
+const pickMetaCarrier = (raw: any) => {
+  if (!raw) return {};
+  if (raw.meta && hasPaginatorKeys(raw.meta)) return raw.meta;
+  if (raw.pagination && hasPaginatorKeys(raw.pagination)) return raw.pagination;
+  if (raw.data && !Array.isArray(raw.data) && hasPaginatorKeys(raw.data)) return raw.data; // Laravel: data:{...meta..., data:[...]}
+  return raw;
+};
+
+// Ambil array data: raw.data (array), raw.items, raw.records, atau raw.data.data (Laravel)
+const pickDataArray = (raw: any): any[] => {
+  if (Array.isArray(raw?.data)) return raw.data;
+  if (Array.isArray(raw?.items)) return raw.items;
+  if (Array.isArray(raw?.records)) return raw.records;
+  if (raw?.data && Array.isArray(raw?.data?.data)) return raw.data.data; // Laravel
+  return [];
+};
+
+const normalizeMeta = (raw: any): Pagination<Article> => {
+  const carrier = pickMetaCarrier(raw);
+  const data = pickDataArray(raw);
+
+  const per_page =
+    toNumber(carrier?.per_page ?? carrier?.perPage ?? carrier?.limit, 12) || 12;
+
+  const total =
+    toNumber(carrier?.total ?? carrier?.total_items ?? carrier?.totalItems, data.length) ||
+    data.length;
+
+  const last_page =
+    toNumber(
+      carrier?.last_page ??
+      carrier?.lastPage ??
+      Math.max(1, Math.ceil(total / Math.max(per_page, 1))),
+      1
+    ) || 1;
+
+  const current_page =
+    toNumber(carrier?.current_page ?? carrier?.currentPage ?? 1, 1) || 1;
+
+  return { current_page, per_page, total, last_page, data } as Pagination<Article>;
+};
+
+/* ------------------------------- component ------------------------------- */
 
 function ArticleList({
   lang,
@@ -66,38 +136,43 @@ function ArticleList({
   onLoadingChange,
   onDataResolved,
 }: ArticleListProps) {
-  const params = useMemo(() => buildParams({ lang, page, perPage, search }), [lang, page, perPage, search]);
-  const query = useArticles(params);
-  const { data, isError, isLoading, isFetching, refetch } = query;
+  const params = useMemo(
+    () => buildParams({ lang, page, perPage, search }),
+    [lang, page, perPage, search]
+  );
 
-  // Stabilkan referensi array agar tidak selalu "baru" di setiap render
-  const articles = useMemo<Article[]>(() => data?.data ?? [], [data?.data]);
+  const query = useArticles(params);
+  const { data: rawData, isError, isLoading, isFetching, refetch } = query;
+
+  const normalized = useMemo(() => (rawData ? normalizeMeta(rawData) : null), [rawData]);
+  const articles = useMemo<Article[]>(
+    () => (normalized?.data ?? []) as Article[],
+    [normalized?.data]
+  );
 
   const isBusy = isLoading || isFetching;
 
-  // report loading state (stabil)
   useEffect(() => {
     onLoadingChange?.(isBusy);
   }, [isBusy, onLoadingChange]);
 
-  // report meta hanya saat berubah signifikan
   const lastMetaRef = useRef<Pagination<Article> | null>(null);
   useEffect(() => {
-    if (!data || !onMetaChange) return;
+    if (!normalized || !onMetaChange) return;
     const prev = lastMetaRef.current;
     const changed =
       !prev ||
-      prev.current_page !== data.current_page ||
-      prev.last_page !== data.last_page ||
-      prev.total !== data.total ||
-      prev.per_page !== data.per_page;
-    if (changed) {
-      onMetaChange(data);
-      lastMetaRef.current = data;
-    }
-  }, [data, onMetaChange]);
+      prev.current_page !== normalized.current_page ||
+      prev.last_page !== normalized.last_page ||
+      prev.total !== normalized.total ||
+      prev.per_page !== normalized.per_page;
 
-  // report data hanya saat daftar artikel benar-benar berubah
+    if (changed) {
+      onMetaChange(normalized);
+      lastMetaRef.current = normalized;
+    }
+  }, [normalized, onMetaChange]);
+
   const lastArticlesRef = useRef<Article[] | null>(null);
   useEffect(() => {
     if (!onDataResolved) return;
@@ -137,7 +212,7 @@ function ArticleList({
         ? Array.from({ length: perPage }, (_, index) => <SkeletonCard key={index} />)
         : articles.map((article) => (
           <ArticleItem
-            key={`${article.slug ?? article.id}`}
+            key={`${(article as any)?.slug ?? (article as any)?.id}`}
             article={article}
             lang={lang}
             readMoreLabel={dictionary.read_more}

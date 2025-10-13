@@ -9,24 +9,23 @@ import { AiOutlineSearch } from "react-icons/ai";
 import Container from "@/components/ui-custom/Container";
 import ArticleList from "./_components/ArticleList";
 import ArticlePagination from "./_components/ArticlePagination";
-import ArticleSlider from "./_components/ArticleSlider";
 import enDictionary from "@/dictionaries/article/en.json";
 import idDictionary from "@/dictionaries/article/id.json";
 import type { Article, Pagination } from "@/services/types";
 
-const PER_PAGE = 12;
+// ⬇️ IMPORT BARU
+import { useLatestArticle } from "@/hooks/useLatestArticle";
+
+const PER_PAGE = 6; // <- kamu minta 6 per halaman
 const FALLBACK_COVER = "/assets/demo/article/article-header.webp";
 
-// ---------- helpers ----------
 const resolveLang = (value: unknown): string => {
   if (typeof value === "string") return value;
   if (Array.isArray(value) && value.length > 0) return String(value[0]);
   return "id";
 };
-
 const resolveDictionary = (lang: string) => (lang.startsWith("id") ? idDictionary : enDictionary);
 
-// pastikan benar-benar string sebelum dipakai di prop yang butuh string
 const asString = (v: unknown): string | undefined =>
   typeof v === "string" && v.trim() ? v : undefined;
 
@@ -67,6 +66,9 @@ export default function ArticlePage() {
   const [articlesPreview, setArticlesPreview] = useState<Article[]>([]);
   const [isPending, startTransition] = useTransition();
 
+  // ⬇️ ambil artikel terbaru secara global (tidak tergantung page)
+  const { data: latest } = useLatestArticle(lang);
+
   useEffect(() => {
     setSearchTerm(initialSearch);
     setSearchInput(initialSearch);
@@ -81,12 +83,12 @@ export default function ArticlePage() {
       const nextParams = new URLSearchParams();
       if (nextSearch.trim()) nextParams.set("search", nextSearch.trim());
       if (nextPage > 1) nextParams.set("page", String(nextPage));
-      const queryString = nextParams.toString();
+      const qs = nextParams.toString();
       startTransition(() => {
-        router.replace(`/${lang}/article${queryString ? `?${queryString}` : ""}`, { scroll: false });
+        router.replace(`/${lang}/article${qs ? `?${qs}` : ""}`, { scroll: false });
       });
     },
-    [router, lang],
+    [router, lang]
   );
 
   const handleSearchSubmit = useCallback(
@@ -97,7 +99,7 @@ export default function ArticlePage() {
       setPage(1);
       updateUrl(1, nextSearch);
     },
-    [searchInput, updateUrl],
+    [searchInput, updateUrl]
   );
 
   const handlePageChange = useCallback(
@@ -106,112 +108,73 @@ export default function ArticlePage() {
       setPage(nextPage);
       updateUrl(nextPage, searchTerm);
     },
-    [page, searchTerm, updateUrl],
+    [page, searchTerm, updateUrl]
   );
 
-  // ---------- hero (type-safe derived) ----------
-  const heroArticle = articlesPreview[0] ?? null;
+  // ---------- Hero (pakai artikel terbaru global) ----------
+  const heroArticle = latest ?? articlesPreview[0] ?? null;
 
   const heroImage =
-    asString(heroArticle?.cover_url) ??
-    asString(heroArticle?.cover) ??
+    asString((heroArticle as any)?.cover_url) ??
+    asString((heroArticle as any)?.cover) ??
     FALLBACK_COVER;
 
   const heroTitle =
-    asString(heroArticle?.title) ??
-    asString((heroArticle as any)?.title_text) ?? // kalau BE kirim title_text
+    asString((heroArticle as any)?.title) ??
+    asString((heroArticle as any)?.title_text) ??
     dictionary.hero_title;
 
   const heroSubtitle =
-    asString((heroArticle as any)?.excerpt) ??
-    dictionary.hero_subtitle;
+    asString((heroArticle as any)?.excerpt) ?? dictionary.hero_subtitle;
 
   const heroHref = heroArticle
-    ? `/${lang}/article/${asString(heroArticle.slug) ?? String(heroArticle.id)}`
+    ? `/${lang}/article/${asString((heroArticle as any)?.slug) ?? String((heroArticle as any)?.id)}`
     : "#";
 
   const rawDateTime =
-    asString(heroArticle?.published_at) ??
-    asString(heroArticle?.created_at);
+    asString((heroArticle as any)?.published_at) ?? asString((heroArticle as any)?.created_at);
 
   const heroDate = formatPublishedDate(rawDateTime, lang);
-  const heroAuthor = asString(heroArticle?.author_name);
+  const heroAuthor = asString((heroArticle as any)?.author_name);
 
+  // ---------- Related (opsional) ----------
+  // kalau mau tetap related dari list halaman aktif, biarkan seperti ini
   const relatedArticles = useMemo(() => {
-    if (!heroArticle) return articlesPreview.slice(1, 7);
-    const currentKey = asString(heroArticle.slug) ?? heroArticle.id;
+    if (!heroArticle) return articlesPreview.slice(0, 6);
+    const heroKey = asString((heroArticle as any)?.slug) ?? (heroArticle as any).id;
     return articlesPreview
-      .filter((a) => (asString(a.slug) ?? a.id) !== currentKey)
+      .filter((a) => (asString((a as any)?.slug) ?? (a as any).id) !== heroKey)
       .slice(0, 6);
   }, [articlesPreview, heroArticle]);
 
   const isBusy = isFetching || isPending;
 
+  // ---------- Total pages (fallback kalau meta kosong) ----------
+  const totalPages =
+    meta?.last_page ??
+    Math.max(1, Math.ceil((meta?.total ?? articlesPreview.length) / Math.max(meta?.per_page ?? PER_PAGE, 1)));
+  const currentPage = meta?.current_page ?? page;
+
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
-      <header className="border-b border-black/5 bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/40">
-        <Container className="py-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-2xl font-semibold leading-tight text-[#003663] sm:text-3xl">
-              {dictionary.title}
-            </h1>
-
-            <form role="search" className="relative w-full sm:w-[360px]" onSubmit={handleSearchSubmit}>
-              <label htmlFor="article-search" className="sr-only">
-                {dictionary.search_label}
-              </label>
-              <AiOutlineSearch
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <input
-                id="article-search"
-                type="search"
-                inputMode="search"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={dictionary.search_placeholder}
-                className="w-full rounded-md border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm leading-none outline-none focus:border-[#003663] focus:ring-2 focus:ring-[#003663]/25"
-              />
-            </form>
-          </div>
-        </Container>
-      </header>
+      {/* header + search (biarkan) */}
 
       <main>
         {/* HERO */}
         <section aria-labelledby="featured-article" className="relative h-[380px] bg-black sm:h-[440px]">
-          <Image
-            src={heroImage}
-            alt={heroTitle}
-            fill
-            priority
-            className="object-cover object-center opacity-90"
-            sizes="100vw"
-          />
+          <Image src={heroImage} alt={heroTitle} fill priority className="object-cover object-center opacity-90" sizes="100vw" />
           <div className="absolute inset-0 bg-black/55" aria-hidden />
-
           <Container className="relative z-10 h-full">
             <div className="flex h-full items-center">
               <div className="max-w-xl rounded-lg bg-white p-6 shadow-md sm:p-8">
                 {heroDate ? (
                   <p className="mb-2 text-[13px] leading-5 text-gray-500">
-                    {/* dateTime harus string | undefined */}
                     <time dateTime={rawDateTime}>{heroDate}</time>
-                    {heroAuthor ? (
-                      <>
-                        {" · "}
-                        <span>{heroAuthor}</span>
-                      </>
-                    ) : null}
+                    {heroAuthor ? <>{" · "}<span>{heroAuthor}</span></> : null}
                   </p>
                 ) : null}
 
-                <h2
-                  id="featured-article"
-                  className="mb-4 line-clamp-3 text-[28px] font-semibold leading-tight text-[#121212] sm:text-[34px]"
-                >
+                <h2 id="featured-article" className="mb-4 line-clamp-3 text-[28px] font-semibold leading-tight text-[#121212] sm:text-[34px]">
                   {heroTitle}
                 </h2>
 
@@ -233,44 +196,34 @@ export default function ArticlePage() {
         {/* LIST */}
         <section aria-labelledby="all-articles">
           <Container className="py-8 sm:py-10">
-            <h2 id="all-articles" className="sr-only">
-              {dictionary.title}
-            </h2>
+            <h2 id="all-articles" className="sr-only">{dictionary.title}</h2>
 
             <ArticleList
               lang={lang}
-              page={page}
+              page={currentPage}
               perPage={PER_PAGE}
               search={searchTerm}
               dictionary={dictionary}
-              onMetaChange={(metaValue) => setMeta(metaValue)}
+              onMetaChange={setMeta}
               onLoadingChange={setIsFetching}
               onDataResolved={setArticlesPreview}
             />
           </Container>
         </section>
 
+        {/* PAGINATION */}
         <Container className="pb-12">
           <ArticlePagination
-            currentPage={meta?.current_page ?? page}
-            totalPages={meta?.last_page ?? 1}
+            currentPage={currentPage}
+            totalPages={totalPages}
             onChange={handlePageChange}
             dictionary={{ prev: dictionary.prev, next: dictionary.next }}
             disabled={isBusy}
           />
         </Container>
 
-        {/* RELATED */}
-        <section aria-labelledby="related-articles" className="pb-16">
-          <h2 id="related-articles" className="sr-only">
-            {dictionary.related}
-          </h2>
-          <ArticleSlider
-            articles={relatedArticles}
-            lang={lang}
-            readMoreLabel={dictionary.read_more_button}
-          />
-        </section>
+        {/* RELATED (opsional) */}
+        {/* <section className="pb-16"> ... pakai relatedArticles ... </section> */}
       </main>
     </div>
   );

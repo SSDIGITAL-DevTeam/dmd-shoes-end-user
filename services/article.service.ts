@@ -6,6 +6,7 @@ export type ListArticlesParams = {
   per_page?: number;
   search?: string;
   lang?: string;
+  status?: string; // optional (publish/draft) kalau backend-mu pakai
   [key: string]: unknown;
 };
 
@@ -31,46 +32,42 @@ type ArticleResponse = {
   data?: unknown;
 };
 
-const BASE_PATH = "/api/articles";
+// === Base URL langsung ke Laravel (bukan via /api/articles Next) ===
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+if (!API_BASE) {
+  console.error("Missing env NEXT_PUBLIC_API_URL");
+}
+const BASE_PATH = `${API_BASE}/articles`;
 
+// ---------------- utils ----------------
 const toNumber = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
+  if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
   }
   return null;
 };
 
 const buildQueryString = (params?: Record<string, unknown>) => {
   if (!params) return "";
-  const searchParams = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    if (typeof value === "string" && value.trim() === "") return;
-    searchParams.set(key, String(value));
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+    if (typeof v === "string" && v.trim() === "") return;
+    sp.set(k, String(v));
   });
-
-  const query = searchParams.toString();
-  return query ? `?${query}` : "";
+  const q = sp.toString();
+  return q ? `?${q}` : "";
 };
 
 const firstStringFromRecord = (value: unknown): string | null => {
-  if (typeof value === "string") {
-    return value;
-  }
-
+  if (typeof value === "string") return value;
   if (value && typeof value === "object") {
     for (const entry of Object.values(value as Record<string, unknown>)) {
-      if (typeof entry === "string" && entry.trim() !== "") {
-        return entry;
-      }
+      if (typeof entry === "string" && entry.trim() !== "") return entry;
     }
   }
-
   return null;
 };
 
@@ -82,12 +79,8 @@ const makeExcerpt = (content: string | null | undefined, length = 160): string |
   return `${plain.slice(0, length).trimEnd()}...`;
 };
 
-const resolveCover = (raw: unknown): string | null => {
-  if (typeof raw === "string" && raw.trim() !== "") {
-    return raw;
-  }
-  return null;
-};
+const resolveCover = (raw: unknown): string | null =>
+  typeof raw === "string" && raw.trim() !== "" ? raw : null;
 
 const normalizeArticle = (raw: unknown): Article => {
   const item = (raw ?? {}) as Record<string, unknown>;
@@ -158,8 +151,10 @@ const fetchJson = async <T>(
   url: string,
   options?: RequestInit,
 ): Promise<{ response: Response; payload: T | null }> => {
-  const response = await fetch(url, {
-    credentials: "include",
+  const res = await fetch(url, {
+    // HAPUS: credentials: "include",
+    // Tambahkan mode cors (opsional, default-nya juga cors kalau cross-origin)
+    mode: "cors",
     cache: "no-store",
     headers: {
       Accept: "application/json",
@@ -170,116 +165,118 @@ const fetchJson = async <T>(
 
   let payload: T | null = null;
   try {
-    payload = (await response.json()) as T;
+    payload = (await res.json()) as T;
   } catch {
     payload = null;
   }
-
-  return { response, payload };
+  return { response: res, payload };
 };
 
-export const ArticleService = {
-  async list(params: ListArticlesParams = {}): Promise<Pagination<Article>> {
-    const query = buildQueryString(params);
-    const { response, payload } = await fetchJson<ArticleListResponse>(
-      `${BASE_PATH}${query}`,
-    );
+// --------------- API ---------------
+export async function listArticles(
+  params: ListArticlesParams = {},
+): Promise<Pagination<Article>> {
+  const query = buildQueryString(params);
+  const { response, payload } = await fetchJson<ArticleListResponse>(`${BASE_PATH}${query}`);
 
-    if (!response.ok) {
-      const message =
-        (payload &&
-          typeof payload === "object" &&
-          typeof payload.message === "string" &&
-          payload.message) ||
-        response.statusText ||
-        "Failed to fetch articles.";
+  if (!response.ok) {
+    const message =
+      (payload && typeof payload === "object" && typeof (payload as any).message === "string" && (payload as any).message) ||
+      response.statusText ||
+      "Failed to fetch articles.";
+    throw new ApiError(response.status, message, payload);
+  }
 
-      throw new ApiError(response.status, message, payload);
-    }
+  const dataRaw = Array.isArray(payload?.data) ? payload!.data : [];
+  const meta = payload?.meta ?? {};
 
-    const dataRaw = Array.isArray(payload?.data) ? payload!.data : [];
-    const meta = payload?.meta ?? {};
+  const perPageCandidate =
+    toNumber(payload?.per_page) ??
+    toNumber(meta.per_page) ??
+    toNumber(params.per_page) ??
+    6;
 
-    const perPageCandidate =
-      toNumber(payload?.per_page) ??
-      toNumber(meta.per_page) ??
-      toNumber(params.per_page) ??
-      12;
-
-    return {
-      data: dataRaw.map(normalizeArticle),
-      current_page:
+  return {
+    data: dataRaw.map(normalizeArticle),
+    current_page:
       toNumber(payload?.current_page) ??
       toNumber(meta.current_page) ??
       toNumber(params.page) ??
       1,
-      last_page:
+    last_page:
       toNumber(payload?.last_page) ??
       toNumber(meta.last_page) ??
-      1,
-      per_page: perPageCandidate,
-      total:
-        toNumber(payload?.total) ??
-        toNumber(meta.total) ??
-        dataRaw.length,
-    };
-  },
+      Math.max(
+        1,
+        Math.ceil((toNumber(meta.total) ?? dataRaw.length) / Math.max(perPageCandidate, 1)),
+      ),
+    per_page: perPageCandidate,
+    total:
+      toNumber(payload?.total) ??
+      toNumber(meta.total) ??
+      dataRaw.length,
+  };
+}
 
-  async showBySlug(slug: string, params: { lang?: string } = {}): Promise<Article> {
-    const query = buildQueryString(params);
-    const { response, payload } = await fetchJson<ArticleResponse>(
-      `${BASE_PATH}/slug/${encodeURIComponent(slug)}${query}`,
-    );
+export async function latestArticle(params: { lang?: string } = {}): Promise<Article | null> {
+  // tambahkan status: 'publish' kalau ingin hanya artikel publish
+  const page1 = await listArticles({ ...params, page: 1, per_page: 1, status: "publish" });
+  return page1.data[0] ?? null;
+}
 
-    if (!response.ok) {
-      const message =
-        (payload &&
-          typeof payload === "object" &&
-          typeof payload.message === "string" &&
-          payload.message) ||
-        response.statusText ||
-        "Failed to fetch article.";
+export async function getArticleBySlug(
+  slug: string,
+  params: { lang?: string } = {},
+): Promise<Article> {
+  const query = buildQueryString(params);
+  const { response, payload } = await fetchJson<ArticleResponse>(
+    `${BASE_PATH}/slug/${encodeURIComponent(slug)}${query}`,
+  );
 
-      throw new ApiError(response.status, message, payload);
-    }
+  if (!response.ok) {
+    const message =
+      (payload && typeof payload === "object" && typeof (payload as any).message === "string" && (payload as any).message) ||
+      response.statusText ||
+      "Failed to fetch article.";
+    throw new ApiError(response.status, message, payload);
+  }
 
-    const rawData =
-      payload && typeof payload === "object" && "data" in payload
-        ? (payload as ArticleResponse).data
-        : payload;
+  const raw =
+    payload && typeof payload === "object" && "data" in payload
+      ? (payload as ArticleResponse).data
+      : payload;
 
-    return normalizeArticle(rawData);
-  },
+  return normalizeArticle(raw);
+}
 
-  async showById(id: number, params: { lang?: string } = {}): Promise<Article> {
-    const query = buildQueryString(params);
-    const { response, payload } = await fetchJson<ArticleResponse>(
-      `${BASE_PATH}/${id}${query}`,
-    );
+export async function getArticleById(
+  id: number,
+  params: { lang?: string } = {},
+): Promise<Article> {
+  const query = buildQueryString(params);
+  const { response, payload } = await fetchJson<ArticleResponse>(`${BASE_PATH}/${id}${query}`);
 
-    if (!response.ok) {
-      const message =
-        (payload &&
-          typeof payload === "object" &&
-          typeof payload.message === "string" &&
-          payload.message) ||
-        response.statusText ||
-        "Failed to fetch article.";
+  if (!response.ok) {
+    const message =
+      (payload && typeof payload === "object" && typeof (payload as any).message === "string" && (payload as any).message) ||
+      response.statusText ||
+      "Failed to fetch article.";
+    throw new ApiError(response.status, message, payload);
+  }
 
-      throw new ApiError(response.status, message, payload);
-    }
+  const raw =
+    payload && typeof payload === "object" && "data" in payload
+      ? (payload as ArticleResponse).data
+      : payload;
 
-    const rawData =
-      payload && typeof payload === "object" && "data" in payload
-        ? (payload as ArticleResponse).data
-        : payload;
+  return normalizeArticle(raw);
+}
 
-    return normalizeArticle(rawData);
-  },
+// Optional: object export
+export const ArticleService = {
+  list: listArticles,
+  latest: latestArticle,
+  showBySlug: getArticleBySlug,
+  showById: getArticleById,
 };
-
 export type ArticleServiceType = typeof ArticleService;
-
-
-
-
