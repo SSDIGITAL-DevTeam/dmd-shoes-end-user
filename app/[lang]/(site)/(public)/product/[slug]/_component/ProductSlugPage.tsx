@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaWhatsapp } from "react-icons/fa";
 import { CiMail } from "react-icons/ci";
 import Container from "@/components/ui-custom/Container";
 import ProductChoice from "./ProductChoice";
@@ -203,7 +198,10 @@ export default function ProductSlugPage({
   const contactLabels = detailDict.contact ?? {};
   const wishlistLabels = detailDict.wishlist ?? {};
   const relatedProducts = useMemo<ProductCard[]>(
-    () => (Array.isArray(related) ? related : []),
+    () =>
+      (Array.isArray(related) ? related : [])
+        .filter((item): item is ProductCard => !!item)
+        .slice(0, 4),
     [related],
   );
 
@@ -267,6 +265,30 @@ export default function ProductSlugPage({
           title: fallbackName,
         },
       ];
+  const previewRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  useEffect(() => {
+    previewRefs.current = previewRefs.current.slice(0, safePreviews.length);
+  }, [safePreviews.length]);
+
+  const showPreviewNav = safePreviews.length > 4;
+
+  const handlePreviewPrev = useCallback(() => {
+    if (safePreviews.length <= 1) return;
+    setActiveIndex((prev) => (prev === 0 ? safePreviews.length - 1 : prev - 1));
+  }, [safePreviews.length]);
+
+  const handlePreviewNext = useCallback(() => {
+    if (safePreviews.length <= 1) return;
+    setActiveIndex((prev) => (prev + 1) % safePreviews.length);
+  }, [safePreviews.length]);
+
+  useEffect(() => {
+    const node = previewRefs.current[activeIndex];
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [activeIndex, safePreviews.length]);
+
   const activePreview = safePreviews[activeIndex] ?? safePreviews[0];
 
   const attributes = useMemo<ProductAttributeChoice[]>(
@@ -603,27 +625,52 @@ export default function ProductSlugPage({
           </div>
 
           {safePreviews.length > 1 ? (
-            <div className="flex flex-wrap gap-3">
-              {safePreviews.map((preview, index) => (
+            <div className="relative mt-2 flex items-center gap-2">
+              {showPreviewNav ? (
                 <button
-                  key={preview.id}
-                  onClick={() => setActiveIndex(index)}
-                  className={`relative h-20 w-20 overflow-hidden rounded-md border transition ${activeIndex === index
-                    ? "border-primary"
-                    : "border-gray-200 hover:border-primary"
-                    }`}
                   type="button"
-                  aria-label={preview.title ?? preview.alt}
+                  onClick={handlePreviewPrev}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label={lang.startsWith("en") ? "Previous image" : "Gambar sebelumnya"}
                 >
-                  <Image
-                    src={preview.url || FALLBACK_IMAGE}
-                    alt={preview.alt}
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                  />
+                  <FaChevronLeft />
                 </button>
-              ))}
+              ) : null}
+              <div className="flex gap-3 overflow-x-auto scroll-smooth py-1">
+                {safePreviews.map((preview, index) => (
+                  <button
+                    key={preview.id}
+                    ref={(node) => {
+                      previewRefs.current[index] = node;
+                    }}
+                    onClick={() => setActiveIndex(index)}
+                    className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border transition ${activeIndex === index
+                      ? "border-primary"
+                      : "border-gray-200 hover:border-primary"
+                      }`}
+                    type="button"
+                    aria-label={preview.title ?? preview.alt}
+                  >
+                    <Image
+                      src={preview.url || FALLBACK_IMAGE}
+                      alt={preview.alt}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+              {showPreviewNav ? (
+                <button
+                  type="button"
+                  onClick={handlePreviewNext}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label={lang.startsWith("en") ? "Next image" : "Gambar berikutnya"}
+                >
+                  <FaChevronRight />
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>

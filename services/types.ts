@@ -105,6 +105,7 @@ export type ProductDetail = ProductCard & {
   gallery?: ProductGalleryImage[];
   attributes_data?: ProductAttribute[];
   variants_data?: ProductVariant[];
+  related_products?: ProductCard[];
   seo?: {
     tags?: string[];
     keyword?: string | null;

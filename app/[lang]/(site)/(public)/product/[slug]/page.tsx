@@ -27,20 +27,36 @@ export default async function ProductDetailRoute({
     notFound();
   }
 
-  let related: ProductCard[] = [];
-  try {
-    const relatedResponse = await ProductService.list({
-      lang,
-      per_page: 8,
-      sort: "favorites_count",
-      dir: "desc",
-      view: "card",
-    });
-    related = relatedResponse.data
-      .filter((item) => item.slug !== product.slug)
-      .slice(0, 4);
-  } catch (error) {
-    console.error("Failed to fetch related products", error);
+  const manualRelated = Array.isArray(product.related_products)
+    ? product.related_products
+        .filter(
+          (item): item is ProductCard =>
+            !!item && typeof item === "object" && item.slug !== product.slug,
+        )
+        .slice(0, 4)
+    : [];
+
+  let related: ProductCard[] = manualRelated;
+
+  if (related.length === 0) {
+    try {
+      const relatedResponse = await ProductService.list({
+        lang,
+        per_page: 8,
+        sort: "favorites_count",
+        dir: "desc",
+        view: "card",
+      });
+      related = relatedResponse.data
+        .filter(
+          (item) =>
+            item.slug !== product.slug &&
+            !manualRelated.some((manual) => manual.id === item.id),
+        )
+        .slice(0, 4);
+    } catch (error) {
+      console.error("Failed to fetch related products", error);
+    }
   }
 
   return (
