@@ -40,6 +40,7 @@
     "price": "Harga",
     "priceNote": "Harga belum termasuk ongkir",
     "priceSuffix": "per pasang",
+    "variantPricePrompt": "Pilih varian untuk melihat harga.",
     "attributes": "Pilihan yang tersedia",
     "variants": "Varian tersedia",
     "noVariants": "Varian belum tersedia",

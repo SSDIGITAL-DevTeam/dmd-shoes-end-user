@@ -274,21 +274,87 @@ export default function ProductSlugPage({
     [product, lang, fallbackName],
   );
 
-  const priceCandidates = [
-    typeof product.price === "number" ? product.price : null,
-    typeof product.price_min === "number" ? product.price_min : null,
-    typeof product.variants_min_price === "number"
-      ? product.variants_min_price
-      : null,
-  ].filter((value): value is number => value !== null);
-  const displayPrice =
-    priceCandidates.length > 0
-      ? formatCurrency(priceCandidates[0], lang)
-      : null;
+  const attributeSummaries = useMemo(
+    () =>
+      attributes
+        .filter((attribute) => attribute.options.length > 0)
+        .map((attribute) => {
+          const uniqueOptions = Array.from(
+            new Set(
+              attribute.options
+                .map((option) => option.trim())
+                .filter(Boolean),
+            ),
+          );
+
+          return {
+            label: attribute.label,
+            options: uniqueOptions.join(", "),
+          };
+        })
+        .filter((summary) => summary.options.length > 0),
+    [attributes],
+  );
+
+  const requiredAttributes = useMemo(
+    () => attributes.filter((attribute) => attribute.options.length > 0),
+    [attributes],
+  );
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(
     {},
   );
+
+  const selectedVariant = useMemo(() => {
+    const variantData = product.variants_data ?? [];
+    if (variantData.length === 0) {
+      return null;
+    }
+
+    const normalizedSelections = requiredAttributes
+      .map((attribute) => selectedOptions[attribute.label])
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .map((value) => value.toLowerCase().trim());
+
+    if (
+      normalizedSelections.length === 0 ||
+      normalizedSelections.length !== requiredAttributes.length
+    ) {
+      return null;
+    }
+
+    return (
+      variantData.find((variant) => {
+        const tokens = extractVariantTokens(variant);
+        if (!tokens.length) return false;
+        return normalizedSelections.every((selection) =>
+          tokens.some((token) => token.includes(selection)),
+        );
+      }) ?? null
+    );
+  }, [product.variants_data, requiredAttributes, selectedOptions]);
+
+  const resolvedPriceValue =
+    product.pricing_mode === "per_variant"
+      ? typeof selectedVariant?.price === "number"
+        ? selectedVariant.price
+        : null
+      : [product.price, product.price_min, product.variants_min_price].find(
+          (value): value is number => typeof value === "number",
+        ) ?? null;
+
+  const displayPrice =
+    typeof resolvedPriceValue === "number"
+      ? formatCurrency(resolvedPriceValue, lang)
+      : null;
+
+  const variantPricePrompt =
+    product.pricing_mode === "per_variant" && !displayPrice
+      ? detailDict.variantPricePrompt ??
+        (lang.startsWith("en")
+          ? "Select a variant to see the price."
+          : "Pilih varian untuk melihat harga.")
+      : null;
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error" | "info";
     text: string;
@@ -347,7 +413,6 @@ export default function ProductSlugPage({
       return;
     }
 
-    const requiredAttributes = attributes.filter(a => a.options.length > 0);
     for (const attribute of requiredAttributes) {
       const selection = selectedOptions[attribute.label];
       if (!selection) {
@@ -358,28 +423,13 @@ export default function ProductSlugPage({
     }
 
     const variantData = product.variants_data ?? [];
-    let matchedVariantId: number | undefined;
+    let matchedVariantId: number | undefined =
+      typeof selectedVariant?.id === "number" ? selectedVariant.id : undefined;
 
-    if (variantData.length > 0) {
-      const normalizedSelections = requiredAttributes
-        .map(attribute => selectedOptions[attribute.label])
-        .filter(Boolean)
-        .map(selection => selection.toLowerCase().trim());
-
-      if (normalizedSelections.length > 0) {
-        const matchedVariant = variantData.find((variant) => {
-          const tokens = extractVariantTokens(variant);
-          if (!tokens.length) return false;
-          return normalizedSelections.every((selection) =>
-            tokens.some((token) => token.includes(selection)),
-          );
-        });
-        matchedVariantId = typeof matchedVariant?.id === "number" ? matchedVariant.id : undefined;
-
-        if (!matchedVariant) {
-          setStatusMessage({ type: "error", text: variantMissingMessage });
-          return;
-        }
+    if (variantData.length > 0 && requiredAttributes.length > 0) {
+      if (!matchedVariantId) {
+        setStatusMessage({ type: "error", text: variantMissingMessage });
+        return;
       }
     }
 
@@ -409,7 +459,6 @@ export default function ProductSlugPage({
     }
   }, [
     addFavorite,
-    attributes,
     checkingSessionMessage,
     currentUrl,
     errorMessage,
@@ -418,8 +467,10 @@ export default function ProductSlugPage({
     lang,
     product.id,
     product.variants_data,
+    requiredAttributes,
     selectTemplate,
     selectedOptions,
+    selectedVariant,
     successMessage,
     variantMissingMessage,
   ]);
@@ -537,8 +588,10 @@ export default function ProductSlugPage({
 
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex flex-col gap-4 lg:w-1/2">
-          {/* 725 x 725 image */}
-          <div className="relative h-[725px] w-[725px] max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div
+            className="relative aspect-square w-full overflow-hidden rounded-lg border border-gray-200 bg-white"
+            style={{ maxWidth: "min(100%, 725px)" }}
+          >
             <Image
               src={activePreview.url || FALLBACK_IMAGE}
               alt={activePreview.alt}
@@ -589,6 +642,14 @@ export default function ProductSlugPage({
                   {product.category_name}
                 </p>
               ) : null}
+              {attributeSummaries.map(({ label, options }) => (
+                <p key={label}>
+                  <span className="font-semibold text-gray-700">
+                    {label}:
+                  </span>{" "}
+                  {options}
+                </p>
+              ))}
               {typeof product.favorites_count === "number" ? (
                 <p className="text-xs text-gray-500">
                   {product.favorites_count}{" "}
@@ -598,18 +659,22 @@ export default function ProductSlugPage({
             </div>
           </header>
 
-          {displayPrice ? (
+          {displayPrice || variantPricePrompt ? (
             <div className="space-y-1">
               <div className="text-sm font-semibold uppercase text-primary">
                 {priceLabel}
               </div>
-              <div className="text-3xl font-bold text-[#121212]">
-                {displayPrice}{" "}
-                <span className="text-base font-medium text-gray-500">
-                  {priceSuffix}
-                </span>
-              </div>
-              {priceNote ? (
+              {displayPrice ? (
+                <div className="text-3xl font-bold text-[#121212]">
+                  {displayPrice}{" "}
+                  <span className="text-base font-medium text-gray-500">
+                    {priceSuffix}
+                  </span>
+                </div>
+              ) : variantPricePrompt ? (
+                <p className="text-sm text-[#D97706]">{variantPricePrompt}</p>
+              ) : null}
+              {displayPrice && priceNote ? (
                 <p className="text-sm text-[#D97706]">{priceNote}</p>
               ) : null}
             </div>

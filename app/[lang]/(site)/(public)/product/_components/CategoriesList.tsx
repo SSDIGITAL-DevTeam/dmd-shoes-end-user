@@ -23,6 +23,23 @@ type GroupedCategory = {
   children: Category[];
 };
 
+const toCountValue = (value?: number | null): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0;
+
+const aggregateParentCount = (parent: Category, children: Category[]): number => {
+  const parentCount = toCountValue(parent.products_count);
+  const childTotal = children.reduce(
+    (sum, child) => sum + toCountValue(child.products_count),
+    0,
+  );
+
+  if (parentCount > 0 && parentCount >= childTotal) {
+    return parentCount;
+  }
+
+  return parentCount + childTotal;
+};
+
 const buildGroups = (categories: Category[]): GroupedCategory[] => {
   const parents = categories.filter((cat) => !cat.parent_id);
   const grouped: GroupedCategory[] = parents.map((parent) => ({
@@ -110,7 +127,8 @@ export default function CategoriesList({
                 <span>
                   {(() => {
                     const base = parent.name_text ?? parent.name?.id ?? parent.slug;
-                    const countText = formatCount(parent.products_count);
+                    const aggregatedCount = aggregateParentCount(parent, children);
+                    const countText = formatCount(aggregatedCount);
                     return countText ? `${base} (${countText})` : base;
                   })()}
                 </span>

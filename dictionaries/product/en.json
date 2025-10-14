@@ -40,6 +40,7 @@
     "price": "Price",
     "priceNote": "Price excludes shipping",
     "priceSuffix": "per pair",
+    "variantPricePrompt": "Select a variant to see the price.",
     "attributes": "Available Options",
     "variants": "Available Variants",
     "noVariants": "Variants not available",
