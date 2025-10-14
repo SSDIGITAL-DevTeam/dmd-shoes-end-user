@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 type SortOption = { label: string; value: string };
 
@@ -31,7 +32,6 @@ export default function ProductSortMobile({
   const closeLabel = dictionary?.close ?? "Close sort";
   const selectId = "product-sort-mobile";
 
-  // simple focus trap on open
   useEffect(() => {
     if (!open) return;
     const prevActive = document.activeElement as HTMLElement | null;
@@ -49,16 +49,27 @@ export default function ProductSortMobile({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 text-[13px] underline"
+        className="inline-flex items-center gap-2 text-[16px] underline text-[#003663]"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="mobile-sort-panel"
       >
         {triggerLabel}
-        <span aria-hidden>⚙️</span>
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"         // <- ikut warna teks
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          {/* ikon “sort” tiga garis */}
+          <path d="M4 7h16M8 12h12M12 17h8" />
+        </svg>
       </button>
 
-      {/* overlay */}
       {open && (
         <button
           aria-label="Close overlay"
@@ -67,7 +78,6 @@ export default function ProductSortMobile({
         />
       )}
 
-      {/* panel */}
       <div
         id="mobile-sort-panel"
         role="dialog"
@@ -110,9 +120,11 @@ export default function ProductSortMobile({
               ))}
             </select>
             <svg
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#003663]"
               xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
               aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

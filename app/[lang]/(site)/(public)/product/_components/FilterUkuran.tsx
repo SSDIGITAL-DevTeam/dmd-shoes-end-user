@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 
 type CategoryRange = {
   id: number;
@@ -265,13 +264,13 @@ export default function FilterUkuran({
 
   const handleInput =
     (key: keyof FilterValues) =>
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = event.target.value;
-      setDraft((prev) => ({
-        ...prev,
-        [key]: raw === "" ? undefined : Number(raw),
-      }));
-    };
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = event.target.value;
+        setDraft((prev) => ({
+          ...prev,
+          [key]: raw === "" ? undefined : Number(raw),
+        }));
+      };
 
   const apply = () => {
     onApply(draft);
@@ -289,21 +288,21 @@ export default function FilterUkuran({
   return (
     <div>
       <button
-        onClick={() => {
-          syncWithValues();
-          setOpen(true);
-        }}
-        className={`flex items-center ${fullWidth ? "w-full" : "w-auto"} border px-3 py-2 text-sm rounded-[4px] space-x-2`}
+        onClick={() => { syncWithValues(); setOpen(true); }}
+        className={`inline-flex h-[40px] items-center justify-center gap-2
+              rounded-[4px] border border-[#003663] bg-white px-3 text-sm
+              text-[#003663] shadow-sm transition
+              hover:border-[#002a4f] hover:text-[#002a4f]
+              focus:outline-none focus:ring-2 focus:ring-[#003663]/30
+              ${fullWidth ? "w-full" : "w-auto"}`}
       >
-        <Image
-          src="/assets/images/product/filter-ukuran.svg"
-          alt={labels.iconAlt}
-          width={16}
-          height={16}
+        {/* ikon mengikuti warna teks via CSS mask */}
+        <span
+          aria-hidden="true"
+          className="inline-block h-4 w-4 bg-current text-current
+[mask:url(/assets/images/product/filter-ukuran.svg)_no-repeat_center/contain]"
         />
-        <span className="font-medium text-[14px] leading-[150%]">
-          {labels.trigger}
-        </span>
+        <span className="leading-[150%]">{labels.trigger}</span>
       </button>
 
       {open ? (
@@ -314,9 +313,8 @@ export default function FilterUkuran({
       ) : null}
 
       <div
-        className={`fixed top-0 right-0 h-full w-[320px] bg-white shadow-lg z-50 transform transition-transform duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed top-0 right-0 h-full w-[320px] bg-white shadow-lg z-50 transform transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-b-gray-200">
           <h2 className="text-lg font-semibold text-[#003663]">

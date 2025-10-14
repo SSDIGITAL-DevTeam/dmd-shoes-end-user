@@ -351,7 +351,7 @@ export default function ProductPage({
                   placeholder={dictionaryProduct?.searchPlaceholder || "Search products..."}
                   value={filters.search}
                   onChange={handleSearchChange}
-                  className="w-64 rounded border border-[#003663] px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
+                  className="h-[40px] w-full rounded border border-[#003663] bg-white px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
                   aria-describedby="search-help"
                 />
                 <span id="search-help" className="sr-only">
@@ -393,14 +393,14 @@ export default function ProductPage({
                 placeholder={dictionaryProduct?.searchPlaceholder || "Search products..."}
                 value={filters.search}
                 onChange={handleSearchChange}
-                className="w-full rounded border border-[#003663] px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
+                className="h-[40px] w-full rounded border border-[#003663] bg-white px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setOpenCategory(true)}
-                className="flex items-center justify-center gap-2 rounded border border-[#003663] px-3 py-2 text-sm text-[#003663] transition hover:border-[#002a4f] hover:text-[#002a4f]"
+                className="flex items-center justify-center gap-2 rounded border border-[#003663] bg-white px-3 py-2 text-sm text-[#003663] shadow-sm transition hover:border-[#002a4f] hover:text-[#002a4f]"
                 aria-haspopup="dialog"
                 aria-expanded={openCategory}
                 aria-controls="mobile-category-panel"
