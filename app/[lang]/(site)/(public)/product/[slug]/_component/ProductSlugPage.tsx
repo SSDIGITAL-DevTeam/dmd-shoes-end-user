@@ -362,8 +362,8 @@ export default function ProductSlugPage({
         ? selectedVariant.price
         : null
       : [product.price, product.price_min, product.variants_min_price].find(
-          (value): value is number => typeof value === "number",
-        ) ?? null;
+        (value): value is number => typeof value === "number",
+      ) ?? null;
 
   const displayPrice =
     typeof resolvedPriceValue === "number"
@@ -373,9 +373,9 @@ export default function ProductSlugPage({
   const variantPricePrompt =
     product.pricing_mode === "per_variant" && !displayPrice
       ? detailDict.variantPricePrompt ??
-        (lang.startsWith("en")
-          ? "Select a variant to see the price."
-          : "Pilih varian untuk melihat harga.")
+      (lang.startsWith("en")
+        ? "Select a variant to see the price."
+        : "Pilih varian untuk melihat harga.")
       : null;
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error" | "info";
@@ -665,7 +665,7 @@ export default function ProductSlugPage({
                 <button
                   type="button"
                   onClick={handlePreviewNext}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
                   aria-label={lang.startsWith("en") ? "Next image" : "Gambar berikutnya"}
                 >
                   <FaChevronRight />
@@ -755,20 +755,23 @@ export default function ProductSlugPage({
             </section>
           ) : null}
 
-          <div className="flex flex-col gap-3 lg:flex-row">
+          <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-row">
             <Link
               href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}`}
-              className="flex w-full items-center justify-center gap-2 rounded-[8px] bg-green-500 px-4 py-2 text-white transition hover:bg-green-600 lg:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-white transition hover:bg-green-600 lg:w-auto"
             >
               <FaWhatsapp size={22} aria-hidden="true" />
             </Link>
+
             <Link
               href={`mailto:${CONTACT.email}`}
-              className="flex w-full items-center justify-center gap-2 rounded-[8px] bg-primary px-4 py-2 text-white transition hover:bg-[#04264b] lg:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-white transition hover:bg-[#04264b] lg:w-auto"
             >
               <CiMail size={22} aria-hidden="true" />
             </Link>
-            <ButtonWishlist
+
+            <div className="col-span-2 w-full">
+              <ButtonWishlist
               labels={wishlistLabels}
               onClick={handleAddToWishlist}
               disabled={isAdding}
@@ -778,17 +781,17 @@ export default function ProductSlugPage({
               loginHref={loginHref}
               registerHref={registerHref}
             />
+            </div>
           </div>
 
           {statusMessage ? (
             <p
-              className={`text-sm ${
-                statusMessage.type === "error"
-                  ? "text-red-600"
-                  : statusMessage.type === "success"
-                    ? "text-green-600"
-                    : "text-blue-600"
-              }`}
+              className={`text-sm ${statusMessage.type === "error"
+                ? "text-red-600"
+                : statusMessage.type === "success"
+                  ? "text-green-600"
+                  : "text-blue-600"
+                }`}
             >
               {statusMessage.text}
             </p>
