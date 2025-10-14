@@ -1,7 +1,6 @@
 "use client";
 
 import { ProductCardSkeleton } from "@/components/shared/Skeletons";
-import Container from "@/components/ui-custom/Container";
 import type { ProductCard } from "@/services/types";
 import Link from "next/link";
 import { Assistant } from "next/font/google";
@@ -14,18 +13,9 @@ const assistant = Assistant({
   variable: "--font-assistant",
 });
 
-const FEATURED_FALLBACK_LABELS: Record<
-  string,
-  { title: string; viewAll: string }
-> = {
-  id: {
-    title: "Produk Unggulan",
-    viewAll: "Lihat semua produk",
-  },
-  en: {
-    title: "Featured Products",
-    viewAll: "View all products",
-  },
+const FEATURED_FALLBACK_LABELS: Record<string, { title: string; viewAll: string }> = {
+  id: { title: "Produk Unggulan", viewAll: "Lihat semua produk" },
+  en: { title: "Featured Products", viewAll: "View all products" },
 };
 
 type ProductPromoProps = {
@@ -87,15 +77,15 @@ export default function ProductPromo({
   const resolvedViewAllLabel = viewAllLabel ?? fallbackLabels.viewAll;
 
   return (
-    <Container className="space-y-6">
-      <div className="mx-auto max-w-[1200px] text-center">
-        <h2 className="text-xl font-semibold text-primary md:text-2xl">
-          {resolvedTitle}
-        </h2>
-      </div>
+    <div className="space-y-6">
+      {/* Title */}
+      <h2 className="text-center text-xl font-semibold text-primary md:text-2xl">
+        {resolvedTitle}
+      </h2>
 
+      {/* Grid */}
       {isLoading ? (
-        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 md:gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <ProductCardSkeleton key={index} />
           ))}
@@ -112,7 +102,8 @@ export default function ProductPromo({
         />
       )}
 
-      <div className="mx-auto flex max-w-[1200px] justify-center">
+      {/* CTA */}
+      <div className="flex justify-center">
         <Link
           href={viewAllHref}
           className={`${assistant.className} inline-flex items-center justify-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/5 md:px-5 md:py-2.5 md:text-[15px]`}
@@ -120,6 +111,6 @@ export default function ProductPromo({
           {resolvedViewAllLabel}
         </Link>
       </div>
-    </Container>
+    </div>
   );
 }

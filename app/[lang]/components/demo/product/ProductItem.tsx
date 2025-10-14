@@ -78,8 +78,8 @@ export default function ProductItem({
     (product as { variants_data?: { price?: number | string | null }[] }).variants_data,
   )
     ? ((product as { variants_data?: { price?: number | string | null }[] }).variants_data || [])
-        .map((variant) => parsePrice(variant.price))
-        .filter((value): value is number => value !== null)
+      .map((variant) => parsePrice(variant.price))
+      .filter((value): value is number => value !== null)
     : [];
 
   const variantLowestPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null;
@@ -111,39 +111,34 @@ export default function ProductItem({
 
   return (
     <div
-      className={`${assistant.className} mx-auto flex w-full max-w-[280px] flex-col rounded-lg bg-white p-2 shadow-sm transition hover:shadow-lg md:p-3`}
+      className={`${assistant.className} group flex w-full flex-col bg-white shadow-sm transition hover:shadow-lg overflow-hidden`}
     >
       <Link href={href} className="block">
-        <div className="relative aspect-square w-full overflow-hidden rounded-md">
+        {/* FOTO FULL, TANPA PADDING */}
+        <div className="relative aspect-square w-full">
           <Image
             src={imageUrl}
             alt={displayName}
             fill
             sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 20vw"
-            className="object-cover"
+            className="object-cover"     // pastikan cover biar tak ada letterbox
+            priority={false}
           />
         </div>
 
-        <div className="space-y-2 pt-3">
-          <div
-            className={`${inter.className} text-sm font-semibold leading-[130%] text-[#121212] md:text-[15px]`}
-          >
+        {/* PADDING CUMA DI TEKS */}
+        <div className="space-y-2 p-2 md:p-3">
+          <div className={`${inter.className} text-sm font-semibold leading-[130%] text-[#121212] md:text-[15px]`}>
             {displayName}
           </div>
 
           {product.category_name ? (
-            <div className="text-xs text-[#121212]/70 md:text-sm">
-              {product.category_name}
-            </div>
+            <div className="text-xs text-[#121212]/70 md:text-sm">{product.category_name}</div>
           ) : null}
 
           <div className="flex flex-wrap items-center gap-2 text-[#121212]">
-            <span className="text-sm font-semibold">
-              {priceLabel}
-            </span>
-            <span className="text-xs text-[#121212]/70 md:text-sm">
-              / {locale === "en" ? "pair" : "pasang"}
-            </span>
+            <span className="text-sm font-semibold">{priceLabel}</span>
+            <span className="text-xs text-[#121212]/70 md:text-sm">/ {locale === "en" ? "pair" : "pasang"}</span>
           </div>
 
           {favoritesCount !== null ? (

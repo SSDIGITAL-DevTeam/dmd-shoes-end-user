@@ -1,5 +1,6 @@
 "use client";
 
+import Container from "@/components/ui-custom/Container";
 import ProductPromo from "@/components/demo/product/ProductFeatured";
 import HomeHero from "./_components/HomeHero";
 import HomeVideo from "./_components/HomeVideo";
@@ -50,14 +51,16 @@ export default function HomePageClient({
 
       {/* FEATURED PRODUCTS */}
       <Section className="py-2" size="dense" bg="bg-[#F5F5F5]">
-        <ProductPromo
-          lang={lang}
-          products={featuredProducts}
-          isLoading={false}
-          title={homeDictionary?.featured?.title ?? "Produk Unggulan"}
-          viewAllLabel={homeDictionary?.featured?.viewAll ?? "Lihat semua produk"}
-          viewAllHref={`/${lang}/product`}
-        />
+        <Container>
+          <ProductPromo
+            lang={lang}
+            products={featuredProducts}
+            isLoading={false}
+            title={homeDictionary?.featured?.title ?? "Produk Unggulan"}
+            viewAllLabel={homeDictionary?.featured?.viewAll ?? "Lihat semua produk"}
+            viewAllHref={`/${lang}/product`}
+          />
+        </Container>
       </Section>
 
       {/* VIDEO */}
