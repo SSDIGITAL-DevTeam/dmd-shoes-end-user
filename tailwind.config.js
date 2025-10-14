@@ -7,11 +7,12 @@ module.exports = {
   ],
   theme: {
     screens: {
+      xs: "480px",
       sm: "640px",
-      md: "48rem",
-      lg: "64rem",
-      xl: "80rem",
-      "2xl": "90rem",
+      md: "48rem",      // 768px
+      lg: "64rem",      // 1024px
+      xl: "80rem",      // 1280px
+      "2xl": "90rem",   // 1440px
     },
     container: {
       center: true,
@@ -22,6 +23,19 @@ module.exports = {
       },
     },
     extend: {
+      // ← nama rasio biar gampang dipakai di komponen
+      aspectRatio: {
+        // hero / banner
+        "hero-mobile": "4 / 5",
+        "hero-tablet": "16 / 9",
+        "hero-desktop": "21 / 9",
+        // produk / katalog
+        product: "1 / 1",
+        "product-portrait": "4 / 5",
+        // konten umum
+        "wide": "3 / 1",
+        "cinema": "21 / 9",
+      },
       colors: {
         primary: "#003663",
         secondary: "#1E40AF",
@@ -58,5 +72,7 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/line-clamp"),
+  ],
 };

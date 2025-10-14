@@ -17,9 +17,9 @@ type ImageObject = {
 export type ProductSliderListProps = {
   images: ImageObject[];
   autoPlayInterval?: number;
-  /** Tinggi responsif area gambar slider; override dari parent. Contoh: "aspect-video md:h-[360px] lg:h-[440px]" */
+  /** Tinggi/rasio area slider, ex: "aspect-slider-259" atau "aspect-[1990/768]" */
   sliderHeightClass?: string;
-  /** Kelas untuk <Image/>: default mobile contain (no crop), desktop cover (full-bleed) */
+  /** Kelas untuk <Image/> */
   imageClassName?: string;
 };
 
@@ -35,18 +35,25 @@ function ProductSliderItem({
   sliderHeightClass,
   imageClassName,
 }: ProductSliderItemProps) {
-  if (!image.src) {
-    return <div className={clsx("w-full bg-slate-100", sliderHeightClass)} />;
+  if (!image?.src) {
+    return <div className={clsx("relative w-full overflow-hidden bg-black/5 min-h-[160px]",
+      sliderHeightClass)} />;
   }
 
   const node = (
-    <div className={clsx("relative w-full overflow-hidden bg-black/5", sliderHeightClass)}>
+    <div
+      className={clsx(
+        "relative w-full overflow-hidden bg-black/5",
+        "min-h-[160px]",                 // fallback supaya nggak 0px
+        sliderHeightClass
+      )}
+    >
       <Image
         src={image.src}
         alt={image.alt || "product image"}
         fill
         sizes="100vw"
-        className={clsx("w-full h-full", imageClassName ?? "object-contain md:object-cover")}
+        className={clsx("w-full h-full", imageClassName ?? "object-cover")}
         priority={false}
       />
     </div>
@@ -61,12 +68,14 @@ function ProductSliderItem({
   );
 }
 
-/** Slider sederhana: autoplay, prev/next, dots, play/pause */
+/** Slider sederhana: autoplay + kontrol overlay (no external gap) */
 export default function ProductSliderListOne({
   images,
   autoPlayInterval = 3000,
-  sliderHeightClass = "aspect-video md:h-[360px] lg:h-[440px]", // 16:9 di mobile, fixed height di md+
-  imageClassName = "object-contain md:object-cover", // Mobile tidak crop, Desktop cover
+  // mobile lebih tinggi, md+ pakai rasio wide
+  sliderHeightClass = "aspect-[16/10] sm:aspect-[21/9] md:aspect-[1990/768]",
+  // mobile tidak crop, md+ full-bleed
+  imageClassName = "object-contain md:object-cover",
 }: ProductSliderListProps) {
   const filteredImages = useMemo(() => images.filter((img) => Boolean(img.src)), [images]);
 
@@ -83,7 +92,6 @@ export default function ProductSliderListOne({
   };
   const togglePlay = () => setIsPlaying((prev) => !prev);
 
-  // Autoplay
   useEffect(() => {
     if (!isPlaying || totalSlides <= 1) {
       if (intervalRef.current) {
@@ -101,7 +109,6 @@ export default function ProductSliderListOne({
     };
   }, [autoPlayInterval, isPlaying, totalSlides]);
 
-  // Pastikan index valid saat jumlah slide berubah
   useEffect(() => {
     if (currentIndex >= totalSlides) setCurrentIndex(0);
   }, [currentIndex, totalSlides]);
@@ -117,7 +124,8 @@ export default function ProductSliderListOne({
             imageClassName={imageClassName}
           />
         ) : (
-          <div className={clsx("w-full bg-slate-100", sliderHeightClass)} />
+          <div className={clsx("relative w-full overflow-hidden bg-black/5 min-h-[160px]",
+            sliderHeightClass)} />
         )}
       </div>
 

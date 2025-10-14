@@ -23,8 +23,7 @@ export default function ProductSlider2({ images, isLoading }: ProductSlider2Prop
   return (
     <ProductSliderListOne
       images={displayImages}
-      autoPlayInterval={4000}
-      sliderHeightClass="aspect-video"
+      sliderHeightClass = "aspect-[1990/768]"
       imageClassName="object-cover"
     />
   );
