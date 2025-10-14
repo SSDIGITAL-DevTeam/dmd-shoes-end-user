@@ -14,7 +14,7 @@
     "intro": "Hi, DMD Shoes. I'm interested in the following products:",
     "outro": "Please share availability and how to place an order.",
     "line": "{index}. {product}{variant} - {price}",
-    "button": "Order via WhatsApp Now",
+    "button": "Order via WhatsApp",
     "preparing": "Preparing..."
   },
   "email": {
@@ -23,6 +23,6 @@
     "outro": "Please let me know their availability and how to proceed with the order.",
     "subject": "Order Inquiry - {count} Products",
     "line": "{index}. {product}{variant} - {price}",
-    "button": "Order via Email Now"
+    "button": "Order via Email"
   }
 }

@@ -4,10 +4,12 @@ import Container from "@/components/ui-custom/Container";
 import type { HomepageVideo } from "@/services/types";
 import Image from "next/image";
 import React, { useMemo, useState } from "react";
+import clsx from "clsx";
 
 type HomeVideoProps = {
   video?: HomepageVideo;
   posterFallback?: string;
+  className?: string; // kontrol spacing dari parent
 };
 
 const FALLBACK_POSTER = "/assets/demo/demo-product-video.png";
@@ -24,6 +26,7 @@ const toEmbedUrl = (url?: string | null) => {
 export default function HomeVideo({
   video,
   posterFallback = FALLBACK_POSTER,
+  className,
 }: HomeVideoProps) {
   const [open, setOpen] = useState(false);
 
@@ -41,51 +44,39 @@ export default function HomeVideo({
   const poster = video?.cover_url ?? posterFallback;
 
   return (
-    <section className="py-12">
+    // tidak ada py default; biarkan parent yang atur via className
+    <section className={clsx(className)}>
       <Container>
         <div className="w-full">
-        {!open ? (
-          <button
-            onClick={() => setOpen(true)}
-            className="relative w-full focus:outline-none"
-          >
-            <Image
-              src={poster}
-              alt="Product video preview"
-              width={1280}
-              height={720}
-              sizes="100vw"
-              className="h-auto w-full rounded-lg object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-white/70 p-3 md:p-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  className="h-8 w-8 text-black md:h-10 md:w-10"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5.25 5.653c0-.856.917-1.398 1.667-.943l11.25 6.847a1.125 1.125 0 010 1.886L6.917 20.29a1.125 1.125 0 01-1.667-.943V5.653z"
-                  />
-                </svg>
+          {!open ? (
+            <button
+              onClick={() => setOpen(true)}
+              className="relative block w-full focus:outline-none"
+              aria-label="Play video"
+            >
+              {/* poster dengan rasio video agar tidak loncat layout */}
+              <div className="relative w-full overflow-hidden bg-black/5 aspect-video">
+                <Image
+                  src={poster}
+                  alt="Product video preview"
+                  fill
+                  sizes="100vw"
+                  className="object-cover"
+                  priority
+                />
               </div>
+            </button>
+          ) : (
+            <div className="aspect-video w-full overflow-hidden">
+              <iframe
+                className="h-full w-full"
+                src={videoSrc}
+                title="Homepage video"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
             </div>
-          </button>
-        ) : (
-          <div className="aspect-video w-full">
-            <iframe
-              className="h-full w-full rounded-lg"
-              src={videoSrc}
-              title="Homepage video"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            />
-          </div>
-        )}
+          )}
         </div>
       </Container>
     </section>

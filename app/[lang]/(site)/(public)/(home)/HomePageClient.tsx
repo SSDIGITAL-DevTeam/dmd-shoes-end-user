@@ -8,16 +8,12 @@ import ProductSlider2 from "./_components/ProductSlider2";
 import CategorySection from "./_components/CategorySection";
 import TechnologySection from "./_components/TechnologySection";
 import HomeContact from "./_components/HomeContact";
+import Section from "@/components/layout/Section";
 import type { HomeBootstrapResponse } from "@/services/bootstrap.service";
 import type { Locale } from "@/i18n-config";
 
 const FALLBACK_BOOTSTRAP: HomeBootstrapResponse = {
-  homepage: {
-    id: 0,
-    hero: undefined,
-    video: undefined,
-    sliders: {},
-  },
+  homepage: { id: 0, hero: undefined, video: undefined, sliders: {} },
   categories: [],
   featured_products: [],
 };
@@ -46,44 +42,64 @@ export default function HomePageClient({
   const categories = bootstrap.categories ?? [];
 
   return (
-    <>
-      <HomeHero lang={lang} dict={homeDictionary} hero={homepage?.hero} />
+    <main>
+      {/* HERO – tidak perlu padding ekstra */}
+      <Section className="py-0 !pt-0 !pb-0">
+        <HomeHero lang={lang} dict={homeDictionary} hero={homepage?.hero} />
+      </Section>
 
-      <div className="bg-[#F5F5F5] py-12">
+      {/* FEATURED PRODUCTS */}
+      <Section className="py-2" size="dense" bg="bg-[#F5F5F5]">
         <ProductPromo
           lang={lang}
           products={featuredProducts}
           isLoading={false}
           title={homeDictionary?.featured?.title ?? "Produk Unggulan"}
-          viewAllLabel={
-            homeDictionary?.featured?.viewAll ?? "Lihat semua produk"
-          }
+          viewAllLabel={homeDictionary?.featured?.viewAll ?? "Lihat semua produk"}
           viewAllHref={`/${lang}/product`}
         />
-      </div>
+      </Section>
 
-      <HomeVideo video={homepage?.video} />
+      {/* VIDEO */}
+      <Section className="py-2 sm:py-3 md:py-4 pb-4">
+        <HomeVideo video={homepage?.video} />
+      </Section>
 
-      <ProductSlider1
-        images={sliderCarousel1.length ? sliderCarousel1 : sliderFallback}
-        isLoading={false}
-      />
+      {/* SLIDER 1 */}
+      <Section className="py-2 sm:py-3 md:py-4 !pt-0">
+        <ProductSlider1
+          images={sliderCarousel1.length ? sliderCarousel1 : sliderFallback}
+          isLoading={false}
+        />
+      </Section>
 
-      <TechnologySection lang={lang} dict={homeDictionary} />
+      {/* TECHNOLOGY */}
+      <Section>
+        <TechnologySection lang={lang} dict={homeDictionary} />
+      </Section>
 
-      <CategorySection
-        lang={lang}
-        dict={homeDictionary}
-        categories={categories}
-        isLoading={false}
-      />
+      {/* CATEGORIES */}
+      <Section>
+        <CategorySection
+          lang={lang}
+          dict={homeDictionary}
+          categories={categories}
+          isLoading={false}
+        />
+      </Section>
 
-      <ProductSlider2
-        images={sliderCarousel2.length ? sliderCarousel2 : sliderDefault}
-        isLoading={false}
-      />
+      {/* SLIDER 2 */}
+      <Section>
+        <ProductSlider2
+          images={sliderCarousel2.length ? sliderCarousel2 : sliderDefault}
+          isLoading={false}
+        />
+      </Section>
 
-      <HomeContact lang={lang} dict={homeDictionary} />
-    </>
+      {/* CONTACT */}
+      <Section bg="bg-[#F5F5F5]">
+        <HomeContact lang={lang} dict={homeDictionary} />
+      </Section>
+    </main>
   );
 }

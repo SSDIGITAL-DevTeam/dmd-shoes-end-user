@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { FaTrash, FaWhatsapp, FaEnvelope } from "react-icons/fa";
+import clsx from "clsx";
 import Container from "@/components/ui-custom/Container";
 import { CONTACT } from "@/config/contact";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -71,7 +71,7 @@ const createFallbackDictionary = (lang: string): Required<WishlistDictionary> & 
         ? "Please share availability and how to place an order."
         : "Mohon informasi ketersediaan dan cara pemesanan.",
       line: "{index}. {product}{variant} - {price}",
-      button: isEnglish ? "Order via WhatsApp Now" : "Pesan Melalui WhatsApp Sekarang",
+      button: isEnglish ? "Order via WhatsApp" : "Pesan Melalui WhatsApp",
       preparing: isEnglish ? "Preparing..." : "Menyiapkan...",
     },
     email: {
@@ -88,7 +88,7 @@ const createFallbackDictionary = (lang: string): Required<WishlistDictionary> & 
         ? "Order Inquiry - {count} Products"
         : "Permintaan Pesanan - {count} Produk",
       line: "{index}. {product}{variant} - {price}",
-      button: isEnglish ? "Order via Email Now" : "Pesan Melalui Email Sekarang",
+      button: isEnglish ? "Order via Email" : "Pesan Melalui Email",
     },
   };
 };
@@ -99,14 +99,12 @@ const resolveText = (
 ): string => {
   if (!value) return "";
   if (typeof value === "string") return value;
-
   if (typeof value === "object") {
-    if (lang in value && typeof value[lang] === "string") {
-      return value[lang] as string;
+    if (lang in value && typeof (value as any)[lang] === "string") {
+      return (value as any)[lang] as string;
     }
-    if (typeof value.id === "string") return value.id;
+    if (typeof (value as any).id === "string") return (value as any).id;
   }
-
   return "";
 };
 
@@ -172,37 +170,24 @@ const Wishlist = ({
       setSelectedIds([]);
       return;
     }
-
     setSelectedIds((prev) => {
-      if (prev.length === 0) {
-        return favorites.map((fav) => fav.favorite_id);
-      }
+      if (prev.length === 0) return favorites.map((f) => f.favorite_id);
       const existing = new Set(prev);
-      const next = favorites
-        .filter((fav) => existing.has(fav.favorite_id))
-        .map((fav) => fav.favorite_id);
-      return next.length > 0 ? next : favorites.map((fav) => fav.favorite_id);
+      const next = favorites.filter((f) => existing.has(f.favorite_id)).map((f) => f.favorite_id);
+      return next.length > 0 ? next : favorites.map((f) => f.favorite_id);
     });
   }, [favorites]);
 
   const toggleSelectAll = useCallback(
     (checked: boolean) => {
-      if (checked) {
-        setSelectedIds(favorites.map((fav) => fav.favorite_id));
-      } else {
-        setSelectedIds([]);
-      }
+      if (checked) setSelectedIds(favorites.map((f) => f.favorite_id));
+      else setSelectedIds([]);
     },
     [favorites],
   );
 
   const toggleSelect = useCallback((favoriteId: number) => {
-    setSelectedIds((prev) => {
-      if (prev.includes(favoriteId)) {
-        return prev.filter((id) => id !== favoriteId);
-      }
-      return [...prev, favoriteId];
-    });
+    setSelectedIds((prev) => (prev.includes(favoriteId) ? prev.filter((id) => id !== favoriteId) : [...prev, favoriteId]));
   }, []);
 
   const handleRemove = useCallback(
@@ -211,58 +196,34 @@ const Wishlist = ({
         productId: favorite.product.id,
         variantId: favorite.variant?.id ?? null,
       });
-      setSelectedIds((prev) =>
-        prev.filter((id) => id !== favorite.favorite_id),
-      );
+      setSelectedIds((prev) => prev.filter((id) => id !== favorite.favorite_id));
     },
     [removeFavorite],
   );
 
   const selectedFavorites = useMemo(
-    () => favorites.filter((fav) => selectedIds.includes(fav.favorite_id)),
+    () => favorites.filter((f) => selectedIds.includes(f.favorite_id)),
     [favorites, selectedIds],
   );
 
   const orderItems = useMemo(() => {
-    if (!selectedFavorites.length) {
-      return [];
-    }
-
+    if (!selectedFavorites.length) return [];
     return selectedFavorites.map((fav, index) => {
-      const productName =
-        resolveText(fav.product.name, lang) || mergedDict.fallbackProductName;
+      const productName = resolveText(fav.product.name, lang) || mergedDict.fallbackProductName;
       const variantText = fav.variant
         ? fav.variant.label_text ?? resolveText(fav.variant.label, lang) ?? ""
         : "";
       const variantLabel = variantText ? ` (${variantText})` : "";
       const price = fav.variant?.price ?? fav.product.price ?? undefined;
       const priceFormatted = formatCurrency(price);
-      const priceText =
-        priceFormatted === "-"
-          ? "-"
-          : `${priceFormatted} ${mergedDict.priceUnit}`.trim();
-
-      return {
-        index: String(index + 1),
-        productName,
-        variantLabel,
-        priceText,
-      };
+      const priceText = priceFormatted === "-" ? "-" : `${priceFormatted} ${mergedDict.priceUnit}`.trim();
+      return { index: String(index + 1), productName, variantLabel, priceText };
     });
-  }, [
-    selectedFavorites,
-    lang,
-    mergedDict.fallbackProductName,
-    mergedDict.priceUnit,
-    formatCurrency,
-  ]);
+  }, [selectedFavorites, lang, mergedDict.fallbackProductName, mergedDict.priceUnit, formatCurrency]);
 
   const whatsappMessage = useMemo(() => {
-    if (!orderItems.length) {
-      return mergedDict.whatsapp.emptyMessage;
-    }
-
-    const whatsappLines = orderItems.map((item) =>
+    if (!orderItems.length) return mergedDict.whatsapp.emptyMessage;
+    const lines = orderItems.map((item) =>
       formatTemplate(mergedDict.whatsapp.line, {
         index: item.index,
         product: item.productName,
@@ -270,26 +231,16 @@ const Wishlist = ({
         price: item.priceText,
       }),
     );
-
-    return `${mergedDict.whatsapp.intro}\n\n${whatsappLines.join("\n")}\n\n${mergedDict.whatsapp.outro}`;
+    return `${mergedDict.whatsapp.intro}\n\n${lines.join("\n")}\n\n${mergedDict.whatsapp.outro}`;
   }, [orderItems, mergedDict.whatsapp]);
 
-  const userName = useMemo(
-    () => (user?.full_name ?? user?.name ?? "").trim(),
-    [user?.full_name, user?.name],
-  );
+  const userName = useMemo(() => (user?.full_name ?? user?.name ?? "").trim(), [user?.full_name, user?.name]);
   const userEmail = useMemo(() => (user?.email ?? "").trim(), [user?.email]);
-  const userWhatsapp = useMemo(
-    () => (user?.whatsapp_e164 ?? user?.phone ?? "").trim(),
-    [user?.whatsapp_e164, user?.phone],
-  );
+  const userWhatsapp = useMemo(() => (user?.whatsapp_e164 ?? user?.phone ?? "").trim(), [user?.whatsapp_e164, user?.phone]);
 
   const emailBody = useMemo(() => {
-    if (!orderItems.length) {
-      return mergedDict.email.emptyMessage;
-    }
-
-    const emailLines = orderItems.map((item) =>
+    if (!orderItems.length) return mergedDict.email.emptyMessage;
+    const lines = orderItems.map((item) =>
       formatTemplate(mergedDict.email.line, {
         index: item.index,
         product: item.productName,
@@ -297,16 +248,12 @@ const Wishlist = ({
         price: item.priceText,
       }),
     );
-
-    const base = `${mergedDict.email.intro}\n\n${emailLines.join("\n")}\n\n${mergedDict.email.outro}`;
+    const base = `${mergedDict.email.intro}\n\n${lines.join("\n")}\n\n${mergedDict.email.outro}`;
     const infoHeader = lang.startsWith("en") ? "Customer details" : "Detail pelanggan";
     const nameLabel = lang.startsWith("en") ? "Name" : "Nama";
-    const emailLabel = lang.startsWith("en") ? "Email" : "Email";
+    const emailLabel = "Email";
     const whatsappLabel = "WhatsApp";
-
-    return `${base}\n\n${infoHeader}:\n${nameLabel}: ${userName || "-"}\n${emailLabel}: ${
-      userEmail || "-"
-    }\n${whatsappLabel}: ${userWhatsapp || "-"}`;
+    return `${base}\n\n${infoHeader}:\n${nameLabel}: ${userName || "-"}\n${emailLabel}: ${userEmail || "-"}\n${whatsappLabel}: ${userWhatsapp || "-"}`;
   }, [orderItems, mergedDict.email, userEmail, userName, userWhatsapp, lang]);
 
   const emailSuccessText = lang.startsWith("en")
@@ -321,11 +268,8 @@ const Wishlist = ({
 
   const handleCheckout = useCallback(async () => {
     if (!selectedFavorites.length) return;
-
     try {
-      await checkout({
-        favorite_ids: selectedFavorites.map((item) => item.favorite_id),
-      });
+      await checkout({ favorite_ids: selectedFavorites.map((i) => i.favorite_id) });
     } catch (error) {
       console.error("Checkout favorites failed", error);
     }
@@ -333,22 +277,16 @@ const Wishlist = ({
 
   const handleEmailOrder = useCallback(async () => {
     if (!selectedFavorites.length || !orderItems.length) return;
-
     if (!userEmail) {
       setEmailFeedback({ type: "error", message: emailMissingEmailText });
       return;
     }
-
     setIsSendingEmail(true);
     setEmailFeedback(null);
-
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           name: userName || "Customer",
           email: userEmail,
@@ -356,45 +294,40 @@ const Wishlist = ({
           message: emailBody,
         }),
       });
-
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         const message =
-          (payload &&
-            typeof payload === "object" &&
-            "message" in payload &&
-            typeof (payload as any).message === "string" &&
-            (payload as any).message) ||
+          (payload && typeof payload === "object" && "message" in payload && typeof (payload as any).message === "string" && (payload as any).message) ||
           emailGenericErrorText;
         throw new Error(message);
       }
-
       setEmailFeedback({ type: "success", message: emailSuccessText });
     } catch (error) {
-      const message =
-        error instanceof Error && error.message ? error.message : emailGenericErrorText;
+      const message = error instanceof Error && error.message ? error.message : emailGenericErrorText;
       setEmailFeedback({ type: "error", message });
     } finally {
       setIsSendingEmail(false);
     }
-  }, [
-    emailBody,
-    emailGenericErrorText,
-    emailMissingEmailText,
-    emailSuccessText,
-    orderItems.length,
-    selectedFavorites.length,
-    userEmail,
-    userName,
-    userWhatsapp,
-  ]);
+  }, [emailBody, emailGenericErrorText, emailMissingEmailText, emailSuccessText, orderItems.length, selectedFavorites.length, userEmail, userName, userWhatsapp]);
+
+  // === Missing vars fixed here ===
+  const hasFavorites = favorites.length > 0;
+  const allSelected = hasFavorites && selectedIds.length === favorites.length;
+
+  const whatsappHref = useMemo(() => {
+    const raw = (CONTACT as any)?.whatsapp_e164 ?? (CONTACT as any)?.whatsapp ?? "";
+    const number = typeof raw === "string" ? raw.replace(/[^\d]/g, "") : "";
+    const base = number ? `https://wa.me/${number}` : "https://wa.me/";
+    const url = `${base}?text=${encodeURIComponent(whatsappMessage)}`;
+    return url;
+  }, [whatsappMessage]);
 
   return (
-    <Container className="py-10">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-primary font-semibold text-[32px] leading-[140%]">
-          {mergedDict.pageTitle}{" "}
-          <span className="text-base font-normal text-gray-500 lg:text-lg">
+    <Container className="py-12">
+      <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <h1 className="text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl">
+          {mergedDict.pageTitle}
+          <span className="mt-2 block text-sm font-normal text-neutral-600 sm:ml-3 sm:inline sm:text-base">
             {formatTemplate(mergedDict.pageTitleCount, {
               count: numberFormatter.format(favorites.length),
             })}
@@ -403,141 +336,118 @@ const Wishlist = ({
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="w-full rounded-[16px] border border-[#EEEEEE] bg-white lg:w-[65%]">
-          <h2 className="p-6 text-lg font-semibold">{mergedDict.sectionTitle}</h2>
+        <section className="w-full rounded border border-neutral-200 bg-white lg:flex-1">
+          <div className="flex flex-col gap-2 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold text-neutral-900 sm:text-xl">
+              {mergedDict.sectionTitle}
+            </h2>
+          </div>
 
-          <div className="flex items-center gap-2 px-6 py-2">
+          <div className="flex items-center gap-3 border-t border-neutral-200 px-6 py-4">
             <input
               type="checkbox"
-              disabled={isLoading || !favorites.length}
-              checked={
-                Boolean(favorites.length) &&
-                selectedIds.length === favorites.length
-              }
+              disabled={isLoading || !hasFavorites}
+              checked={allSelected}
               onChange={(event) => toggleSelectAll(event.target.checked)}
-              className="h-4 w-4 accent-primary"
+              className="size-5 rounded border-neutral-300 text-primary accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
             />
-            <span className="font-inter text-[20px] font-semibold text-[#121212] lg:text-[22px]">
+            <span className="text-sm font-semibold text-neutral-900 sm:text-base">
               {mergedDict.selectAll}
             </span>
           </div>
 
-          <div className="bg-[#F5F5F5]">
+          <div className="border-t border-neutral-200">
             {isLoading ? (
-              <p className="px-6 py-10 text-sm text-gray-500">
-                {mergedDict.loading}
-              </p>
-            ) : favorites.length === 0 ? (
-              <p className="px-6 py-10 text-sm text-gray-500">
-                {mergedDict.empty}
-              </p>
+              <p className="px-6 py-10 text-sm text-neutral-500">{mergedDict.loading}</p>
+            ) : !hasFavorites ? (
+              <p className="px-6 py-10 text-sm text-neutral-500">{mergedDict.empty}</p>
             ) : (
-              favorites.map((favorite) => {
-                const productName =
-                  resolveText(favorite.product.name, lang) ||
-                  mergedDict.fallbackProductName;
+              favorites.map((favorite, index) => {
+                const productName = resolveText(favorite.product.name, lang) || mergedDict.fallbackProductName;
                 const productCode = favorite.product?.slug ?? "";
                 const variantLabelText =
-                  favorite.variant?.label_text ??
-                  resolveText(favorite.variant?.label ?? null, lang);
+                  favorite.variant?.label_text ?? resolveText(favorite.variant?.label ?? null, lang);
                 const variantParts = variantLabelText
-                  ? variantLabelText
-                    .split("|")
-                    .map((part) => part.trim())
-                    .filter(Boolean)
+                  ? variantLabelText.split("|").map((part) => part.trim()).filter(Boolean)
                   : [];
-                const price =
-                  favorite.variant?.price ?? favorite.product.price ?? null;
+                const price = favorite.variant?.price ?? favorite.product.price ?? null;
 
                 const coverSrc =
-                  (typeof favorite.product.cover_url === "string" &&
-                    favorite.product.cover_url.length > 0
+                  (typeof favorite.product.cover_url === "string" && favorite.product.cover_url.length > 0
                     ? favorite.product.cover_url
                     : undefined) ??
-                  (typeof favorite.product.cover === "string" &&
-                    favorite.product.cover.length > 0
+                  (typeof favorite.product.cover === "string" && favorite.product.cover.length > 0
                     ? favorite.product.cover
                     : undefined) ??
                   FALLBACK_IMAGE;
 
                 return (
-                  <div
+                  <article
                     key={favorite.favorite_id}
-                    className="flex items-center gap-4 px-8 py-3 lg:gap-6"
+                    className={clsx(
+                      "flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:gap-6",
+                      index > 0 && "border-t border-neutral-200",
+                    )}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(favorite.favorite_id)}
-                      onChange={() => toggleSelect(favorite.favorite_id)}
-                      className="h-4 w-4 accent-primary"
-                    />
-
-                    <div>
-                      <Image
-                        src={coverSrc}
-                        alt={productName}
-                        width={70}
-                        height={70}
-                        className="h-[70px] w-[70px] rounded border object-contain lg:h-[60px] lg:w-[60px]"
+                    <div className="flex items-start gap-3 sm:items-center sm:gap-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(favorite.favorite_id)}
+                        onChange={() => toggleSelect(favorite.favorite_id)}
+                        className="mt-1 size-5 rounded border-neutral-300 text-primary accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:mt-0"
                       />
+                      <div className="relative h-[6.25rem] w-[6.25rem] flex-shrink-0 overflow-hidden rounded bg-neutral-100 sm:h-[6.5rem] sm:w-[6.5rem]">
+                        <Image src={coverSrc} alt={productName} fill className="object-cover" />
+                      </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col justify-between gap-2 lg:flex-row lg:items-center">
-                      <div>
-                        <p className="font-inter text-[20px] font-semibold leading-[150%] lg:text-[24px]">
+                    <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                      <div className="flex-1">
+                        <p className="text-base font-semibold leading-snug text-neutral-900 line-clamp-2 sm:text-lg">
                           {productName}
                         </p>
                         {productCode ? (
-                          <p className="font-inter text-[18px] leading-[150%] text-primary lg:text-[20px]">
+                          <p className="mt-1 text-sm font-semibold uppercase tracking-[0.08em] text-primary">
                             {productCode.toUpperCase()}
                           </p>
                         ) : null}
-                        {variantParts.map((part) => (
-                          <p
-                            key={part}
-                            className="font-inter text-[18px] leading-[150%] text-[#121212] lg:text-[20px]"
-                          >
-                            {part}
-                          </p>
-                        ))}
+                        {variantParts.length ? (
+                          <p className="mt-1 text-sm text-neutral-700 line-clamp-2">{variantParts.join(", ")}</p>
+                        ) : null}
                       </div>
 
-                      <div className="mt-2 flex items-center justify-between gap-3 lg:mt-0 lg:justify-end">
-                        <span className="text-sm font-semibold lg:text-base">
-                          {`${formatCurrency(price)} ${mergedDict.priceUnit}`}
+                      <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:gap-2">
+                        <span className="text-sm font-semibold text-neutral-900 sm:text-base">
+                          {price ? `${formatCurrency(price)} ${mergedDict.priceUnit}` : "-"}
                         </span>
                         <button
                           onClick={() => handleRemove(favorite)}
                           disabled={isRemoving}
-                          className="rounded bg-red-600 px-3 py-2 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex h-11 w-11 items-center justify-center rounded bg-red-600 text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
                           aria-label={mergedDict.removeLabel}
                           type="button"
                         >
-                          <FaTrash />
+                          <FaTrash aria-hidden />
                         </button>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 );
               })
             )}
           </div>
-        </div>
+        </section>
 
-        <div className="h-auto w-full rounded-[16px] border border-[#EEEEEE] bg-white p-6 lg:w-124">
-          <p className="font-medium">
+        <aside className="w-full rounded border border-neutral-200 bg-white p-6 sm:p-7 lg:max-w-sm lg:flex-shrink-0">
+          <p className="text-base font-semibold text-neutral-900">
             {formatTemplate(mergedDict.selectedCount, {
               count: numberFormatter.format(selectedFavorites.length),
             })}
           </p>
 
-          <div className="mt-10 flex flex-col gap-3">
+          <div className="mt-6 flex flex-col gap-3">
             <a
-              href={selectedFavorites.length
-                ? `https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
-                  whatsappMessage,
-                )}`
-                : undefined}
+              href={whatsappHref}
               onClick={(event) => {
                 if (!selectedFavorites.length) {
                   event.preventDefault();
@@ -545,43 +455,36 @@ const Wishlist = ({
                 }
                 handleCheckout();
               }}
-              className={`flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 ${selectedFavorites.length ? "" : "pointer-events-none opacity-60"
-                }`}
+              className={clsx(
+                "inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded bg-primary px-5 text-sm font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                !selectedFavorites.length && "pointer-events-none opacity-60",
+              )}
               aria-disabled={!selectedFavorites.length}
               rel="noopener noreferrer"
             >
-              <FaWhatsapp />
-              {isCheckingOut
-                ? mergedDict.whatsapp.preparing
-                : mergedDict.whatsapp.button}
+              <FaWhatsapp aria-hidden />
+              {isCheckingOut ? mergedDict.whatsapp.preparing : mergedDict.whatsapp.button}
             </a>
 
             <button
               type="button"
               onClick={handleEmailOrder}
               disabled={!selectedFavorites.length || isSendingEmail}
-              className="flex w-full items-center justify-center gap-2 rounded border border-primary px-4 py-2 text-primary transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded border border-primary px-5 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <FaEnvelope />
-              {isSendingEmail
-                ? locale.startsWith("en")
-                  ? "Sending..."
-                  : "Mengirim..."
-                : mergedDict.email.button}
+              <FaEnvelope aria-hidden />
+              {isSendingEmail ? (locale.startsWith("en") ? "Sending..." : "Mengirim...") : mergedDict.email.button}
             </button>
+
             {emailFeedback ? (
-              <p
-                className={`text-sm ${
-                  emailFeedback.type === "success" ? "text-emerald-600" : "text-red-600"
-                }`}
-              >
+              <p className={clsx("text-sm", emailFeedback.type === "success" ? "text-emerald-600" : "text-red-600")}>
                 {emailFeedback.message}
               </p>
             ) : null}
           </div>
-        </div>
+        </aside>
       </div>
-    </Container >
+    </Container>
   );
 };
 

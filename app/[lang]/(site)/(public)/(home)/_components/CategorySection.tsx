@@ -6,54 +6,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { Assistant, Inter } from "next/font/google";
 import React from "react";
+import clsx from "clsx";
 import { BannerSkeleton } from "@/components/shared/Skeletons";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const assistant = Assistant({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const assistant = Assistant({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 type CategorySectionProps = {
   lang: string;
   dict: any;
   categories?: Category[];
   isLoading?: boolean;
+  className?: string; // NEW: control spacing from parent
 };
 
 const FALLBACK_CATEGORIES: Category[] = [
-  {
-    id: 301,
-    slug: "shoe-heels",
-    name: { id: "Shoe Heels", en: "Shoe Heels" },
-    name_text: "Shoe Heels",
-    cover_url: "/assets/demo/product-category-demo.webp",
-  } as Category,
-  {
-    id: 302,
-    slug: "clear-heels",
-    name: { id: "Clear Heels", en: "Clear Heels" },
-    name_text: "Clear Heels",
-    cover_url: "/assets/demo/product-category-demo.webp",
-  } as Category,
-  {
-    id: 303,
-    slug: "outsole",
-    name: { id: "Outsole", en: "Outsole" },
-    name_text: "Outsole",
-    cover_url: "/assets/demo/product-category-demo.webp",
-  } as Category,
-  {
-    id: 304,
-    slug: "wedges",
-    name: { id: "Wedges", en: "Wedges" },
-    name_text: "Wedges",
-    cover_url: "/assets/demo/product-category-demo.webp",
-  } as Category,
+  { id: 301, slug: "shoe-heels", name: { id: "Shoe Heels", en: "Shoe Heels" }, name_text: "Shoe Heels", cover_url: "/assets/demo/product-category-demo.webp" } as Category,
+  { id: 302, slug: "clear-heels", name: { id: "Clear Heels", en: "Clear Heels" }, name_text: "Clear Heels", cover_url: "/assets/demo/product-category-demo.webp" } as Category,
+  { id: 303, slug: "outsole", name: { id: "Outsole", en: "Outsole" }, name_text: "Outsole", cover_url: "/assets/demo/product-category-demo.webp" } as Category,
+  { id: 304, slug: "wedges", name: { id: "Wedges", en: "Wedges" }, name_text: "Wedges", cover_url: "/assets/demo/product-category-demo.webp" } as Category,
 ];
 
 const resolveName = (category: Category, lang: string) =>
@@ -67,23 +38,21 @@ export default function CategorySection({
   dict,
   categories,
   isLoading,
+  className,
 }: CategorySectionProps) {
-  const items =
-    categories && categories.length > 0
-      ? categories.slice(0, 4)
-      : FALLBACK_CATEGORIES;
+  const items = categories?.length ? categories.slice(0, 4) : FALLBACK_CATEGORIES;
 
   return (
-    <div className={`py-12 ${inter.className}`}>
+    <section className={clsx(inter.className, className)}>
       <Container>
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 sm:gap-8">
             {Array.from({ length: 4 }).map((_, index) => (
               <BannerSkeleton key={index} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 sm:gap-8">
             {items.map((cat) => {
               const name = resolveName(cat, lang);
               return (
@@ -93,7 +62,7 @@ export default function CategorySection({
                   className="flex flex-col"
                 >
                   <div
-                    className="relative w-full overflow-hidden rounded-md"
+                    className="relative w-full overflow-hidden"
                     style={{ aspectRatio: "750 / 580" }}
                   >
                     <Image
@@ -101,28 +70,15 @@ export default function CategorySection({
                       alt={name || "Category"}
                       fill
                       className="object-cover"
-                      sizes="(min-width: 1024px) 375px, (min-width: 640px) 50vw, 100vw"
+                      sizes="(min-width: 640px) 50vw, 50vw"
                     />
                   </div>
 
-                  <div className="mt-6 w-full">
-                    <h2 className="mt-2 text-base font-semibold uppercase tracking-wide md:text-[15px]">
-                      {name || cat.slug}
-                    </h2>
-
-                    <div>
-                      <button
-                        className={`mt-2 inline-block rounded-full bg-primary px-4 py-2 text-sm text-white transition hover:bg-primary/90 ${assistant.className}`}
-                      >
-                        {dict?.category?.more ?? "Lihat Produk"} &gt;
-                      </button>
-                    </div>
-
-                    <div>
-                      <button className="mt-3 text-xs text-gray-600 transition hover:text-primary md:text-sm">
-                        {name || cat.slug} &rarr;
-                      </button>
-                    </div>
+                  {/* perkecil jarak judul dari gambar */}
+                  <div className="mt-2 w-full">
+                    <span className="text-base font-semibold uppercase transition hover:text-primary md:text-[15px]">
+                      {name || cat.slug} &rarr;
+                    </span>
                   </div>
                 </Link>
               );
@@ -130,6 +86,6 @@ export default function CategorySection({
           </div>
         )}
       </Container>
-    </div>
+    </section>
   );
 }

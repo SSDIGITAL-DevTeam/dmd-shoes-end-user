@@ -1,25 +1,34 @@
-// components/TechnologySection.tsx
-import React from "react"
-import Image from "next/image"
+"use client";
+
+import React from "react";
+import Image from "next/image";
 import {
   FaCog,
   FaRecycle,
   FaBullseye,
   FaMoneyBillWave,
   FaLayerGroup,
-} from "react-icons/fa"
-import Container from "@/components/ui-custom/Container"
-import { HiArrowRight } from "react-icons/hi"
-import Link from "next/link"
-import { Inter } from "next/font/google"
+} from "react-icons/fa";
+import Container from "@/components/ui-custom/Container";
+import { HiArrowRight } from "react-icons/hi";
+import Link from "next/link";
+import { Inter } from "next/font/google";
+import clsx from "clsx";
 
-// ✅ Import font Inter hanya untuk halaman ini
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-})
+});
 
-export default function TechnologySection({ lang, dict }: { lang: string; dict: any }) {
+export default function TechnologySection({
+  lang,
+  dict,
+  className,
+}: {
+  lang: string;
+  dict: any;
+  className?: string;
+}) {
   const features = [
     {
       icon: <FaCog size={20} />,
@@ -46,13 +55,14 @@ export default function TechnologySection({ lang, dict }: { lang: string; dict: 
       title: dict?.technology?.features?.scalability?.title,
       description: dict?.technology?.features?.scalability?.description,
     },
-  ]
+  ];
 
   return (
-    <div className={`py-12 ${inter.className}`}>
+    // ganti root jadi <section> & tanpa py default
+    <section className={clsx(inter.className, className)}>
       <Container>
         <div className="flex flex-col items-center gap-8 md:flex-row lg:gap-12">
-          {/* Left Section: Text & Features */}
+          {/* Left: Text & Features */}
           <div className="w-full md:w-1/2">
             <h2 className="mb-6 text-xl font-semibold leading-tight text-primary md:text-2xl">
               {dict?.technology?.heading}
@@ -76,7 +86,6 @@ export default function TechnologySection({ lang, dict }: { lang: string; dict: 
               ))}
             </div>
 
-            {/* Button */}
             <Link
               href={`/${lang}/product`}
               className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 md:px-5 md:py-2.5 md:text-[15px]"
@@ -85,18 +94,20 @@ export default function TechnologySection({ lang, dict }: { lang: string; dict: 
             </Link>
           </div>
 
-          {/* Right Section: Image */}
+          {/* Right: Image */}
           <div className="flex w-full justify-center md:w-1/2">
-            <Image
-              src="/assets/images/home/teknologi-unggulan.webp"
-              alt={dict?.technology?.imageAlt || ""}
-              width={600}
-              height={400}
-              className="object-cover "
-            />
+            <div className="relative aspect-video w-full max-w-[600px] overflow-hidden">
+              <Image
+                src="/assets/images/home/teknologi-unggulan.webp"
+                alt={dict?.technology?.imageAlt || ""}
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 600px, 90vw"
+              />
+            </div>
           </div>
         </div>
       </Container>
-    </div>
-  )
+    </section>
+  );
 }

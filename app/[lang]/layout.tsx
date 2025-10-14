@@ -32,7 +32,7 @@ export default async function Root(props: {
   return (
     <html lang={params.lang}>
       <body
-        className={`${inter.className} ${assistant.variable} ${lato.variable} ${poppins.variable} ${plusJakartaSans.variable} antialiased`}
+        className={`${inter.className} ${assistant.variable} ${lato.variable} ${poppins.variable} ${plusJakartaSans.variable} antialiased min-h-screen bg-[var(--surface)] text-[var(--text-primary)]`}
       >
         <ReactQueryProvider>
           <AuthInitializer />

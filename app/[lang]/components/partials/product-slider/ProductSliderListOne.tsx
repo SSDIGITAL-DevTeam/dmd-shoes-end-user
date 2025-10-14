@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaPlay, FaPause, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import clsx from "clsx";
 
 type ImageObject = {
   src: string;
@@ -16,36 +17,43 @@ type ImageObject = {
 export type ProductSliderListProps = {
   images: ImageObject[];
   autoPlayInterval?: number;
-  /** Tinggi responsif area gambar slider; boleh di-override dari pemanggil */
-  sliderHeightClass?: string; // e.g. "h-[280px] md:h-[340px] lg:h-[420px]"
+  /** Tinggi responsif area gambar slider; override dari parent. Contoh: "aspect-video md:h-[360px] lg:h-[440px]" */
+  sliderHeightClass?: string;
+  /** Kelas untuk <Image/>: default mobile contain (no crop), desktop cover (full-bleed) */
+  imageClassName?: string;
 };
 
 type ProductSliderItemProps = {
   image: ImageObject;
   sliderHeightClass: string;
+  imageClassName?: string;
 };
 
-/** Satu slide, gambar selalu cover + center dengan Next/Image fill */
-function ProductSliderItem({ image, sliderHeightClass }: ProductSliderItemProps) {
+/** Satu slide */
+function ProductSliderItem({
+  image,
+  sliderHeightClass,
+  imageClassName,
+}: ProductSliderItemProps) {
   if (!image.src) {
-    return <div className={`w-full bg-slate-100 ${sliderHeightClass}`} />;
+    return <div className={clsx("w-full bg-slate-100", sliderHeightClass)} />;
   }
 
   const node = (
-    <div className={`relative w-full ${sliderHeightClass}`}>
+    <div className={clsx("relative w-full overflow-hidden bg-black/5", sliderHeightClass)}>
       <Image
         src={image.src}
         alt={image.alt || "product image"}
         fill
         sizes="100vw"
-        className="object-cover object-center"
+        className={clsx("w-full h-full", imageClassName ?? "object-contain md:object-cover")}
         priority={false}
       />
     </div>
   );
 
   return image.href ? (
-    <Link href={image.href} className="block w-full">
+    <Link href={image.href} className="block w-full" aria-label={image.alt ?? image.name ?? "slide"}>
       {node}
     </Link>
   ) : (
@@ -57,17 +65,15 @@ function ProductSliderItem({ image, sliderHeightClass }: ProductSliderItemProps)
 export default function ProductSliderListOne({
   images,
   autoPlayInterval = 3000,
-  sliderHeightClass = "h-[300px] md:h-[360px] lg:h-[440px]",
+  sliderHeightClass = "aspect-video md:h-[360px] lg:h-[440px]", // 16:9 di mobile, fixed height di md+
+  imageClassName = "object-contain md:object-cover", // Mobile tidak crop, Desktop cover
 }: ProductSliderListProps) {
-  const filteredImages = useMemo(
-    () => images.filter((img) => Boolean(img.src)),
-    [images],
-  );
+  const filteredImages = useMemo(() => images.filter((img) => Boolean(img.src)), [images]);
 
   const totalSlides = filteredImages.length;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (totalSlides === 0 ? 0 : (prev + 1) % totalSlides));
@@ -108,9 +114,10 @@ export default function ProductSliderListOne({
           <ProductSliderItem
             image={filteredImages[currentIndex]}
             sliderHeightClass={sliderHeightClass}
+            imageClassName={imageClassName}
           />
         ) : (
-          <div className={`w-full bg-slate-100 ${sliderHeightClass}`} />
+          <div className={clsx("w-full bg-slate-100", sliderHeightClass)} />
         )}
       </div>
 
@@ -127,14 +134,17 @@ export default function ProductSliderListOne({
             <FaChevronLeft />
           </button>
 
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2">
             {Array.from({ length: totalSlides }).map((_, idx) => (
-              <span
+              <button
                 key={idx}
-                className={`h-2 w-2 rounded-full ${
-                  idx === currentIndex ? "bg-[#121212]" : "bg-[rgba(18,18,18,0.5)]"
-                }`}
-                aria-hidden="true"
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                aria-label={`Pindah ke slide ${idx + 1}`}
+                className={clsx(
+                  "h-2 w-2 rounded-full transition",
+                  idx === currentIndex ? "bg-[#121212]" : "bg-[rgba(18,18,18,0.5)] hover:bg-[rgba(18,18,18,0.7)]"
+                )}
               />
             ))}
           </div>
@@ -149,6 +159,7 @@ export default function ProductSliderListOne({
             <FaChevronRight />
           </button>
         </div>
+
         <div className="py-2 border-l pl-2 border-l-[#12121214]">
           <button
             type="button"

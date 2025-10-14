@@ -14,7 +14,7 @@
     "intro": "Hi, DMD Shoes. Saya tertarik dengan produk berikut:",
     "outro": "Mohon informasi ketersediaan dan cara pemesanan.",
     "line": "{index}. {product}{variant} - {price}",
-    "button": "Pesan Melalui WhatsApp Sekarang",
+    "button": "Pesan Melalui WhatsApp",
     "preparing": "Menyiapkan..."
   },
   "email": {
@@ -23,6 +23,6 @@
     "outro": "Mohon informasikan ketersediaan dan cara pemesanan selanjutnya.",
     "subject": "Permintaan Pesanan - {count} Produk",
     "line": "{index}. {product}{variant} - {price}",
-    "button": "Pesan Melalui Email Sekarang"
+    "button": "Pesan Melalui Email"
   }
 }

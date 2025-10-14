@@ -130,7 +130,7 @@ export type Category = {
   status?: boolean;
   parent_id?: number | null;
   parent_brief?: CategoryBrief | null;
-   products_count?: number | null;
+  products_count?: number | null;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;
@@ -144,6 +144,7 @@ export type HomepageHero = {
   cta_label?: string | null;
   cta_href?: string | null;
   link?: string | null;
+  mobile_image_url?: string | null;
 };
 
 export type HomepageVideo = {
@@ -160,6 +161,7 @@ export type HomepageSlider = {
   image?: string | null;
   link_url?: string | null;
   sort?: number | null;
+  group?: string | null;
 };
 
 export type HomepageContent = {
