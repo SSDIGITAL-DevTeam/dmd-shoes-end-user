@@ -14,8 +14,8 @@ const assistant = Assistant({
 });
 
 const FEATURED_FALLBACK_LABELS: Record<string, { title: string; viewAll: string }> = {
-  id: { title: "Produk Unggulan", viewAll: "Lihat semua produk" },
-  en: { title: "Featured Products", viewAll: "View all products" },
+  id: { title: "Produk Unggulan", viewAll: "Lihat Semua Produk" },
+  en: { title: "Featured Products", viewAll: "View All Products" },
 };
 
 type ProductPromoProps = {
@@ -106,7 +106,12 @@ export default function ProductPromo({
       <div className="flex justify-center">
         <Link
           href={viewAllHref}
-          className={`${assistant.className} inline-flex items-center justify-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/5 md:px-5 md:py-2.5 md:text-[15px]`}
+          className={`${assistant.className} inline-flex items-center justify-center
+              rounded-md px-4 py-2 md:px-5 md:py-2.5
+              text-sm md:text-[15px] font-semibold
+              text-primary bg-white border border-primary
+              shadow-sm transition
+              hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30`}
         >
           {resolvedViewAllLabel}
         </Link>

@@ -57,7 +57,7 @@ export default function HomePageClient({
             products={featuredProducts}
             isLoading={false}
             title={homeDictionary?.featured?.title ?? "Produk Unggulan"}
-            viewAllLabel={homeDictionary?.featured?.viewAll ?? "Lihat semua produk"}
+            viewAllLabel={homeDictionary?.featured?.viewAll ?? "Lihat Semua Produk"}
             viewAllHref={`/${lang}/product`}
           />
         </Container>
