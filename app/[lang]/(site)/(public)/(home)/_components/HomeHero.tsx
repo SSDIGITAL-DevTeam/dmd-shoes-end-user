@@ -78,7 +78,11 @@ export default function HomeHero({
       {/* Overlay teks */}
       <div className="absolute left-1/2 top-1/2 z-10 w-full -translate-x-1/2 -translate-y-1/2 px-4 sm:px-6">
         <div className="mx-auto w-full max-w-[1200px] text-white">
-          <div className="max-w-[760px] md:max-w-[820px]">
+          <div className={clsx(
+            "max-w-[760px] md:max-w-[820px]",
+            // center di mobile, left di desktop
+            "text-center lg:text-left"
+          )}>
             <h1
               className="uppercase font-semibold
                          text-3xl md:text-5xl lg:text-[44px]
