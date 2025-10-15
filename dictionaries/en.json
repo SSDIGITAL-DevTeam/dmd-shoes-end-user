@@ -6,7 +6,6 @@
     "about_us": "About Us",
     "contact_us": "Contact Us",
     "faq": "FAQ"
-    
   },
   "company": {
     "name": "DMD Shoeparts Manufacturing",
@@ -19,5 +18,11 @@
     "login": "Log In",
     "wishlist": "Wishlist",
     "account": "Account"
+  },
+  "common": {
+    "cta": {
+      "whatsappLabel": "Contact Us",
+      "whatsappMessage": "Hello DMD, I’d like to ask about shoe component production."
+    }
   }
 }

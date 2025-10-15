@@ -5,12 +5,12 @@
     "articles": "Artikel",
     "about_us": "Tentang Kami",
     "contact_us": "Kontak Kami",
-      "faq": "FAQ"
+    "faq": "FAQ"
   },
   "company": {
     "name": "DMD Shoeparts Manufacturing",
     "tagline": "Memproduksi komponen alas kaki berkualitas untuk industri sepatu sejak 2004",
-    "address": "Alamat"  ,
+    "address": "Alamat",
     "operating_hours": "Jam Operasional"
   },
   "auth": {
@@ -18,5 +18,11 @@
     "login": "Masuk",
     "wishlist": "Favorit",
     "account": "Akun"
+  },
+  "common": {
+    "cta": {
+      "whatsappLabel": "Hubungi Kami",
+      "whatsappMessage": "Halo DMD, saya ingin bertanya tentang produksi komponen sepatu."
+    }
   }
 }

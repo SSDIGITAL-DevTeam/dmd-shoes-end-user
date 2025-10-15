@@ -1,7 +1,7 @@
 import React from "react";
 import Container from "@/components/ui-custom/Container";
-import Image from "next/image";
 import { getDictionaryAbout } from "../../../../../../dictionaries/about/get-dictionary-about";
+import AboutPhoto from "./shared/AboutPhoto";
 
 export default function About({
   lang,
@@ -10,55 +10,57 @@ export default function About({
   lang: string;
   dictionaryAbout: Awaited<ReturnType<typeof getDictionaryAbout>>;
 }) {
+  const title = dictionaryAbout?.about?.title || "Tentang kami";
+  const desc =
+    dictionaryAbout?.about?.description ||
+    "Kami adalah pabrik spesialis komponen sepatu yang berfokus pada produksi hak sepatu, outsole, dan insole berkualitas. Dengan teknologi modern dan material ramah lingkungan, kami menghadirkan solusi shoes parts yang presisi, terjangkau, dan cocok untuk berbagai skala produksi — dari workshop kecil hingga pabrik besar.";
+
   return (
     <Container>
-      {/* Wrapper */}
       <section className="py-8 md:py-12">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center">
-          {/* Text */}
-          <div className="w-full md:w-2/3 md:pr-8">
-            <h1 className="text-primary font-semibold text-2xl leading-snug sm:text-3xl md:text-[32px] md:leading-[140%] text-left">
-              {dictionaryAbout.about.title || "Tentang kami"}
+        {/* TOP: teks kiri, foto kanan */}
+        <div className="grid gap-6 md:gap-10 md:grid-cols-[1.6fr_1fr] items-start">
+          <div className="md:pr-8">
+            <h1 className="text-primary font-semibold text-2xl sm:text-3xl md:text-[32px] leading-[1.3]">
+              {title}
             </h1>
-
-            <p className="mt-3 sm:mt-4 text-base leading-[170%] sm:text-lg md:text-[20px] text-[#121212] text-left">
-              {dictionaryAbout.about.description ||
-                "Kami adalah pabrik spesialis komponen sepatu yang berfokus pada produksi hak sepatu, outsole, dan insole berkualitas. Dengan teknologi modern dan material ramah lingkungan, kami menghadirkan solusi shoes parts yang presisi, terjangkau, dan cocok untuk berbagai skala produksi — dari workshop kecil hingga pabrik besar."}
+            <p className="mt-3 sm:mt-4 text-base sm:text-lg md:text-[20px] leading-[1.7] text-[#121212]">
+              {desc}
             </p>
-          </div>
 
-          {/* Image */}
-          <div className="w-full md:w-1/3">
-            <div className="mx-auto md:mx-0 w-full max-w-[320px] sm:max-w-[380px]">
-              <Image
-                src="/assets/demo/demo-product.png"
-                alt="Demo Product"
-                width={800}
-                height={800}
-                className="w-full h-auto rounded-xl object-cover"
+            {/* Foto besar di bawah paragraf (mobile-first) */}
+            <div className="mt-4 md:hidden">
+              <AboutPhoto
+                src="/assets/images/about/about-1.webp"
+                alt="Proses produksi sepatu 1"
                 priority
+                ratio="aspect-[4/3] md:aspect-[3/2]"
               />
             </div>
           </div>
+
+          {/* Foto rak sepatu di kanan untuk desktop */}
+          <div className="hidden md:block">
+            <AboutPhoto
+              src="/assets/images/about/about-1.webp"
+              alt="Rak sepatu"
+              priority
+              ratio="aspect-[3/2]"
+            />
+          </div>
         </div>
 
-        {/* Grid gambar */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          <Image
-            src="/assets/demo/product-demo-width.webp"
-            alt="Product Demo 1"
-            width={1200}
-            height={800}
-            className="w-full h-auto rounded-lg"
-            priority
+        {/* BOTTOM: dua foto sejajar */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AboutPhoto
+            src="/assets/images/about/about-3.webp"
+            alt="Proses produksi sepatu 3"
+            ratio="aspect-[4/3] md:aspect-[3/2]"
           />
-          <Image
-            src="/assets/demo/product-demo-width.webp"
-            alt="Product Demo 2"
-            width={1200}
-            height={800}
-            className="w-full h-auto rounded-lg"
-            priority
+          <AboutPhoto
+            src="/assets/images/about/about-2.webp"
+            alt="Proses produksi sepatu 4"
+            ratio="aspect-[4/3] md:aspect-[3/2]"
           />
         </div>
       </section>
