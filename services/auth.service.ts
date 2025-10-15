@@ -1,3 +1,4 @@
+// services/auth.service.ts
 import { ApiError, apiFetch } from "@/lib/api-client";
 import {
   clearStoredToken,
@@ -16,31 +17,32 @@ import type {
   User,
 } from "@/services/types";
 
+const withLang = (url: string, lang?: string) =>
+  lang ? `${url}${url.includes("?") ? "&" : "?"}lang=${lang}` : url;
+
 const parseJson = async (response: Response) => {
   const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
+  if (contentType.includes("application/json")) return response.json();
   const text = await response.text();
   return text ? { message: text } : {};
 };
 
-const login = async (credentials: Credentials) => {
-  const response = await fetch("/api/auth/login", {
+const login = async (credentials: Credentials, lang?: string) => {
+  const response = await fetch(withLang("/api/auth/login", lang), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      ...(lang ? { "Accept-Language": lang } : {}),
     },
     credentials: "include",
     body: JSON.stringify(credentials),
   });
 
   const data = await parseJson(response);
-
   if (!response.ok) {
     const message =
-      (data && typeof data === "object" && "message" in data && data.message) ||
+      (data && typeof data === "object" && "message" in data && (data as any).message) ||
       "Login failed.";
     throw new ApiError(response.status, String(message), data);
   }
@@ -51,42 +53,34 @@ const login = async (credentials: Credentials) => {
       : typeof (data as any)?.data?.token === "string"
         ? (data as any).data.token
         : null;
+
   const user =
     ((data as any)?.user as User | undefined) ??
     ((data as any)?.data?.user as User | undefined) ??
     null;
 
-  if (token) {
-    setStoredToken(token);
-  } else {
-    clearStoredToken();
-  }
-
-  if (user) {
-    setStoredUser(user);
-  } else {
-    clearStoredUser();
-  }
+  token ? setStoredToken(token) : clearStoredToken();
+  user ? setStoredUser(user) : clearStoredUser();
 
   return { token: token ?? null, user: user ?? null, raw: data };
 };
 
-const registerCustomer = async (payload: RegisterPayload) => {
-  const response = await fetch("/api/auth/customer/register", {
+const registerCustomer = async (payload: RegisterPayload, lang?: string) => {
+  const response = await fetch(withLang("/api/auth/customer/register", lang), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      ...(lang ? { "Accept-Language": lang } : {}),
     },
     credentials: "include",
     body: JSON.stringify(payload),
   });
 
   const data = await parseJson(response);
-
   if (!response.ok) {
     const message =
-      (data && typeof data === "object" && "message" in data && data.message) ||
+      (data && typeof data === "object" && "message" in data && (data as any).message) ||
       "Registration failed.";
     throw new ApiError(response.status, String(message), data);
   }
@@ -97,59 +91,61 @@ const registerCustomer = async (payload: RegisterPayload) => {
       : typeof (data as any)?.data?.token === "string"
         ? (data as any).data.token
         : null;
+
   const user =
     ((data as any)?.user as User | undefined) ??
     ((data as any)?.data?.user as User | undefined) ??
     null;
 
-  if (token) {
-    setStoredToken(token);
-  } else {
-    clearStoredToken();
-  }
-
-  if (user) {
-    setStoredUser(user);
-  } else {
-    clearStoredUser();
-  }
+  token ? setStoredToken(token) : clearStoredToken();
+  user ? setStoredUser(user) : clearStoredUser();
 
   return { token: token ?? null, user: user ?? null, raw: data };
 };
 
 const logout = async () => {
   try {
-    await fetch("/api/auth/logout", {
-      method: "DELETE",
-      credentials: "include",
-    });
-  } catch (error) {
-    console.error("Logout request failed", error);
+    await fetch("/api/auth/logout", { method: "DELETE", credentials: "include" });
+  } catch (e) {
+    console.error("Logout request failed", e);
   } finally {
     clearStoredToken();
     clearStoredUser();
   }
 };
 
-const forgotPassword = async (payload: ForgotPasswordPayload) =>
-  apiFetch<ApiResponse<null>>("/password/forgot", {
+// === Perhatikan path sesuai routes Laravel (/v1/password/forgot & /v1/password/reset, /v1/email/resend)
+const forgotPassword = async (payload: ForgotPasswordPayload, lang?: string) =>
+  apiFetch<ApiResponse<null>>(withLang("/password/forgot", lang), {
     method: "POST",
     body: payload,
+    headers: lang ? { "Accept-Language": lang } : undefined,
   });
 
-const resetPassword = async (payload: ResetPasswordPayload) =>
-  apiFetch<ApiResponse<null>>("/password/reset", {
+const resetPassword = async (payload: ResetPasswordPayload, lang?: string) =>
+  apiFetch<ApiResponse<null>>(withLang("/password/reset", lang), {
     method: "POST",
     body: payload,
+    headers: lang ? { "Accept-Language": lang } : undefined,
   });
 
-const resendVerification = async (payload: { email: string }) =>
-  apiFetch<ApiResponse<null>>("/email/resend", {
+const resendVerification = async (payload: { email: string }, lang?: string) =>
+  apiFetch<ApiResponse<null>>(withLang("/email/resend", lang), {
     method: "POST",
     body: payload,
+    headers: lang ? { "Accept-Language": lang } : undefined,
   });
 
-const getMe = async (): Promise<User | null> => {
+// verifikasi via link GET signed URL → biasanya tidak via API JSON.
+// Ini disediakan jika kamu punya endpoint POST alternatif.
+const verifyEmailCode = async (payload: { email: string; code: string }, lang?: string) =>
+  apiFetch<ApiResponse<null>>(withLang("/email/verify", lang), {
+    method: "POST",
+    body: payload,
+    headers: lang ? { "Accept-Language": lang } : undefined,
+  });
+
+const getMe = async (lang?: string): Promise<User | null> => {
   const existingToken = getStoredToken();
   const cachedUser = getStoredUser<User>();
 
@@ -159,14 +155,13 @@ const getMe = async (): Promise<User | null> => {
   }
 
   try {
-    const response = await fetch("/api/auth/user", {
+    const response = await fetch(withLang("/api/auth/user", lang), {
       method: "GET",
       credentials: "include",
-      headers: existingToken
-        ? {
-            Authorization: `Bearer ${existingToken}`,
-          }
-        : undefined,
+      headers: {
+        ...(existingToken ? { Authorization: `Bearer ${existingToken}` } : {}),
+        ...(lang ? { "Accept-Language": lang } : {}),
+      },
       cache: "no-store",
     });
 
@@ -180,7 +175,7 @@ const getMe = async (): Promise<User | null> => {
 
     if (!response.ok) {
       const message =
-        (data && typeof data === "object" && "message" in data && data.message) ||
+        (data && typeof data === "object" && "message" in data && (data as any).message) ||
         "Failed to fetch authenticated user.";
       throw new ApiError(response.status, String(message), data);
     }
@@ -192,9 +187,7 @@ const getMe = async (): Promise<User | null> => {
           ? (data as any).data.token
           : null;
 
-    if (token) {
-      setStoredToken(token);
-    }
+    if (token) setStoredToken(token);
 
     const user =
       ((data as any)?.user as User | undefined) ??
@@ -210,10 +203,7 @@ const getMe = async (): Promise<User | null> => {
     clearStoredUser();
     return null;
   } catch (error) {
-    if (cachedUser) {
-      return cachedUser;
-    }
-
+    if (cachedUser) return cachedUser;
     throw error;
   }
 };
@@ -225,6 +215,7 @@ export const AuthService = {
   forgotPassword,
   resetPassword,
   resendVerification,
+  verifyEmailCode,
   getMe,
 };
 

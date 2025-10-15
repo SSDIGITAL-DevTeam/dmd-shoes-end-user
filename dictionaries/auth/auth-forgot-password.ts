@@ -1,0 +1,36 @@
+export const authDict = {
+    id: {
+        title: "Reset kata sandi",
+        subtitle: "Masukkan email anda untuk reset kata sandi",
+        emailPlaceholder: "Email",
+        submit: "Lanjutkan",
+        processing: "Memproses...",
+        sentTitle: "Cek Email Anda",
+        sentDesc: (email: string) => `Kami telah mengirimkan link reset ke ${email}`,
+        resend: "Kirim Ulang Verifikasi",
+        resendCountdown: (s: number) => `Kirim ulang (${s}s)`,
+        okSent: "Tautan reset telah dikirim ke email bila terdaftar.",
+        okResent: "Email verifikasi telah dikirim ulang.",
+        tooMany: "Terlalu sering. Coba lagi sebentar lagi.",
+        failSend: "Gagal mengirim tautan reset.",
+        failResend: "Gagal mengirim ulang email.",
+    },
+    en: {
+        title: "Reset password",
+        subtitle: "Enter your email to reset your password",
+        emailPlaceholder: "Email",
+        submit: "Continue",
+        processing: "Processing...",
+        sentTitle: "Check your inbox",
+        sentDesc: (email: string) => `We sent a reset link to ${email}`,
+        resend: "Resend Verification",
+        resendCountdown: (s: number) => `Resend (${s}s)`,
+        okSent: "Reset link has been sent if the email is registered.",
+        okResent: "Verification email has been re-sent.",
+        tooMany: "Too many attempts. Please try again later.",
+        failSend: "Failed to send reset link.",
+        failResend: "Failed to resend email.",
+    },
+} as const;
+
+export type AuthLang = keyof typeof authDict;
