@@ -153,31 +153,40 @@ export default function Navbar({
                 <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 md:px-6 py-2.5">
                     {/* MOBILE BAR: burger + logo + wishlist */}
                     <div className="flex w-full items-center justify-between lg:hidden">
+                        {/* kiri: burger */}
                         <button
                             aria-label={isOpen ? "Close menu" : "Open menu"}
                             aria-expanded={isOpen}
                             aria-controls="mobile-sidebar"
                             onClick={() => setIsOpen((v) => !v)}
-                            className="text-white text-3xl"
+                            className="justify-self-start text-white text-3xl h-9 w-9 inline-flex items-center justify-center"
                         >
                             <HiMenu />
                         </button>
 
-                        <Logo lang={lang} />
+                        <div className="justify-self-center">
+                            <Logo lang={lang} />
+                        </div>
 
-                        <Link
-                            href={`/${lang}/wishlist`}
-                            className="relative inline-flex h-9 w-9 items-center justify-center text-white"
-                            aria-label={`${authLabels.wishlist}${wishlistCount ? ` (${wishlistCount})` : ""}`}
-                            title={authLabels.wishlist}
-                        >
-                            <WishlistIcon size={20} />
-                            {wishlistCount > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-600 px-1.5 text-center text-[11px] font-bold leading-[18px] text-white">
-                                    {wishlistCount > 99 ? "99+" : wishlistCount}
-                                </span>
-                            )}
-                        </Link>
+                        {/* kanan: wishlist jika login; kalau tidak, spacer biar tetap center */}
+                        {isAuthenticated ? (
+                            <Link
+                                href={`/${lang}/wishlist`}
+                                className="relative justify-self-end inline-flex h-9 w-9 items-center justify-center text-white"
+                                aria-label={`${authLabels.wishlist}${wishlistCount ? ` (${wishlistCount})` : ""}`}
+                                title={authLabels.wishlist}
+                            >
+                                <WishlistIcon size={20} />
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-600 px-1.5 text-center text-[11px] font-bold leading-[18px] text-white">
+                                        {wishlistCount > 99 ? "99+" : wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
+                        ) : (
+                            // spacer dengan ukuran tombol supaya logo tetap benar-benar center
+                            <span className="justify-self-end h-9 w-9" aria-hidden />
+                        )}
                     </div>
 
                     {/* DESKTOP: logo kiri */}
@@ -209,20 +218,21 @@ export default function Navbar({
                     <div className="hidden lg:flex items-center gap-4">
                         <LocaleSwitcher />
 
-                        <Link
-                            href={`/${lang}/wishlist`}
-                            className="relative inline-flex h-9 w-9 items-center justify-center text-white hover:opacity-90"
-                            aria-label={`${authLabels.wishlist}${wishlistCount ? ` (${wishlistCount})` : ""}`}
-                            title={authLabels.wishlist}
-                        >
-                            <WishlistIcon size={20} />
-                            {wishlistCount > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-600 px-1.5 text-center text-[11px] font-bold leading-[18px] text-white">
-                                    {wishlistCount > 99 ? "99+" : wishlistCount}
-                                </span>
-                            )}
-                        </Link>
-
+                        {isAuthenticated && (
+                            <Link
+                                href={`/${lang}/wishlist`}
+                                className="relative inline-flex h-9 w-9 items-center justify-center text-white hover:opacity-90"
+                                aria-label={`${authLabels.wishlist}${wishlistCount ? ` (${wishlistCount})` : ""}`}
+                                title={authLabels.wishlist}
+                            >
+                                <WishlistIcon size={20} />
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[18px] rounded-full bg-red-600 px-1.5 text-center text-[11px] font-bold leading-[18px] text-white">
+                                        {wishlistCount > 99 ? "99+" : wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
                         {showGuestView ? (
                             <>
                                 <Link
