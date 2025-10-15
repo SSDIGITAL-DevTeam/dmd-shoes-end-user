@@ -1,7 +1,5 @@
 import FormLogin from "./_component/FormLogin";
 import Image from "next/image";
-// import Logo from "@/../../public/assets/logo-dmd.svg"; // import langsung SVG
-import Logo from "@/assets/Logo"
 export default function Login() {
   return (
     <div className="flex h-screen">
@@ -14,27 +12,30 @@ export default function Login() {
           className="object-cover" // bisa diganti 'object-contain' kalau mau seluruh gambar keliatan
           priority
         />
-        
+
       </div>
 
       {/* Kolom kanan - Form Login */}
       <div className="flex flex-col flex-1 bg-[#F5F5F5] items-center justify-center p-8 space-y-[40px]">
         <div className=" flex text-primary space-x-[10px]">
-      
-        < Image
-              src="/assets/logo-dmd-blue.svg"
-              alt="DMD Logo"
-              
-              width={40}
-              height={40}
-         
+          <div className="flex items-center text-[#003663] gap-2">
+            <span
+              aria-hidden="true"
+              className="
+      block shrink-0 w-12 h-12 bg-[#003663]
+      [mask-image:url('/assets/logo-dmd-vector.svg')]
+      [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]
+      [-webkit-mask-image:url('/assets/logo-dmd-vector.svg')]
+      [-webkit-mask-size:contain] [-webkit-mask-repeat:no-repeat] [-webkit-mask-position:center]
+    "
             />
-            <div className="font-bold text-[28px] leading-[120%]">
-              DMD Shoeparts 
-              <br></br>
+            <div className="font-bold text-[28px] leading-[1.1]">
+              DMD Shoeparts
+              <br />
               Manufacturing
             </div>
-                 {/* <Logo className="w-10 h-10 text-primary" /> */}
+          </div>
+          {/* <Logo className="w-10 h-10 text-primary" /> */}
         </div>
         <div className="w-full max-w-md bg-white mx-6 p-6">
           <h1 className="text-2xl font-bold mb-6 text-center text-primary">

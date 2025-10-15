@@ -18,7 +18,6 @@ const jakartaSans = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-//const REGISTER_ENDPOINT = "/api/auth/customer/register";
 const REGISTER_ENDPOINT = "/api/auth/customer/register";
 const PENDING_WISHLIST_KEY = "pending_wishlist";
 
@@ -26,6 +25,7 @@ type PendingFavorite = {
   productId: number;
   variantId?: number | null;
 };
+
 type RegisterFormValues = {
   name: string;
   email: string;
@@ -36,71 +36,93 @@ type RegisterFormValues = {
 
 type RegisterFieldErrors = Partial<Record<keyof RegisterFormValues, string[]>>;
 
-const initialValues: RegisterFormValues = {
-  name: "",
-  email: "",
-  password: "",
-  password_confirmation: "",
-  phone: "",
+// ==== DICTIONARY TYPES ====
+type RegisterDict = {
+  title: string;
+  placeholders: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    password_confirmation: string;
+  };
+  button: { submit: string };
+  links: { haveAccount: string; login: string };
+  messages: {
+    genericError: string;
+    success: string;
+  };
+  validation: {
+    name_required: string;
+    email_required: string;
+    email_invalid: string;
+    password_required: string;
+    password_min: string;
+    password_confirmation_required: string;
+    password_mismatch: string;
+    phone_required: string;
+    phone_invalid: string;
+    form_invalid: string;
+  };
 };
 
-export default function FormRegister() {
+export default function FormRegister({ dict }: { dict: RegisterDict }) {
   const router = useRouter();
   const { lang } = useParams<{ lang: string }>();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
   const queryClient = useQueryClient();
+
   const callbackUrlParam = searchParams.get("callbackUrl") ?? "";
   const loginLink = callbackUrlParam
     ? `/${lang}/auth/login?callbackUrl=${encodeURIComponent(callbackUrlParam)}`
     : `/${lang}/auth/login`;
 
-  const [formValues, setFormValues] = useState<RegisterFormValues>(
-    initialValues,
-  );
+  const [formValues, setFormValues] = useState<RegisterFormValues>({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    phone: "",
+  });
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
-  const [statusMessage, setStatusMessage] = useState<
-    | { type: "idle" }
-    | { type: "error"; text: string }
-    | { type: "success"; text: string }
-  >({ type: "idle" });
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ Pesan global di bawah tombol (rata kiri)
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const clientErrors = useMemo<RegisterFieldErrors>(() => {
     const errors: RegisterFieldErrors = {};
 
-    if (!formValues.name.trim()) {
-      errors.name = ["Name is required."];
-    }
+    if (!formValues.name.trim()) errors.name = [dict.validation.name_required];
 
     if (!formValues.email.trim()) {
-      errors.email = ["Email is required."];
+      errors.email = [dict.validation.email_required];
     } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/i.test(formValues.email)) {
-      errors.email = ["Email is not valid."];
+      errors.email = [dict.validation.email_invalid];
     }
 
     if (!formValues.password) {
-      errors.password = ["Password is required."];
+      errors.password = [dict.validation.password_required];
     } else if (formValues.password.length < 8) {
-      errors.password = ["Password must be at least 8 characters long."];
+      errors.password = [dict.validation.password_min];
     }
 
     if (!formValues.password_confirmation) {
-      errors.password_confirmation = [
-        "Password confirmation is required.",
-      ];
+      errors.password_confirmation = [dict.validation.password_confirmation_required];
     } else if (formValues.password !== formValues.password_confirmation) {
-      errors.password_confirmation = ["Passwords do not match."];
+      errors.password_confirmation = [dict.validation.password_mismatch];
     }
 
     if (!formValues.phone.trim()) {
-      errors.phone = ["Phone is required."];
+      errors.phone = [dict.validation.phone_required];
     } else if (!/^\+\d{8,15}$/.test(formValues.phone)) {
-      errors.phone = ["Phone must be in E.164 format (e.g. +62812...)."];
+      errors.phone = [dict.validation.phone_invalid];
     }
 
     return errors;
-  }, [formValues]);
+  }, [formValues, dict]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -114,26 +136,20 @@ export default function FormRegister() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!process.env.NEXT_PUBLIC_API_URL) {
-      setStatusMessage({
-        type: "error",
-        text: "NEXT_PUBLIC_API_URL belum diset pada .env.local.",
-      });
-      return;
-    }
+    // Reset state pesan
+    setGlobalError(null);
+    setSuccessMessage(null);
+    setFieldErrors({});
 
-    if (Object.keys(clientErrors).length > 0) {
+    // Validasi client-side
+    const hasClientErrors = Object.keys(clientErrors).length > 0;
+    if (hasClientErrors) {
       setFieldErrors(clientErrors);
-      setStatusMessage({
-        type: "error",
-        text: "Periksa kembali data yang kamu isi.",
-      });
+      setGlobalError(dict.validation.form_invalid);
       return;
     }
 
     setSubmitting(true);
-    setStatusMessage({ type: "idle" });
-    setFieldErrors({});
 
     try {
       const response = await fetch(REGISTER_ENDPOINT, {
@@ -149,26 +165,28 @@ export default function FormRegister() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setFieldErrors(payload?.errors ?? {});
-        setStatusMessage({
-          type: "error",
-          text:
-            payload?.message ??
-            "Registrasi gagal. Silakan periksa data yang dimasukkan.",
-        });
+        const fieldErrs: RegisterFieldErrors = payload?.errors ?? {};
+
+        // ✅ Jadikan error email → pesan global tunggal
+        if (fieldErrs.email?.length) {
+          setGlobalError(fieldErrs.email[0]); // tampilkan apa adanya dari backend
+          delete fieldErrs.email;
+        } else {
+          setGlobalError(payload?.message ?? dict.messages.genericError);
+        }
+
+        setFieldErrors(fieldErrs);
         return;
       }
 
       const token: string | null = payload?.data?.token ?? null;
       const user = payload?.data?.user ?? null;
 
-      if (token) {
-        setStoredToken(token);
-      }
-
+      if (token) setStoredToken(token);
       setAuth({ token, user });
       setStoredUser(user);
 
+      // Restore pending wishlist jika ada
       if (token) {
         try {
           if (typeof window !== "undefined") {
@@ -179,7 +197,7 @@ export default function FormRegister() {
                 if (pending?.productId) {
                   await FavoriteService.add(
                     pending.productId,
-                    pending.variantId ?? undefined,
+                    pending.variantId ?? undefined
                   );
                 }
               } catch (wishlistError) {
@@ -196,12 +214,7 @@ export default function FormRegister() {
         window.localStorage.removeItem(PENDING_WISHLIST_KEY);
       }
 
-      setStatusMessage({
-        type: "success",
-        text:
-          payload?.message ??
-          "Registered successfully. Please verify your email.",
-      });
+      setSuccessMessage(payload?.message ?? dict.messages.success);
 
       const redirectTarget =
         callbackUrlParam && callbackUrlParam.startsWith("/")
@@ -215,10 +228,7 @@ export default function FormRegister() {
       }, 800);
     } catch (error) {
       console.error("Register request failed", error);
-      setStatusMessage({
-        type: "error",
-        text: "Terjadi kesalahan. Silakan coba lagi nanti.",
-      });
+      setGlobalError(dict.messages.genericError);
     } finally {
       setSubmitting(false);
     }
@@ -234,132 +244,121 @@ export default function FormRegister() {
   return (
     <>
       <form
-      className="space-y-3 font-['Plus_Jakarta_Sans']"
-      onSubmit={handleSubmit}
-      noValidate
-    >
-      {statusMessage.type !== "idle" && (
-        <p
-          className={`text-sm ${
-            statusMessage.type === "error" ? "text-red-600" : "text-green-600"
-          }`}
-        >
-          {"text" in statusMessage ? statusMessage.text : null}
-        </p>
-      )}
-
-      <input
-        type="text"
-        name="name"
-        value={formValues.name}
-        onChange={handleChange}
-        className={`w-full text-[#121212]/75 text-[20px] font-medium border-b border-[#1212124D] px-[10px] py-[10px] focus:outline-none focus:border-blue-500 placeholder-gray-400 ${jakartaSans.className}`}
-        placeholder="Name"
-        autoComplete="name"
-      />
-      {renderFieldErrors("name")}
-
-      <input
-        type="email"
-        name="email"
-        value={formValues.email}
-        onChange={handleChange}
-        className={`w-full text-[#121212]/75 text-[20px] font-medium border-b border-[#1212124D] px-[10px] py-[10px] focus:outline-none focus:border-blue-500 placeholder-gray-400 ${jakartaSans.className}`}
-        placeholder="Email"
-        autoComplete="email"
-      />
-      {renderFieldErrors("email")}
-
-      <InputPassword
-        name="password"
-        value={formValues.password}
-        onChange={handleChange}
-        autoComplete="new-password"
-      />
-      {renderFieldErrors("password")}
-
-      <InputPassword
-        name="password_confirmation"
-        placeholder="Konfirmasi kata sandi"
-        value={formValues.password_confirmation}
-        onChange={handleChange}
-        autoComplete="new-password"
-      />
-      {renderFieldErrors("password_confirmation")}
-
-      <PhoneInput
-        placeholder="Phone Number"
-        value={formValues.phone}
-        onChange={handlePhoneChange}
-        defaultCountry="ID"
-        international
-        countryCallingCodeEditable={false}
-        className={`register-phone w-full ${jakartaSans.className}`}
-      />
-      {renderFieldErrors("phone")}
-
-      <div className="text-right">
-        <Link
-          href={`/${lang}/auth/forgot-password`}
-          className={`text-primary text-[20px] underline  ${jakartaSans.className}`}
-        >
-          Lupa kata sandi?
-        </Link>
-      </div>
-
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full bg-primary text-white p-[10px]  hover:bg-[#3a00b8] transition disabled:opacity-70"
+        className="space-y-3 font-['Plus_Jakarta_Sans']"
+        onSubmit={handleSubmit}
+        noValidate
       >
-        {submitting ? "Memproses..." : "Daftar"}
-      </button>
-      <p className="text-center text-[20px] leading-[150%]">
-        Sudah punya akun?
-        {" "}
-        <Link
-          className="text-[#191C42] font-semibold underline"
-          href={loginLink}
+        <input
+          type="text"
+          name="name"
+          value={formValues.name}
+          onChange={handleChange}
+          className={`w-full text-[#121212]/75 text-[20px] font-medium border-b border-[#1212124D] px-[10px] py-[10px] focus:outline-none focus:border-blue-500 placeholder-gray-400 ${jakartaSans.className}`}
+          placeholder={dict.placeholders.name}
+          autoComplete="name"
+        />
+        {renderFieldErrors("name")}
+
+        <input
+          type="email"
+          name="email"
+          value={formValues.email}
+          onChange={handleChange}
+          className={`w-full text-[#121212]/75 text-[20px] font-medium border-b border-[#1212124D] px-[10px] py-[10px] focus:outline-none focus:border-blue-500 placeholder-gray-400 ${jakartaSans.className}`}
+          placeholder={dict.placeholders.email}
+          autoComplete="email"
+        />
+        {/* ❌ Tidak render error email di sini */}
+
+        <InputPassword
+          name="password"
+          value={formValues.password}
+          onChange={handleChange}
+          autoComplete="new-password"
+          placeholder={dict.placeholders.password}
+        />
+        {renderFieldErrors("password")}
+
+        <InputPassword
+          name="password_confirmation"
+          placeholder={dict.placeholders.password_confirmation}
+          value={formValues.password_confirmation}
+          onChange={handleChange}
+          autoComplete="new-password"
+        />
+        {renderFieldErrors("password_confirmation")}
+
+        <PhoneInput
+          placeholder={dict.placeholders.phone}
+          value={formValues.phone}
+          onChange={handlePhoneChange}
+          defaultCountry="ID"
+          international
+          countryCallingCodeEditable={false}
+          className={`register-phone w-full ${jakartaSans.className}`}
+        />
+        {renderFieldErrors("phone")}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-primary text-white p-[10px] hover:bg-[#3a00b8] transition disabled:opacity-70"
         >
-          Masuk
-        </Link>
-      </p>
+          {submitting ? `${dict.button.submit}...` : dict.button.submit}
+        </button>
+
+        {/* ✅ Pesan global di bawah tombol, rata kiri */}
+        {globalError && (
+          <p className="mt-2 text-sm text-red-600 text-left">{globalError}</p>
+        )}
+        {successMessage && (
+          <p className="mt-2 text-sm text-green-600 text-left">
+            {successMessage}
+          </p>
+        )}
+
+        <p className="text-[20px] text-center leading-[150%]">
+          {dict.links.haveAccount}{" "}
+          <Link className="text-[#191C42] font-semibold underline" href={loginLink}>
+            {dict.links.login}
+          </Link>
+        </p>
       </form>
+
+      {/* Styles untuk PhoneInput */}
       <style jsx global>{`
-      .register-phone {
-        display: flex;
-        align-items: center;
-        width: 100%;
-      }
-      .register-phone input {
-        flex: 1;
-        min-width: 0;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-        padding: 0.75rem;
-        outline: none;
-        transition: 0.2s;
-      }
-      .register-phone input:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
-      }
-      .register-phone .PhoneInputCountry {
-        margin-right: 0.5rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-        padding: 0.75rem;
-        background: white;
-        display: flex;
-        align-items: center;
-        flex-shrink: 0;
-      }
-      .register-phone .PhoneInputCountrySelect {
-        outline: none;
-      }
-    `}</style>
+        .register-phone {
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+        .register-phone input {
+          flex: 1;
+          min-width: 0;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          padding: 0.75rem;
+          outline: none;
+          transition: 0.2s;
+        }
+        .register-phone input:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+        }
+        .register-phone .PhoneInputCountry {
+          margin-right: 0.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          padding: 0.75rem;
+          background: white;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
+        .register-phone .PhoneInputCountrySelect {
+          outline: none;
+        }
+      `}</style>
     </>
   );
 }
-
-
