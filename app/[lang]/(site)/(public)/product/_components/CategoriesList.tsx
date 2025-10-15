@@ -102,74 +102,92 @@ export default function CategoriesList({
   const toggleLabel = dictionary?.toggleLabel ?? "Toggle category";
 
   return (
-    <div className={`${lato.className} space-y-[16px]`}>
-      <div className="text-[14px] text-[#121212]/80">
-        {allProductsDisplay}
+    <div className={`${lato.className} space-y-4`}>
+      {/* All Products + separator (full-bleed) */}
+      <div className="px-0">
+        <div className="text-[14px] text-[#121212]/80">{allProductsDisplay}</div>
+        {/* garis mentok ke sisi sidebar: samakan p-4 (16px) di container */}
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          className="h-px bg-[#E5E7EB] my-2 mx-[calc(var(--sidepad,1rem)*-1)]"
+        />
       </div>
 
       {safeCategories.length === 0 ? (
         <p className="text-sm text-gray-500">{emptyLabel}</p>
       ) : null}
 
-      {groups.map(({ parent, children }) => {
-        const isOpen = open.includes(parent.id);
-        const hasChildren = children.length > 0;
-        return (
-          <div key={parent.id} className="space-y-[12px]">
-            <div className="flex items-center justify-between">
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(parent.id)}
-                  onChange={handleToggle(parent.id)}
-                  className="accent-[#003663]"
-                />
-                <span>
-                  {(() => {
-                    const base = parent.name_text ?? parent.name?.id ?? parent.slug;
-                    const aggregatedCount = aggregateParentCount(parent, children);
-                    const countText = formatCount(aggregatedCount);
-                    return countText ? `${base} (${countText})` : base;
-                  })()}
-                </span>
-              </label>
-              {hasChildren ? (
-                <button
-                  type="button"
-                  aria-label={toggleLabel}
-                  onClick={() => toggle(parent.id)}
-                  className="text-gray-500 transition hover:text-gray-700"
-                >
-                  {isOpen ? <FaChevronUp /> : <FaChevronDown />}
-                </button>
+      <div className="space-y-4">
+        {groups.map(({ parent, children }) => {
+          const isOpen = open.includes(parent.id);
+          const hasChildren = children.length > 0;
+
+          return (
+            <div key={parent.id} className="space-y-3">
+              {/* Baris parent */}
+              <div className="flex items-center justify-between">
+                <label className="inline-flex items-center gap-2 text-[14px] text-[#121212]">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(parent.id)}
+                    onChange={handleToggle(parent.id)}
+                    className="accent-[#003663] h-[14px] w-[14px]"
+                  />
+                  <span className="leading-[1.4]">
+                    {(() => {
+                      const base = parent.name_text ?? parent.name?.id ?? parent.slug;
+                      const aggregatedCount = aggregateParentCount(parent, children);
+                      const countText = formatCount(aggregatedCount);
+                      return countText ? `${base} (${countText})` : base;
+                    })()}
+                  </span>
+                </label>
+
+                {hasChildren ? (
+                  <button
+                    type="button"
+                    aria-label={toggleLabel}
+                    onClick={() => toggle(parent.id)}
+                    className="text-gray-500 hover:text-gray-700 transition p-1"
+                  >
+                    {isOpen ? (
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5H5z" /></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5H5z" /></svg>
+                    )}
+                  </button>
+                ) : null}
+              </div>
+
+              {/* Anak kategori */}
+              {hasChildren && isOpen ? (
+                <ul className="ml-3 pl-3 border-l border-[#E5E7EB] space-y-2">
+                  {children.map((child) => (
+                    <li key={child.id}>
+                      <label className="inline-flex items-center gap-2 text-[14px] text-[#4B5563]">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(child.id)}
+                          onChange={handleToggle(child.id)}
+                          className="accent-[#003663] h-[14px] w-[14px]"
+                        />
+                        <span className="leading-[1.4]">
+                          {(() => {
+                            const base = child.name_text ?? child.name?.id ?? child.slug;
+                            const countText = formatCount(child.products_count);
+                            return countText ? `${base} (${countText})` : base;
+                          })()}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
               ) : null}
             </div>
-            {hasChildren && isOpen ? (
-              <ul className="ml-[12px] space-y-2 border-l border-l-[#CCCCCC] pl-[12px]">
-                {children.map((child) => (
-                  <li key={child.id}>
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(child.id)}
-                        onChange={handleToggle(child.id)}
-                        className="accent-[#003663]"
-                      />
-                      <span>
-                        {(() => {
-                          const base = child.name_text ?? child.name?.id ?? child.slug;
-                          const countText = formatCount(child.products_count);
-                          return countText ? `${base} (${countText})` : base;
-                        })()}
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

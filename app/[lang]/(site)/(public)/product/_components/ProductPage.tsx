@@ -444,8 +444,10 @@ export default function ProductPage({
 
           {/* Sidebar kategori – slide-in di mobile, statis di desktop */}
           <aside
-            className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white px-[32px] py-[24px] shadow-lg transition-transform duration-300 lg:hidden ${openCategory ? "translate-x-0" : "translate-x-full"
-              }`}
+            className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white
+              px-[32px] py-[24px] [--sidepad:32px]  /* ← tambah ini */
+              shadow-lg transition-transform duration-300 lg:hidden
+              ${openCategory ? "translate-x-0" : "translate-x-full"}`}
           >
             <div className="flex items-center justify-between">
               <h2 className={`${lato.className} text-lg font-semibold text-[#003663]`}>
@@ -471,7 +473,8 @@ export default function ProductPage({
           </aside>
 
           {/* Sidebar kategori versi desktop */}
-          <aside className="hidden w-64 rounded-[8px] bg-white px-[32px] py-[24px] lg:block">
+          <aside className="hidden w-64 rounded-[8px] bg-white
+                  px-[32px] py-[24px] [--sidepad:32px] lg:block">
             <div>
               <h3
                 className={`${lato.className} mb-3 text-lg font-semibold text-primary lg:text-black`}

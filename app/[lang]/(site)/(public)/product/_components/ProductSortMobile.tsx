@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 
 type SortOption = { label: string; value: string };
 
@@ -23,29 +22,62 @@ export default function ProductSortMobile({
   onChange,
   dictionary,
 }: ProductSortMobileProps) {
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);         // panel
+  const [listOpen, setListOpen] = useState(false); // dropdown
+  const [activeIdx, setActiveIdx] = useState<number>(() => {
+    const idx = options.findIndex((o) => o.value === value);
+    return idx >= 0 ? idx : 0;
+  });
 
   const triggerLabel = dictionary?.trigger ?? "Sort";
   const modalTitle = dictionary?.modalTitle ?? "Sort Products";
   const labelText = dictionary?.label ?? "Sort :";
   const closeLabel = dictionary?.close ?? "Close sort";
-  const selectId = "product-sort-mobile";
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  const selectWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const prevActive = document.activeElement as HTMLElement | null;
+    if (!open) { setListOpen(false); return; }
+    const prev = document.activeElement as HTMLElement | null;
     panelRef.current?.focus();
-    return () => prevActive?.focus();
+    return () => prev?.focus();
   }, [open]);
 
-  const handleChange = (next: string) => {
-    onChange(next);
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!listOpen) return;
+      if (!selectWrapRef.current?.contains(e.target as Node)) setListOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [listOpen]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (listOpen) { setListOpen(false); return; }
+      if (open) setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, listOpen]);
+
+  const currentLabel =
+    options.find((o) => o.value === value)?.label ?? options[activeIdx]?.label ?? "";
+
+  function choose(idx: number) {
+    const opt = options[idx];
+    if (!opt) return;
+    onChange(opt.value);
+    setActiveIdx(idx);
+    setListOpen(false);
     setOpen(false);
-  };
+  }
 
   return (
     <div className="lg:hidden">
+      {/* TRIGGER */}
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -55,21 +87,13 @@ export default function ProductSortMobile({
         aria-controls="mobile-sort-panel"
       >
         {triggerLabel}
-        <svg
-          className="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"         // <- ikut warna teks
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          {/* ikon “sort” tiga garis */}
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M4 7h16M8 12h12M12 17h8" />
         </svg>
       </button>
 
+      {/* OVERLAY */}
       {open && (
         <button
           aria-label="Close overlay"
@@ -78,6 +102,7 @@ export default function ProductSortMobile({
         />
       )}
 
+      {/* PANEL */}
       <div
         id="mobile-sort-panel"
         role="dialog"
@@ -85,50 +110,82 @@ export default function ProductSortMobile({
         aria-labelledby="mobile-sort-title"
         ref={panelRef}
         tabIndex={-1}
-        className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white shadow-lg outline-none transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={[
+          "fixed top-0 z-50 h-full w-[320px] bg-white shadow-lg outline-none",
+          "transition-[right] duration-300",
+          open ? "right-0" : "-right-[320px]",
+        ].join(" ")}
       >
-        <div className="flex items-center justify-between border-b p-4">
+        {/* header */}
+        <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]">
           <h2 id="mobile-sort-title" className="text-lg font-semibold text-[#003663]">
             {modalTitle}
           </h2>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="text-xl"
-            aria-label={closeLabel}
-          >
+          <button type="button" onClick={() => setOpen(false)} className="text-xl" aria-label={closeLabel}>
             &times;
           </button>
         </div>
 
-        <div className="space-y-3 p-4">
-          <label htmlFor={selectId} className="text-[15px] font-medium text-[#003663]">
+        {/* body */}
+        <div className="p-4 space-y-4">{/* ← spacing 16px antar elemen */}
+          <label className="text-[15px] font-medium text-[#003663] mb-2 block">
             {labelText}
           </label>
-          <div className="relative">
-            <select
-              id={selectId}
-              className="w-full appearance-none rounded border border-[#E0E0E0] bg-white px-3 py-2 pr-8 text-sm leading-none focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
-              value={value}
-              onChange={(e) => handleChange(e.target.value)}
+
+          {/* CUSTOM SELECT */}
+          <div className="relative" ref={selectWrapRef}>
+            {/* trigger button: tinggi 44px */}
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={listOpen}
+              className="w-full h-11 rounded border border-[#E0E0E0] bg-white px-3 pr-8 text-sm text-left
+                         focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
+              onClick={() => setListOpen((v) => !v)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") { e.preventDefault(); setListOpen(true); setActiveIdx((i) => Math.min(i + 1, options.length - 1)); }
+                if (e.key === "ArrowUp") { e.preventDefault(); setListOpen(true); setActiveIdx((i) => Math.max(i - 1, 0)); }
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(activeIdx); }
+              }}
             >
-              {options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#003663]"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+              {currentLabel}
+              <svg
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#003663]"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* listbox: jarak dari trigger 8px, item ≥44px */}
+            {listOpen && (
+              <ul
+                role="listbox"
+                tabIndex={-1}
+                className="absolute left-0 right-0 z-50 mt-2 max-h-60 overflow-auto rounded border border-[#E0E0E0] bg-white shadow-lg divide-y divide-[#F1F5F9]"
+              >
+                {options.map((opt, idx) => {
+                  const selected = opt.value === value;
+                  const active = idx === activeIdx;
+                  return (
+                    <li
+                      key={opt.value}
+                      role="option"
+                      aria-selected={selected}
+                      className={[
+                        "cursor-pointer px-3 py-3 text-[15px] leading-5", // ← py-3 ≈ 44px height
+                        active ? "bg-[#E6F0F8]" : "",
+                        selected ? "font-medium" : "",
+                      ].join(" ")}
+                      onMouseEnter={() => setActiveIdx(idx)}
+                      onClick={() => choose(idx)}
+                    >
+                      {opt.label}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       </div>
