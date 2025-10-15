@@ -1,7 +1,6 @@
 import FormLogin from "./_component/FormChangePassword";
 import Image from "next/image";
 // import Logo from "@/../../public/assets/logo-dmd.svg"; // import langsung SVG
-import Logo from "@/assets/Logo"
 export default function Login() {
   return (
     <div className="flex h-screen">

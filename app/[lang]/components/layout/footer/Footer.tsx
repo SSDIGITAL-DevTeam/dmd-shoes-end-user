@@ -25,12 +25,12 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export default function Footer({ 
-  lang, 
-  dictionary 
-}: { 
-  lang: string, 
-  dictionary: Awaited<ReturnType<typeof getDictionary>> 
+export default function Footer({
+  lang,
+  dictionary
+}: {
+  lang: string,
+  dictionary: Awaited<ReturnType<typeof getDictionary>>
 }) {
   const menu = [
     { label: dictionary.menu.home, href: "/" },
@@ -49,11 +49,12 @@ export default function Footer({
             <div className="flex flex-col items-start">
               <div className="w-[72px]">
                 <Image
-                  src="/assets/logo-dmd-white.svg"
+                  src="/assets/logo-dmd-vector.svg"
                   alt="DMD Logo"
                   width={400}
                   height={400}
-                  className="w-full h-auto"
+                  className="w-full h-auto invert brightness-0"
+                  style={{ filter: "invert(1) brightness(2)" }}
                 />
               </div>
               <h2 className={`${poppins.className} mt-4 text-[18px] font-semibold leading-[130%] md:text-[20px]`}>
@@ -72,12 +73,12 @@ export default function Footer({
                 <h2 className="font-semibold">{dictionary.company.address || "Alamat"}</h2>
                 <p>Pengudangan Mutiara Kosambi 2 Blok A6 No. 22, Dadap - Tangerang</p>
               </div>
-              
+
               <div>
                 <h2 className="font-semibold">{dictionary.company.operating_hours || "Jam Operasional"}</h2>
                 <p>08.00 - 18.00</p>
               </div>
-             
+
             </div>
           </div>
 
@@ -86,25 +87,25 @@ export default function Footer({
             <div className="space-y-4">
               <div>
 
-              <h2 className="font-semibold">Telp / WA</h2>
-              <p>
-                
-                <Link 
-                  href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, '')}`} 
-                  target="_blank"
-                  className="hover:underline"
-                >
-                  {/* {CONTACT.whatsapp} */}
+                <h2 className="font-semibold">Telp / WA</h2>
+                <p>
 
-                  {formatWhatsapp(CONTACT.whatsapp)}
-                </Link>
-              </p>
+                  <Link
+                    href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, '')}`}
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    {/* {CONTACT.whatsapp} */}
+
+                    {formatWhatsapp(CONTACT.whatsapp)}
+                  </Link>
+                </p>
               </div>
-            
+
               <p>
-                <span className="font-semibold">Email</span><br/>
-                <Link 
-                  href={`mailto:${CONTACT.email}`} 
+                <span className="font-semibold">Email</span><br />
+                <Link
+                  href={`mailto:${CONTACT.email}`}
                   className="hover:underline"
                 >
                   {CONTACT.email}
