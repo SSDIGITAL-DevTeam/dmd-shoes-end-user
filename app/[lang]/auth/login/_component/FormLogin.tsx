@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { setStoredToken, setStoredUser } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import { authLoginDict, type AuthLoginLang } from "@/dictionaries/auth-login";
+import { authLoginDict, type AuthLoginLang } from "@/dictionaries/auth/auth-login";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],

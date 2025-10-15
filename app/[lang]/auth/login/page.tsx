@@ -1,6 +1,6 @@
 import Image from "next/image";
 import FormLogin from "./_component/FormLogin";
-import { authLoginDict } from "@/dictionaries/auth-login";
+import { authLoginDict } from "@/dictionaries/auth/auth-login";
 
 export default function LoginPage({ params: { lang } }: { params: { lang: "id" | "en" } }) {
   const t = authLoginDict[lang] ?? authLoginDict.id;
