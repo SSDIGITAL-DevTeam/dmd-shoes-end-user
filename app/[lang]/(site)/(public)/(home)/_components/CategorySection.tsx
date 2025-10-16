@@ -57,7 +57,7 @@ export default function CategorySection({
               const name = resolveName(cat, lang);
               return (
                 <Link
-                  href={`/${lang}/product?category=${cat.id}`}
+                  href={`/${lang}/product?category_ids=${cat.id}`}
                   key={`${cat.id}-${cat.slug}`}
                   className="flex flex-col"
                 >
