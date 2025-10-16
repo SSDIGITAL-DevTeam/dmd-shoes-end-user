@@ -20,6 +20,16 @@ import type { Category, Pagination, ProductCard } from "@/services/types";
 import { inter, lato } from "@/config/font";
 import ProductPagination from "./ProductPagination";
 
+/* =========================
+   Helpers (function declaration → hoisted)
+   ========================= */
+function getChildrenIds(cats: Category[], parentId: number): number[] {
+  return cats.filter((c) => c.parent_id === parentId).map((c) => c.id);
+}
+function hasChildren(cats: Category[], id: number): boolean {
+  return cats.some((c) => c.parent_id === id);
+}
+
 /**
  * Props diterima dari page (server component) yang mem-pass 'lang' & dictionary terjemahan.
  */
@@ -88,9 +98,7 @@ const buildQueryFromState = (state: ProductFiltersState): URLSearchParams => {
 };
 
 /** Deserialize URLSearchParams -> state (untuk initial load & navigasi back/forward) */
-const buildStateFromSearchParams = (
-  searchParams: URLSearchParams,
-): ProductFiltersState => ({
+const buildStateFromSearchParams = (searchParams: URLSearchParams): ProductFiltersState => ({
   search: searchParams.get("search") ?? "",
   categoryIds: parseCategories(searchParams.get("category_ids")),
   heel_min: parseNumber(searchParams.get("heel_min")),
@@ -100,15 +108,11 @@ const buildStateFromSearchParams = (
   page: parseNumber(searchParams.get("page")) ?? 1,
   per_page: parseNumber(searchParams.get("per_page")) ?? DEFAULT_STATE.per_page,
   sort: searchParams.get("sort") ?? DEFAULT_STATE.sort,
-  dir:
-    (searchParams.get("dir") as "asc" | "desc" | null) ?? DEFAULT_STATE.dir,
+  dir: (searchParams.get("dir") as "asc" | "desc" | null) ?? DEFAULT_STATE.dir,
 });
 
 /** Adapter: map state -> input untuk hook useProducts (API list product) */
-const buildQueryInput = (
-  state: ProductFiltersState,
-  lang: string,
-): Parameters<typeof useProducts>[0] => ({
+const buildQueryInput = (state: ProductFiltersState, lang: string): Parameters<typeof useProducts>[0] => ({
   lang,
   search: state.search || undefined,
   category_ids: state.categoryIds.length ? state.categoryIds.join(",") : undefined,
@@ -123,10 +127,7 @@ const buildQueryInput = (
   view: "card",
 });
 
-export default function ProductPage({
-  lang,
-  dictionaryProduct,
-}: ProductPageProps) {
+export default function ProductPage({ lang, dictionaryProduct }: ProductPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -143,20 +144,15 @@ export default function ProductPage({
 
   /** Sinkronkan state saat URL berubah (misal back/forward) */
   useEffect(() => {
-    const paramsState = buildStateFromSearchParams(
-      new URLSearchParams(searchParamsString),
-    );
+    const paramsState = buildStateFromSearchParams(new URLSearchParams(searchParamsString));
     setFilters((prev) => ({ ...prev, ...paramsState }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParamsString]);
 
   /** Update state + push ke URL tanpa scroll (UX halus) */
-  const updateFilters = useCallback(
-    (updater: (prev: ProductFiltersState) => ProductFiltersState) => {
-      setFilters((prev) => updater(prev));
-    },
-    [],
-  );
+  const updateFilters = useCallback((updater: (prev: ProductFiltersState) => ProductFiltersState) => {
+    setFilters((prev) => updater(prev));
+  }, []);
 
   useEffect(() => {
     const params = buildQueryFromState(filters);
@@ -166,49 +162,29 @@ export default function ProductPage({
     }
 
     startTransition(() => {
-      router.replace(
-        nextQuery ? `${pathname}?${nextQuery}` : pathname,
-        { scroll: false },
-      );
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     });
   }, [filters, pathname, router, searchParamsString, startTransition]);
 
   /** Params untuk query products */
-  const productsParams = useMemo(
-    () => buildQueryInput(filters, lang),
-    [filters, lang],
-  );
+  const productsParams = useMemo(() => buildQueryInput(filters, lang), [filters, lang]);
 
   /** Opsi sort diturunkan dari dictionary (fallback ID) */
   const sortOptions = useMemo(
     () => [
-      {
-        label: dictionaryProduct?.sort?.newest ?? "Produk Terpopuler",
-        value: "favorites_count:desc",
-      },
-      {
-        label: dictionaryProduct?.sort?.priceLow ?? "Harga Terendah",
-        value: "price:asc",
-      },
-      {
-        label: dictionaryProduct?.sort?.priceHigh ?? "Harga Tertinggi",
-        value: "price:desc",
-      },
+      { label: dictionaryProduct?.sort?.newest ?? "Produk Terpopuler", value: "favorites_count:desc" },
+      { label: dictionaryProduct?.sort?.priceLow ?? "Harga Terendah", value: "price:asc" },
+      { label: dictionaryProduct?.sort?.priceHigh ?? "Harga Tertinggi", value: "price:desc" },
     ],
     [dictionaryProduct],
   );
 
   /** Nilai tampilan select (format: field:dir) */
   const selectedSortValue =
-    filters.sort && filters.dir
-      ? `${filters.sort}:${filters.dir}`
-      : filters.sort
-        ? `${filters.sort}:asc`
-        : "favorites_count:desc";
+    filters.sort && filters.dir ? `${filters.sort}:${filters.dir}` : filters.sort ? `${filters.sort}:asc` : "favorites_count:desc";
 
   /** Fetch daftar produk (termasuk meta filter utk FilterUkuran) */
-  const { products, filters: filterMeta, isLoading, isError, error, refetch } =
-    useProducts(productsParams);
+  const { products, filters: filterMeta, isLoading, isError, error, refetch } = useProducts(productsParams);
 
   /** Fetch kategori untuk sidebar kiri */
   const categoriesQuery = useQuery({
@@ -216,28 +192,53 @@ export default function ProductPage({
     queryFn: () => CategoryService.list({ lang, per_page: 20 }),
   });
 
+  // ====== Derived data ======
+  const isMutating = isPending;
+  const categories: Category[] = categoriesQuery.data?.data ?? [];
+
   // ====== Handlers ======
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    updateFilters((prev) => ({
-      ...prev,
-      search: value,
-      page: 1,
-    }));
+    updateFilters((prev) => ({ ...prev, search: value, page: 1 }));
   };
 
   const handleCategoryToggle = (categoryId: number) => {
+    const isParent = hasChildren(categories, categoryId);
+    const children = isParent ? getChildrenIds(categories, categoryId) : [];
+
+    // Cari parent dari sebuah child (kalau yang diklik child)
+    const parentId = categories.find((c) => c.id === categoryId)?.parent_id ?? null;
+
     updateFilters((prev) => {
-      const exists = prev.categoryIds.includes(categoryId);
-      const nextCategories = exists
-        ? prev.categoryIds.filter((id) => id !== categoryId)
-        : [...prev.categoryIds, categoryId];
-      return {
-        ...prev,
-        categoryIds: nextCategories,
-        page: 1,
-      };
+      const ids = new Set(prev.categoryIds);
+      const isSelected = ids.has(categoryId);
+      const bundle = [categoryId, ...children];
+
+      if (isSelected) {
+        // Uncheck parent/child ⇒ lepas id itu + seluruh anak kalau parent
+        bundle.forEach((id) => ids.delete(id));
+
+        // Jika yang dilepas adalah child, dan parent ada dalam set, cek:
+        // jika tidak ada child yang tersisa, lepas parent juga (opsional)
+        if (!isParent && parentId) {
+          const siblings = getChildrenIds(categories, parentId);
+          const anySiblingSelected = siblings.some((id) => ids.has(id));
+          if (!anySiblingSelected) ids.delete(parentId);
+        }
+      } else {
+        // Check parent/child ⇒ tambah id + semua anak kalau parent
+        bundle.forEach((id) => ids.add(id));
+
+        // Jika yang dicentang child, dan semua sibling sekarang terpilih, auto-check parent
+        if (!isParent && parentId) {
+          const siblings = getChildrenIds(categories, parentId);
+          const allSiblingsSelected = siblings.every((id) => ids.has(id));
+          if (allSiblingsSelected) ids.add(parentId);
+        }
+      }
+
+      return { ...prev, categoryIds: Array.from(ids), page: 1 };
     });
   };
 
@@ -264,10 +265,7 @@ export default function ProductPage({
   };
 
   const handlePageChange = (page: number) => {
-    updateFilters((prev) => ({
-      ...prev,
-      page,
-    }));
+    updateFilters((prev) => ({ ...prev, page }));
   };
 
   const handleSortChange = (value: string) => {
@@ -280,10 +278,6 @@ export default function ProductPage({
     }));
   };
 
-  // ====== Derived data ======
-  const isMutating = isPending;
-  const categories: Category[] = categoriesQuery.data?.data ?? [];
-
   // Pagination typing safety
   const pagination = products satisfies Pagination<ProductCard>;
   const totalPages = pagination.last_page ?? 1;
@@ -292,18 +286,11 @@ export default function ProductPage({
   const sortDictionary = dictionaryProduct?.sort ?? {};
   const sizeFilterDictionary = dictionaryProduct?.sizeFilter;
   const baseAllProductsLabel =
-    dictionaryProduct?.allProducts ??
-    (lang === "en" ? "All Products" : "Semua Produk");
+    dictionaryProduct?.allProducts ?? (lang === "en" ? "All Products" : "Semua Produk");
 
   return (
     <div className={`${inter.className} bg-[#F5F5F5]`}>
       <Container className="py-8">
-        {/* =========================================
-           Header Section
-           - Baris 1: H1 "Produk Kami" "Urutkan :" + Sort + Filter Ukuran + Search (rata kanan)
-           ========================================= */}
-        {/* ===== Header (Title kiri, controls kanan) ===== */}
-        {/* Header */}
         <header className="mb-6 space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-primary font-semibold text-[32px] leading-[140%]">
@@ -335,7 +322,7 @@ export default function ProductPage({
                 locale={lang}
               />
 
-              {/* Search with label (screen reader) */}
+              {/* Search */}
               <div className="relative">
                 <label htmlFor="product-search" className="sr-only">
                   {dictionaryProduct?.searchPlaceholder || "Search products"}
@@ -428,24 +415,18 @@ export default function ProductPage({
             </div>
           </div>
         </header>
-        {/* =========================================
-            Layout 2 kolom:
-            - Sidebar kategori (kiri)
-            - Grid produk (kanan)
-           ========================================= */}
+
+        {/* Layout 2 kolom */}
         <div className="flex gap-6">
-          {/* Overlay saat sidebar kategori mobile terbuka */}
+          {/* Overlay mobile */}
           {openCategory ? (
-            <div
-              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-              onClick={() => setOpenCategory(false)}
-            />
+            <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setOpenCategory(false)} />
           ) : null}
 
-          {/* Sidebar kategori – slide-in di mobile, statis di desktop */}
+          {/* Sidebar kategori – mobile */}
           <aside
             className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white
-              px-[32px] py-[24px] [--sidepad:32px]  /* ← tambah ini */
+              px-[32px] py-[24px] [--sidepad:32px]
               shadow-lg transition-transform duration-300 lg:hidden
               ${openCategory ? "translate-x-0" : "translate-x-full"}`}
           >
@@ -464,21 +445,16 @@ export default function ProductPage({
                 empty: dictionaryProduct?.categoriesEmpty,
               }}
               selectedIds={filters.categoryIds}
-              onToggle={(id) => {
-                handleCategoryToggle(id);
-              }}
+              onToggle={handleCategoryToggle}
               totalCount={totalItems}
               locale={lang}
             />
           </aside>
 
-          {/* Sidebar kategori versi desktop */}
-          <aside className="hidden w-64 rounded-[8px] bg-white
-                  px-[32px] py-[24px] [--sidepad:32px] lg:block">
+          {/* Sidebar kategori – desktop */}
+          <aside className="hidden w-64 rounded-[8px] bg-white px-[32px] py-[24px] [--sidepad:32px] lg:block">
             <div>
-              <h3
-                className={`${lato.className} mb-3 text-lg font-semibold text-primary lg:text-black`}
-              >
+              <h3 className={`${lato.className} mb-3 text-lg font-semibold text-primary lg:text-black`}>
                 {dictionaryProduct?.productCategory || "Kategori Produk"}
               </h3>
             </div>
@@ -495,7 +471,7 @@ export default function ProductPage({
             />
           </aside>
 
-          {/* Konten utama: grid produk + pagination */}
+          {/* Grid produk + pagination */}
           <main className="flex-1">
             <ApiBoundary
               isLoading={isLoading || isMutating}
@@ -508,11 +484,9 @@ export default function ProductPage({
                   ))}
                 </div>
               }
-              empty={
-                <div className="py-12 text-center text-sm text-gray-500">
-                  {dictionaryProduct?.empty || "Produk tidak ditemukan."}
-                </div>
-              }
+              empty={<div className="py-12 text-center text-sm text-gray-500">
+                {dictionaryProduct?.empty || "Produk tidak ditemukan."}
+              </div>}
               isEmpty={(products?.data?.length ?? 0) === 0}
               onRetry={refetch}
             >
@@ -528,12 +502,8 @@ export default function ProductPage({
               totalPages={totalPages}
               onPageChange={handlePageChange}
               labels={{
-                prev:
-                  dictionaryProduct?.prev ??
-                  (lang.startsWith("en") ? "Previous" : "Sebelumnya"),
-                next:
-                  dictionaryProduct?.next ??
-                  (lang.startsWith("en") ? "Next" : "Selanjutnya"),
+                prev: dictionaryProduct?.prev ?? (lang.startsWith("en") ? "Previous" : "Sebelumnya"),
+                next: dictionaryProduct?.next ?? (lang.startsWith("en") ? "Next" : "Selanjutnya"),
               }}
             />
           </main>
