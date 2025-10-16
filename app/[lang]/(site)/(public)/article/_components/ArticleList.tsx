@@ -8,18 +8,13 @@ import ArticleItem from "./ArticleItem";
 
 /* -------------------------------- helpers -------------------------------- */
 
-const buildParams = (params: {
-  page: number;
-  perPage: number;
-  search?: string;
-  lang: string;
-}): ListArticlesParams => {
+const buildParams = (p: { page: number; perPage: number; search?: string; lang: string }) => {
   const normalized: ListArticlesParams = {
-    page: params.page,
-    per_page: params.perPage,
-    lang: params.lang,
+    page: p.page,
+    per_page: p.perPage,
+    lang: p.lang,
   };
-  if (params.search?.trim()) normalized.search = params.search.trim();
+  if (p.search?.trim()) normalized.search = p.search.trim(); // ✅ hanya kirim jika ada
   return normalized;
 };
 
@@ -43,12 +38,12 @@ type ArticleListProps = {
 };
 
 const SkeletonCard = () => (
-  <div className="relative bg-white shadow-sm overflow-visible animate-pulse">
+  <div className="relative overflow-visible bg-white shadow-sm animate-pulse">
     <div className="relative h-60 w-full bg-gray-200" />
-    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[90%] bg-white p-4 shadow-lg">
-      <div className="h-3 w-24 bg-gray-200 rounded mb-2" />
-      <div className="h-4 w-full bg-gray-200 rounded" />
-      <div className="h-4 w-2/3 bg-gray-200 rounded mt-2" />
+    <div className="absolute -bottom-10 left-1/2 w-[90%] -translate-x-1/2 bg-white p-4 shadow-lg">
+      <div className="mb-2 h-3 w-24 rounded bg-gray-200" />
+      <div className="h-4 w-full rounded bg-gray-200" />
+      <div className="mt-2 h-4 w-2/3 rounded bg-gray-200" />
     </div>
   </div>
 );
@@ -141,21 +136,34 @@ function ArticleList({
     [lang, page, perPage, search]
   );
 
-  const query = useArticles(params);
-  const { data: rawData, isError, isLoading, isFetching, refetch } = query;
+  const {
+    data: rawData,
+    isError,
+    isLoading,
+    isFetching,
+    isPlaceholderData,
+    refetch,
+  } = useArticles(params);
 
-  const normalized = useMemo(() => (rawData ? normalizeMeta(rawData) : null), [rawData]);
+  const normalized = useMemo(
+    () => (rawData ? normalizeMeta(rawData) : null),
+    [rawData]
+  );
+
   const articles = useMemo<Article[]>(
     () => (normalized?.data ?? []) as Article[],
     [normalized?.data]
   );
 
-  const isBusy = isLoading || isFetching;
+  // Skeleton hanya saat load awal (bukan saat refetch/page/search berubah)
+  const showSkeleton = isLoading && !isPlaceholderData;
 
+  // biar parent tahu kapan sedang fetching
   useEffect(() => {
-    onLoadingChange?.(isBusy);
-  }, [isBusy, onLoadingChange]);
+    onLoadingChange?.(isFetching);
+  }, [isFetching, onLoadingChange]);
 
+  // kirim meta ke parent saat berubah
   const lastMetaRef = useRef<Pagination<Article> | null>(null);
   useEffect(() => {
     if (!normalized || !onMetaChange) return;
@@ -173,6 +181,7 @@ function ArticleList({
     }
   }, [normalized, onMetaChange]);
 
+  // callback saat daftar artikel “resolved” (berbeda dari sebelumnya)
   const lastArticlesRef = useRef<Article[] | null>(null);
   useEffect(() => {
     if (!onDataResolved) return;
@@ -198,7 +207,8 @@ function ArticleList({
     );
   }
 
-  if (!articles.length && !isBusy) {
+  // benar-benar kosong (bukan loading awal / placeholder)
+  if (!articles.length && !showSkeleton) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-600">
         {dictionary.empty}
@@ -207,9 +217,11 @@ function ArticleList({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-20 py-12">
-      {isBusy
-        ? Array.from({ length: perPage }, (_, index) => <SkeletonCard key={index} />)
+    <div className="grid grid-cols-1 gap-x-10 gap-y-20 py-12 md:grid-cols-2">
+      {showSkeleton
+        ? Array.from({ length: perPage }, (_, index) => (
+          <SkeletonCard key={index} />
+        ))
         : articles.map((article) => (
           <ArticleItem
             key={`${(article as any)?.slug ?? (article as any)?.id}`}

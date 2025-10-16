@@ -5,6 +5,9 @@ export type ListArticlesParams = {
   page?: number;
   per_page?: number;
   search?: string;
+  q?: string;
+  keyword?: string;
+  query?: string;
   lang?: string;
   status?: string; // optional (publish/draft) kalau backend-mu pakai
   [key: string]: unknown;
@@ -59,6 +62,40 @@ const buildQueryString = (params?: Record<string, unknown>) => {
   });
   const q = sp.toString();
   return q ? `?${q}` : "";
+};
+
+// Tambahan helper: sebar/duplikasi alias kata kunci
+// Tambahan helper: sebar/duplikasi alias kata kunci
+const expandSearchAliases = (params: ListArticlesParams) => {
+  const { search, q, keyword, query, title, ...rest } = params ?? {};
+
+  const raw =
+    (typeof search === "string" && search) ||
+    (typeof q === "string" && q) ||
+    (typeof keyword === "string" && keyword) ||
+    (typeof query === "string" && query) ||
+    (typeof title === "string" && title) ||
+    "";
+
+  const term = raw.trim();
+  if (!term) return rest;
+
+  return {
+    ...rest,
+    // alias “biasa”
+    search: term,
+    q: term,
+    keyword: term,
+    query: term,
+    title: term,
+    s: term,
+    term: term,
+    // alias gaya Laravel / Spatie Query Builder
+    "filter[search]": term,
+    "filter[title]": term,
+    "filter[q]": term,
+    "filter[query]": term,
+  } as Record<string, unknown>;
 };
 
 const firstStringFromRecord = (value: unknown): string | null => {
@@ -176,7 +213,28 @@ const fetchJson = async <T>(
 export async function listArticles(
   params: ListArticlesParams = {},
 ): Promise<Pagination<Article>> {
-  const query = buildQueryString(params);
+  // pastikan page/per_page/lang tidak hilang
+  const baseParams: Record<string, unknown> = {
+    page: params.page ?? 1,
+    per_page: params.per_page ?? 6,
+    lang: params.lang,
+    status: params.status, // biarkan kalau kamu kirim publish/draft
+  };
+
+  // sebar alias pencarian
+  const finalParams = {
+    ...baseParams,
+    ...expandSearchAliases(params),
+  };
+
+  const query = buildQueryString(finalParams);
+
+  // (opsional) debug URL saat dev
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.debug("[articles] GET", `${BASE_PATH}${query}`);
+  }
+
   const { response, payload } = await fetchJson<ArticleListResponse>(`${BASE_PATH}${query}`);
 
   if (!response.ok) {
@@ -187,36 +245,54 @@ export async function listArticles(
     throw new ApiError(response.status, message, payload);
   }
 
-  const dataRaw = Array.isArray(payload?.data) ? payload!.data : [];
-  const meta = payload?.meta ?? {};
+  // --- robust parsing untuk berbagai bentuk payload ---
+  // 1) array langsung di data
+  let dataRaw: unknown[] = Array.isArray(payload?.data) ? (payload!.data as unknown[]) : [];
+  // 2) Laravel paginator classic: { data: { data: [...] , ...meta } }
+  if (!dataRaw.length && payload && typeof payload === "object" && (payload as any).data?.data) {
+    const inner = (payload as any).data;
+    if (Array.isArray(inner.data)) dataRaw = inner.data;
+  }
+  // 3) fallback lain-lain (items/records)
+  if (!dataRaw.length && payload && typeof payload === "object") {
+    const obj = payload as any;
+    if (Array.isArray(obj.items)) dataRaw = obj.items;
+    if (Array.isArray(obj.records)) dataRaw = obj.records;
+  }
 
+  // meta bisa ada di root, di .meta, atau di .data (laravel)
+  const metaRoot = payload?.meta ?? (payload as any)?.data ?? payload ?? {};
   const perPageCandidate =
-    toNumber(payload?.per_page) ??
-    toNumber(meta.per_page) ??
+    toNumber((payload as any)?.per_page) ??
+    toNumber(metaRoot?.per_page) ??
     toNumber(params.per_page) ??
     6;
 
+  const total =
+    toNumber((payload as any)?.total) ??
+    toNumber(metaRoot?.total) ??
+    dataRaw.length;
+
+  const current =
+    toNumber((payload as any)?.current_page) ??
+    toNumber(metaRoot?.current_page) ??
+    toNumber(params.page) ??
+    1;
+
+  const last =
+    toNumber((payload as any)?.last_page) ??
+    toNumber(metaRoot?.last_page) ??
+    Math.max(1, Math.ceil((total ?? 0) / Math.max(perPageCandidate ?? 6, 1)));
+
   return {
     data: dataRaw.map(normalizeArticle),
-    current_page:
-      toNumber(payload?.current_page) ??
-      toNumber(meta.current_page) ??
-      toNumber(params.page) ??
-      1,
-    last_page:
-      toNumber(payload?.last_page) ??
-      toNumber(meta.last_page) ??
-      Math.max(
-        1,
-        Math.ceil((toNumber(meta.total) ?? dataRaw.length) / Math.max(perPageCandidate, 1)),
-      ),
-    per_page: perPageCandidate,
-    total:
-      toNumber(payload?.total) ??
-      toNumber(meta.total) ??
-      dataRaw.length,
+    current_page: current ?? 1,
+    last_page: last ?? 1,
+    per_page: perPageCandidate ?? 6,
+    total: total ?? dataRaw.length,
   };
 }
+
 
 export async function latestArticle(params: { lang?: string } = {}): Promise<Article | null> {
   // tambahkan status: 'publish' kalau ingin hanya artikel publish

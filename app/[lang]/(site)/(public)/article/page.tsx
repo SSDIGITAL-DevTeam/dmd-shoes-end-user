@@ -12,6 +12,7 @@ import ArticlePagination from "./_components/ArticlePagination";
 import enDictionary from "@/dictionaries/article/en.json";
 import idDictionary from "@/dictionaries/article/id.json";
 import type { Article, Pagination } from "@/services/types";
+import { inter } from "@/config/font";
 
 // ⬇️ IMPORT BARU
 import { useLatestArticle } from "@/hooks/useLatestArticle";
@@ -73,6 +74,11 @@ export default function ArticlePage() {
     setSearchTerm(initialSearch);
     setSearchInput(initialSearch);
   }, [initialSearch]);
+
+  useEffect(() => {
+    // reset meta ketika term berubah agar totalPages menyesuaikan
+    setMeta(null);
+  }, [searchTerm]);
 
   useEffect(() => {
     setPage(initialPage);
@@ -150,16 +156,65 @@ export default function ArticlePage() {
   const isBusy = isFetching || isPending;
 
   // ---------- Total pages (fallback kalau meta kosong) ----------
-  const totalPages =
-    meta?.last_page ??
-    Math.max(1, Math.ceil((meta?.total ?? articlesPreview.length) / Math.max(meta?.per_page ?? PER_PAGE, 1)));
-  const currentPage = meta?.current_page ?? page;
+  // ---------- Total pages (fallback kalau meta kosong) ----------
+  // Jadikan state `page` sebagai sumber kebenaran utama
+  const currentPage = page;
+
+  // Total pages ambil dari meta (kalau sudah ada), kalau belum ya 1
+  const totalPages = meta?.last_page ?? 1;
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      {/* header + search (biarkan) */}
-
+    <div className={`${inter.className} bg-[#F5F5F5]`}>
       <main>
+        {/* Header */}
+        <section aria-labelledby="articles-header">
+          <Container className="py-6 sm:py-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h1
+                id="articles-header"
+                className="text-primary font-semibold text-[32px] leading-[140%]"
+              >
+                {dictionary.title || (lang.startsWith("en") ? "Articles" : "Artikel")}
+              </h1>
+
+              {/* Search form */}
+              <form
+                onSubmit={handleSearchSubmit}
+                className="relative w-full sm:w-[360px]"
+                role="search"
+                aria-label={
+                  dictionary.search_label ||
+                  (lang.startsWith("en") ? "Search articles" : "Cari artikel")
+                }
+              >
+                <label htmlFor="article-search" className="sr-only">
+                  {dictionary.search_label || (lang.startsWith("en") ? "Search" : "Pencarian")}
+                </label>
+                <AiOutlineSearch
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+                />
+                <input
+                  id="article-search"
+                  type="search"
+                  inputMode="search"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder={
+                    dictionary.search_placeholder ||
+                    (lang.startsWith("en") ? "Search articles..." : "Cari artikel...")
+                  }
+                  className="h-[44px] w-full rounded border border-[#003663] bg-white pl-10 pr-3 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
+                />
+                {/* optional: submit button for keyboards/enter */}
+                <button type="submit" className="sr-only">
+                  {dictionary.search_label || (lang.startsWith("en") ? "Search" : "Cari")}
+                </button>
+              </form>
+            </div>
+          </Container>
+        </section>
         {/* HERO */}
         <section aria-labelledby="featured-article" className="relative h-[380px] bg-black sm:h-[440px]">
           <Image src={heroImage} alt={heroTitle} fill priority className="object-cover object-center opacity-90" sizes="100vw" />
