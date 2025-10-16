@@ -37,7 +37,6 @@ export default function Footer({
     { label: dictionary.menu.products, href: "/product" },
     { label: dictionary.menu.articles, href: "/article" },
     { label: dictionary.menu.about_us, href: "/about" },
-    { label: dictionary.menu.faq, href: "/faq" },
   ];
 
   return (
@@ -71,7 +70,11 @@ export default function Footer({
             <div className="space-y-4">
               <div>
                 <h2 className="font-semibold">{dictionary.company.address || "Alamat"}</h2>
-                <p>Pengudangan Mutiara Kosambi 2 Blok A6 No. 22, Dadap - Tangerang</p>
+                <p>
+                  Pergudangan Mutiara Kosambi Blok A6 No 22, Dadap – Tangerang
+                  <br/>
+                  Kode Pos: 15125
+                </p>
               </div>
 
               <div>
