@@ -11,7 +11,7 @@ import {
     poppins,
     plusJakartaSans,
 } from "./config/font";
-import "./global.css";
+import "../global.css";
 
 export const metadata = {
     title: "DMD Shoes",

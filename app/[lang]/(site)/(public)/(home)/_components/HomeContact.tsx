@@ -17,7 +17,13 @@ export default function HomeContact({
   className?: string;
 }) {
   return (
-    <section className={clsx("bg-[#F5F5F5]", inter.className, className)}>
+    <section
+      className={clsx(
+        "bg-[#F5F5F5] pt-10 pb-16 sm:pt-14 sm:pb-18 md:pt-18 md:pb-18",
+        inter.className,
+        className
+      )}
+    >
       <Container>
         <div className="grid grid-cols-1 items-center gap-6 sm:gap-8 md:grid-cols-2">
           {/* Gambar */}

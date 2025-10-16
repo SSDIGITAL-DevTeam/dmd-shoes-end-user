@@ -37,7 +37,7 @@ const list = async (
   );
 
   const items = Array.isArray(response.data) ? response.data : [];
-  const meta = response.meta ?? {};
+  const meta = (response.meta ?? {}) as NonNullable<CategoryListResponse["meta"]>;
 
   return {
     data: items,

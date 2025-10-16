@@ -48,10 +48,7 @@ const nextConfig = {
 
   // Don't hide TS errors in production; it masks real issues.
   // You can gate this with NODE_ENV if you truly need it in dev.
-  typescript: {
-    ignoreBuildErrors: process.env.NODE_ENV !== "production" ? true : false,
-  },
-
+  typescript: { ignoreBuildErrors: process.env.NODE_ENV !== "production" },
   env: resolveEnv(),
   outputFileTracingRoot: path.resolve(__dirname),
 };

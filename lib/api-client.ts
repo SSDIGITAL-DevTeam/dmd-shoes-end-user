@@ -70,11 +70,10 @@ const parseBody = async (response: Response) => {
   return text.length ? text : null;
 };
 
-export type ApiRequestInit = Omit<RequestInit, "body" | "headers"> & {
-  body?: RequestInit["body"] | Record<string, unknown> | Array<unknown> | null;
-  headers?: HeadersInit;
+export type ApiRequestInit = Omit<RequestInit, "body" | "next"> & {
+  body?: Record<string, unknown> | unknown[] | BodyInit | null | undefined;
   next?: {
-    revalidate?: number;
+    revalidate?: number | false;
     tags?: string[];
   };
 };
@@ -122,7 +121,7 @@ export const apiFetch = async <T = unknown>(path: string, init?: ApiRequestInit)
   return payload as T;
 };
 
-export const withAuth = (init: RequestInit = {}): RequestInit => {
+export const withAuth = (init: ApiRequestInit = {}): ApiRequestInit => {
   const token = getStoredToken();
   const headers = new Headers(init.headers ?? {});
 
