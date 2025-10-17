@@ -40,7 +40,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 if (!API_BASE) {
   console.error("Missing env NEXT_PUBLIC_API_URL");
 }
-const BASE_PATH = `${API_BASE}/articles`;
+const BASE_PATH = `${API_BASE}/articles/public`;
 
 // ---------------- utils ----------------
 const toNumber = (value: unknown): number | null => {
