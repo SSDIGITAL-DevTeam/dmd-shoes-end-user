@@ -15,11 +15,11 @@ export default async function SiteLayout({ children, params }: SiteLayoutProps) 
   const dictionary = await getDictionary(lang);
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col"> {/* ⬅️ penting */}
       <Header lang={lang} dictionary={dictionary} />
-      {children}
+      <main className="flex-1">{children}</main> {/* ⬅️ mendorong footer ke bawah */}
       <Footer lang={lang} dictionary={dictionary} />
       <FloatingContact whatsapp={CONTACT.whatsapp} />
-    </>
+    </div>
   );
 }

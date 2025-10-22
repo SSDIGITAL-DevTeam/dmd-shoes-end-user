@@ -1,35 +1,22 @@
-"use client";
-import { useEffect, useState } from "react";
-import Container from "@/components/ui-custom/Container";
-import Image from "next/image";
-import Link from "next/link";
-import { getDictionary } from "../../../../../dictionaries/get-dictionary";
-import { Cairo, Poppins, Inter } from "next/font/google";
+import Container from '@/components/ui-custom/Container';
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { getDictionary } from '../../../../../dictionaries/get-dictionary';
+import { Cairo, Poppins, Inter } from 'next/font/google';
 import { CONTACT, formatWhatsapp } from "@/config/contact";
 
-const cairo = Cairo({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-cairo" });
-const poppins = Poppins({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-poppins" });
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter" });
+const cairo = Cairo({ subsets: ["latin"], weight: ["400","500","600","700"], variable: "--font-cairo" });
+const poppins = Poppins({ subsets: ["latin"], weight: ["600","700"], variable: "--font-poppins" });
+const inter = Inter({ subsets: ["latin"], weight: ["400","500","600"], variable: "--font-inter" });
 
 export default function Footer({
   lang,
-  dictionary,
+  dictionary
 }: {
   lang: string;
   dictionary: Awaited<ReturnType<typeof getDictionary>>;
 }) {
-  const [isShortPage, setIsShortPage] = useState(false);
-
-  useEffect(() => {
-    const checkHeight = () => {
-      // jika tinggi konten < tinggi viewport, berarti page pendek
-      setIsShortPage(document.body.scrollHeight <= window.innerHeight);
-    };
-    checkHeight();
-    window.addEventListener("resize", checkHeight);
-    return () => window.removeEventListener("resize", checkHeight);
-  }, []);
-
   const menu = [
     { label: dictionary.menu.home, href: "/" },
     { label: dictionary.menu.products, href: "/product" },
@@ -38,11 +25,7 @@ export default function Footer({
   ];
 
   return (
-    <footer
-      className={`${cairo.className} bg-primary text-white z-40 ${
-        isShortPage ? "fixed bottom-0 left-0 w-full" : "relative"
-      }`}
-    >
+    <footer className={`${cairo.className} bg-primary text-white z-40 mt-auto`} role="contentinfo">
       <Container className="py-6 md:py-8">
         <div className="grid grid-cols-1 gap-8 text-sm leading-relaxed md:grid-cols-4">
           {/* Logo & Slogan */}
@@ -63,8 +46,7 @@ export default function Footer({
               </h2>
             </div>
             <p className={`${inter.className} text-sm leading-[150%] md:text-[15px]`}>
-              {dictionary.company.tagline ||
-                "Memproduksi komponen alas kaki berkualitas untuk industri sepatu sejak 2004"}
+              {dictionary.company.tagline || "Memproduksi komponen alas kaki berkualitas untuk industri sepatu sejak 2004"}
             </p>
           </div>
 
@@ -75,11 +57,9 @@ export default function Footer({
                 <h2 className="font-semibold">{dictionary.company.address || "Alamat"}</h2>
                 <p>
                   Pergudangan Mutiara Kosambi Blok A6 No 22, Dadap – Tangerang
-                  <br />
-                  Kode Pos: 15125
+                  <br/>Kode Pos: 15125
                 </p>
               </div>
-
               <div>
                 <h2 className="font-semibold">{dictionary.company.operating_hours || "Jam Operasional"}</h2>
                 <p>08.00 - 18.00</p>
@@ -94,7 +74,7 @@ export default function Footer({
                 <h2 className="font-semibold">Telp / WA</h2>
                 <p>
                   <Link
-                    href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}`}
+                    href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, '')}`}
                     target="_blank"
                     className="hover:underline"
                   >
@@ -102,10 +82,8 @@ export default function Footer({
                   </Link>
                 </p>
               </div>
-
               <p>
-                <span className="font-semibold">Email</span>
-                <br />
+                <span className="font-semibold">Email</span><br />
                 <Link href={`mailto:${CONTACT.email}`} className="hover:underline">
                   {CONTACT.email}
                 </Link>
@@ -127,6 +105,7 @@ export default function Footer({
           </div>
         </div>
 
+        {/* Garis Pembatas dan Hak Cipta */}
         <div className="mt-8 pt-6 border-t border-white/20 text-center">
           <p className="text-sm leading-relaxed md:text-[15px]">
             © 2025 DMD Shoes. All rights reserved.
