@@ -1,16 +1,10 @@
+import type { PagePropsP, LangParamsP } from "@/types/next";
 import Wishlist from "./_components/Wishlist";
-import type { Locale } from "../../../../../i18n-config";
 import { getDictionaryWishlist } from "../../../../../dictionaries/wishlist/get-dictionary-wishlist";
 
-export default async function WishlistPage(props: {
-  params: Promise<{ lang: Locale }>;
-}) {
-  const { lang } = await props.params;
+export default async function WishlistPage({ params }: PagePropsP<LangParamsP>) {
+  const { lang } = await params;
   const dictionary = await getDictionaryWishlist(lang);
 
-  return (
-    <div>
-      <Wishlist lang={lang} dictionary={dictionary} />
-    </div>
-  );
+  return <Wishlist lang={lang} dictionary={dictionary} />;
 }

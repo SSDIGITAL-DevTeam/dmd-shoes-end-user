@@ -1,12 +1,15 @@
+import type { PagePropsP, LangParamsP } from "@/types/next";
 import { getDictionaryAbout as getDictionaryHome } from "../../../../../dictionaries/home/get-dictionary-home";
-import { Locale } from "../../../../../i18n-config";
 import HomePageClient from "./HomePageClient";
 import { BootstrapService, type HomeBootstrapResponse } from "@/services/bootstrap.service";
 
-export default async function IndexPage(props: {
-  params: Promise<{ lang: Locale }>;
-}) {
-  const { lang } = await props.params;
+export const metadata = {
+  title: "About Our Company",
+  description: "Learn more about our company",
+};
+
+export default async function IndexPage({ params }: PagePropsP<LangParamsP>) {
+  const { lang } = await params;
 
   const [homeDictionary, bootstrap] = await Promise.all([
     getDictionaryHome(lang),
@@ -31,9 +34,4 @@ const fetchBootstrap = async (lang: string): Promise<HomeBootstrapResponse | und
     }
     return undefined;
   }
-};
-
-export const metadata = {
-  title: "About Our Company",
-  description: "Learn more about our company",
 };

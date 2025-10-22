@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const TOKEN_COOKIE_NAME = "token";
@@ -13,15 +13,16 @@ async function parseSafeJson(r: Response) {
   return txt ? { message: txt } : null;
 }
 
-export async function GET(request: Request, ctx: { params: { slug: string } }) {
+export async function GET(request: NextRequest, ctx: { params: Promise<{ slug: string }> }) {
   try {
     if (!API_BASE_URL) {
       return NextResponse.json({ message: "NEXT_PUBLIC_API_URL is not configured." }, { status: 500 });
     }
 
+    const { slug } = await ctx.params;
     const incoming = new URL(request.url);
-    const search = incoming.search; // keep ?lang=id etc.
-    const upstream = `${API_BASE_URL.replace(/\/+$/, "")}/articles/slug/${encodeURIComponent(ctx.params.slug)}${search}`;
+    const search = incoming.search;
+    const upstream = `${API_BASE_URL.replace(/\/+$/, "")}/articles/slug/${encodeURIComponent(slug)}${search}`;
 
     const jar = await cookies();
     const token = jar.get(TOKEN_COOKIE_NAME)?.value;

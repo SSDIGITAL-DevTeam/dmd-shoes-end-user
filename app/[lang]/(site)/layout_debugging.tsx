@@ -16,10 +16,10 @@ import { CONTACT } from "@/config/contact";
  * 5) SHOW_FLOATING
  */
 const FETCH_DICTIONARY = true;
-const SHOW_CHILDREN    = true;   // biasanya nyalakan dulu ini
-const SHOW_HEADER      = false;
-const SHOW_FOOTER      = true;
-const SHOW_FLOATING    = true;
+const SHOW_CHILDREN = true;   // biasanya nyalakan dulu ini
+const SHOW_HEADER = false;
+const SHOW_FOOTER = true;
+const SHOW_FLOATING = true;
 
 type SiteLayoutProps = {
   children: ReactNode;
@@ -74,7 +74,7 @@ export default async function SiteLayout({ children, params }: SiteLayoutProps) 
       {SHOW_FLOATING ? (
         (() => {
           console.log("[site] render FloatingContact");
-          return <FloatingContact whatsapp={CONTACT.whatsapp} />;
+          return <FloatingContact phone={CONTACT.whatsapp} />;
         })()
       ) : (
         <div style={{ display: "none" }} data-debug="floating-off" />

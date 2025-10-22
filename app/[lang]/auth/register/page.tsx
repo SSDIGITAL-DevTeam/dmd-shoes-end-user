@@ -1,48 +1,32 @@
+// app/[lang]/auth/register/page.tsx
 import Image from "next/image";
-import FormRegister from "./_component/FormRegister";
+import FormRegister from "./_component/FormRegister"; // ✅ tambahkan import ini
+import type { PagePropsP, LangParamsP } from "@/types/next"; // ✅ pakai versi Promise
 import { getDictionary } from "@/dictionaries/get-dictionary";
 
-type Params = { lang: string };
+type RegisterDict = typeof defaultRegisterDict.en;
 
 const supportedLangs = ["id", "en"] as const;
 type LangKey = (typeof supportedLangs)[number];
-
 function isLang(x: string): x is LangKey {
   return (supportedLangs as readonly string[]).includes(x);
 }
-
-type RegisterDict = typeof defaultRegisterDict.en;
 
 // 🔧 util deep-merge khusus struktur RegisterDict
 function normalizeDict(base: RegisterDict, override?: Partial<RegisterDict>): RegisterDict {
   const o = override || {};
   return {
     title: o.title ?? base.title,
-    placeholders: {
-      ...base.placeholders,
-      ...(o.placeholders ?? {}),
-    },
-    button: {
-      ...base.button,
-      ...(o.button ?? {}),
-    },
-    links: {
-      ...base.links,
-      ...(o.links ?? {}),
-    },
-    messages: {
-      ...base.messages,
-      ...(o.messages ?? {}),
-    },
-    validation: {
-      ...base.validation,
-      ...(o.validation ?? {}),
-    },
+    placeholders: { ...base.placeholders, ...(o.placeholders ?? {}) },
+    button: { ...base.button, ...(o.button ?? {}) },
+    links: { ...base.links, ...(o.links ?? {}) },
+    messages: { ...base.messages, ...(o.messages ?? {}) },
+    validation: { ...base.validation, ...(o.validation ?? {}) },
   };
 }
 
-export default async function Register(props: { params: Promise<Params> }) {
-  const { lang } = await props.params;
+export default async function Register({ params }: PagePropsP<LangParamsP>) {
+  const { lang } = await params; // ✅ Next 15: params harus di-await
   const safeLang: LangKey = isLang(lang) ? lang : "en";
 
   // Ambil dict dari i18n (boleh partial)
@@ -72,13 +56,11 @@ export default async function Register(props: { params: Promise<Params> }) {
         <div className="flex items-center text-[#003663] gap-2">
           <span
             aria-hidden="true"
-            className="
-              block shrink-0 w-12 h-12 bg-[#003663]
+            className="block shrink-0 w-12 h-12 bg-[#003663]
               [mask-image:url('/assets/logo-dmd-vector.svg')]
               [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]
               [-webkit-mask-image:url('/assets/logo-dmd-vector.svg')]
-              [-webkit-mask-size:contain] [-webkit-mask-repeat:no-repeat] [-webkit-mask-position:center]
-            "
+              [-webkit-mask-size:contain] [-webkit-mask-repeat:no-repeat] [-webkit-mask-position:center]"
           />
           <div className="font-bold text-[28px] leading-[1.1]">
             DMD Shoeparts
@@ -92,7 +74,7 @@ export default async function Register(props: { params: Promise<Params> }) {
             {dict.title}
           </h1>
 
-          {/* ✅ dict sudah normalized (tidak ada field undefined) */}
+          {/* ✅ dict sudah normalized */}
           <FormRegister dict={dict} />
         </div>
       </div>
@@ -100,34 +82,34 @@ export default async function Register(props: { params: Promise<Params> }) {
   );
 }
 
-const defaultRegisterDict: Record<"en" | "id", {
-  title: string;
-  placeholders: {
-    name: string;
-    email: string;
-    phone: string;
-    password: string;
-    password_confirmation: string;
-  };
-  button: { submit: string };
-  links: { haveAccount: string; login: string };
-  messages: {
-    genericError: string;
-    success: string;
-  };
-  validation: {
-    name_required: string;
-    email_required: string;
-    email_invalid: string;
-    password_required: string;
-    password_min: string;
-    password_confirmation_required: string;
-    password_mismatch: string;
-    phone_required: string;
-    phone_invalid: string;
-    form_invalid: string;
-  };
-}> = {
+const defaultRegisterDict: Record<
+  "en" | "id",
+  {
+    title: string;
+    placeholders: {
+      name: string;
+      email: string;
+      phone: string;
+      password: string;
+      password_confirmation: string;
+    };
+    button: { submit: string };
+    links: { haveAccount: string; login: string };
+    messages: { genericError: string; success: string };
+    validation: {
+      name_required: string;
+      email_required: string;
+      email_invalid: string;
+      password_required: string;
+      password_min: string;
+      password_confirmation_required: string;
+      password_mismatch: string;
+      phone_required: string;
+      phone_invalid: string;
+      form_invalid: string;
+    };
+  }
+> = {
   en: {
     title: "Register",
     placeholders: {

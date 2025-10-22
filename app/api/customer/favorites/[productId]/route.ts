@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const TOKEN_COOKIE_NAME = "token";
@@ -7,9 +7,9 @@ const TOKEN_COOKIE_NAME = "token";
 const parseSafeJson = async (response: Response) => {
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
-    return response.json();
+    try { return await response.json(); } catch { return null; }
   }
-  const text = await response.text();
+  const text = await response.text().catch(() => "");
   return text ? { message: text } : null;
 };
 
@@ -23,18 +23,14 @@ const requireConfig = () => {
   return null;
 };
 
-type Params = {
-  params: {
-    productId: string;
-  };
-};
+type Params = { params: Promise<{ productId: string }> }; // ✅ Promise
 
-export async function POST(request: Request, context: Params) {
-  const params = await context.params;
+export async function POST(request: NextRequest, context: Params) {
+  const { productId } = await context.params; // ✅ await
   const configError = requireConfig();
   if (configError) return configError;
 
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // ✅ sinkron
   const token = cookieStore.get(TOKEN_COOKIE_NAME)?.value;
 
   if (!token) {
@@ -46,17 +42,14 @@ export async function POST(request: Request, context: Params) {
   try {
     const json = await request.json();
     if (json && typeof json === "object" && "variant_id" in json) {
-      payload.variant_id =
-        typeof json.variant_id === "number" ? json.variant_id : null;
+      payload.variant_id = typeof (json as any).variant_id === "number" ? (json as any).variant_id : null;
     }
-  } catch {
-    // ignore invalid json; treat as empty body
-  }
+  } catch { /* ignore invalid json */ }
 
   const upstreamBase = API_BASE_URL!.replace(/\/+$/, "");
 
   try {
-    const upstream = await fetch(`${upstreamBase}/favorites/${params.productId}`, {
+    const upstream = await fetch(`${upstreamBase}/favorites/${productId}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -85,8 +78,8 @@ export async function POST(request: Request, context: Params) {
   }
 }
 
-export async function DELETE(request: Request, context: Params) {
-  const params = await context.params;
+export async function DELETE(request: NextRequest, context: Params) {
+  const { productId } = await context.params;
   const configError = requireConfig();
   if (configError) return configError;
 
@@ -105,7 +98,7 @@ export async function DELETE(request: Request, context: Params) {
 
   try {
     const upstream = await fetch(
-      `${upstreamBase}/favorites/${params.productId}${query}`,
+      `${upstreamBase}/favorites/${productId}${query}`,
       {
         method: "DELETE",
         headers: {

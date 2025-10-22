@@ -56,7 +56,7 @@ function FormLogin() {
           {otp.map((digit, index) => (
             <input
               key={index}
-              ref={(el) => (inputsRef.current[index] = el)}
+              ref={(el) => {inputsRef.current[index] = el;}}
               type="text"
               inputMode="numeric"
               maxLength={1}
@@ -78,8 +78,8 @@ function FormLogin() {
         </button>
 
         <p className='text-center text-[20px] leading-[150%]'>
-            Tidak mendapatkan kode? 
-          <button className="text-[#191C42] font-semibold underline">Daftar</button> 
+          Tidak mendapatkan kode?
+          <button className="text-[#191C42] font-semibold underline">Daftar</button>
         </p>
       </form>
     </>

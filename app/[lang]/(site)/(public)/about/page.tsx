@@ -1,25 +1,19 @@
-// app/[lang]/(site)/(public)/about/page.tsx
-import React from "react";
 import { Inter } from "next/font/google";
-import type { Locale } from "../../../../../i18n-config";
+import type { PagePropsP, LangParamsP } from "@/types/next";
 import { getDictionaryAbout } from "../../../../../dictionaries/about/get-dictionary-about";
-
 import About from "./_component/About";
 import FeaturesSection from "./_component/FeaturesSection";
 import HelpSection from "./_component/HelpSection";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400"],
-});
-
+const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 export const revalidate = 0;
 
-export default async function IndexPage({
-  params,
-}: {
-  params: Promise<{ lang: Locale }>;
-}) {
+export const metadata = {
+  title: "About Our Company",
+  description: "Learn more about our company",
+};
+
+export default async function AboutPage({ params }: PagePropsP<LangParamsP>) {
   const { lang } = await params;
   const dictionaryAbout = await getDictionaryAbout(lang);
 
@@ -31,8 +25,3 @@ export default async function IndexPage({
     </div>
   );
 }
-
-export const metadata = {
-  title: "About Our Company",
-  description: "Learn more about our company",
-};

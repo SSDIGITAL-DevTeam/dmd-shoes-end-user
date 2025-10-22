@@ -2,7 +2,13 @@ import Image from "next/image";
 import FormLogin from "./_component/FormLogin";
 import { authLoginDict } from "@/dictionaries/auth/auth-login";
 
-export default function LoginPage({ params: { lang } }: { params: { lang: "id" | "en" } }) {
+// Versi simpel tanpa helper types: params adalah Promise dan di-await
+export default async function LoginPage({
+  params,
+}: {
+  params: Promise<{ lang: "id" | "en" }>;
+}) {
+  const { lang } = await params;
   const t = authLoginDict[lang] ?? authLoginDict.id;
 
   return (

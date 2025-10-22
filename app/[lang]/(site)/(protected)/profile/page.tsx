@@ -1,12 +1,10 @@
+import type { PagePropsP, LangParamsP } from "@/types/next";
 import Container from "@/components/ui-custom/Container";
 import ProfileForm from "./_component/ProfileForm";
-import type { Locale } from "../../../../../i18n-config";
 import { getDictionaryProfile } from "../../../../../dictionaries/profile/get-dictionary-profile";
 
-export default async function ProfilePage(props: {
-  params: Promise<{ lang: Locale }>;
-}) {
-  const { lang } = await props.params;
+export default async function ProfilePage({ params }: PagePropsP<LangParamsP>) {
+  const { lang } = await params;
   const dictionary = await getDictionaryProfile(lang);
 
   return (
