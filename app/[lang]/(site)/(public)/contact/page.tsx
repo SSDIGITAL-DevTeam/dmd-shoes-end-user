@@ -10,12 +10,11 @@ const inter = Inter({
   weight: ["400"],
 });
 
-
-export default async function Page({
-  params,
-}: {
+export type PageProps = {
   params: { lang: Locale };
-}) {
+};
+
+export default async function Page({ params }: PageProps) {
   const { lang } = params;
   const dictionaryContact = await getDictionaryContact(lang);
 
