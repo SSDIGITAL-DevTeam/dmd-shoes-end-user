@@ -13,7 +13,6 @@ type CategoriesListProps = {
     empty?: string;
     toggleLabel?: string;
   };
-  /** Tidak dipakai lagi untuk label "Semua Produk" */
   totalCount?: number;
   locale?: string;
 };
@@ -29,34 +28,44 @@ const toCountValue = (value?: number | null): number =>
 const aggregateParentCount = (parent: Category, children: Category[]): number => {
   const parentCount = toCountValue(parent.products_count);
   const childTotal = children.reduce((sum, child) => sum + toCountValue(child.products_count), 0);
-  // Hindari double-count: bila parent sudah >= total anak, pakai parent; jika tidak, pakai parent+anak
   if (parentCount > 0 && parentCount >= childTotal) return parentCount;
   return parentCount + childTotal;
 };
 
-/** ===== Hanya tampilkan kategori yang benar-benar punya produk ===== */
+/** 🔹 Sorting helper */
+const getName = (c: Category) =>
+  c.name_text?.toLowerCase() ?? c.name?.id?.toLowerCase() ?? c.slug?.toLowerCase() ?? "";
+
+/** ===== Filter kategori yang punya produk + urut abjad ===== */
 const buildGroups = (categories: Category[]): GroupedCategory[] => {
   const hasOwnProducts = (c: Category) => toCountValue(c.products_count) > 0;
 
-  const parents = categories.filter((cat) => !cat.parent_id);
+  // 🔹 Sort global ascending
+  const sortedCats = [...categories].sort((a, b) => getName(a).localeCompare(getName(b)));
+
+  const parents = sortedCats.filter((cat) => !cat.parent_id);
   const childrenOf = (pid: number) =>
-    categories.filter((cat) => cat.parent_id === pid && hasOwnProducts(cat));
+    sortedCats.filter((cat) => cat.parent_id === pid && hasOwnProducts(cat));
 
   const grouped: GroupedCategory[] = [];
 
   for (const parent of parents) {
-    const children = childrenOf(parent.id);
+    const children = childrenOf(parent.id).sort((a, b) =>
+      getName(a).localeCompare(getName(b))
+    );
     const total = aggregateParentCount(parent, children);
     if (total > 0) grouped.push({ parent, children });
   }
 
-  // Orphan (child yang parent-nya tidak ada di data)
   const parentIds = new Set(parents.map((p) => p.id));
-  const orphans = categories.filter(
+  const orphans = sortedCats.filter(
     (cat) => cat.parent_id && !parentIds.has(cat.parent_id) && hasOwnProducts(cat)
   );
 
-  return [...grouped, ...orphans.map((cat) => ({ parent: cat, children: [] as Category[] }))];
+  return [
+    ...grouped.sort((a, b) => getName(a.parent).localeCompare(getName(b.parent))),
+    ...orphans.map((cat) => ({ parent: cat, children: [] as Category[] })),
+  ];
 };
 
 /* ---------- Row ---------- */
@@ -166,21 +175,18 @@ export default function CategoriesList({
   selectedIds,
   onToggle,
   dictionary,
-  totalCount, // tidak dipakai untuk "Semua Produk" lagi
   locale,
 }: CategoriesListProps) {
   const safeCategories = categories ?? [];
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale ?? undefined), [locale]);
-  const formatCount = (value?: number | null) => {
-    if (typeof value !== "number" || !Number.isFinite(value)) return null;
-    return numberFormatter.format(value);
-    // Catatan: gunakan numberFormatter agar konsisten dengan locale
-  };
+  const formatCount = (value?: number | null) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? numberFormatter.format(value)
+      : null;
 
   const groups = useMemo(() => buildGroups(safeCategories), [safeCategories]);
 
-  /** === NEW: total semua produk (bukan yang dipilih) === */
   const totalAllProducts = useMemo(
     () =>
       groups.reduce((sum, g) => sum + aggregateParentCount(g.parent, g.children), 0),
@@ -189,7 +195,9 @@ export default function CategoriesList({
 
   const formattedTotal = formatCount(totalAllProducts);
   const allLabel = dictionary?.allProducts ?? "Semua Produk";
-  const allProductsDisplay = formattedTotal ? `${allLabel} (${formattedTotal})` : allLabel;
+  const allProductsDisplay = formattedTotal
+    ? `${allLabel} (${formattedTotal})`
+    : allLabel;
 
   const emptyLabel = dictionary?.empty ?? "Kategori belum tersedia.";
   const toggleLabel = dictionary?.toggleLabel ?? "Toggle category";
@@ -208,20 +216,20 @@ export default function CategoriesList({
 
       {groups.length === 0 ? (
         <p className="text-sm text-gray-500">{emptyLabel}</p>
-      ) : null}
-
-      <div className="space-y-4">
-        {groups.map(({ parent, children }) => (
-          <CategoryRow
-            key={parent.id}
-            parent={parent}
-            children={children}
-            selectedIds={selectedIds}
-            onToggle={onToggle}
-            toggleLabel={toggleLabel}
-          />
-        ))}
-      </div>
+      ) : (
+        <div className="space-y-4">
+          {groups.map(({ parent, children }) => (
+            <CategoryRow
+              key={parent.id}
+              parent={parent}
+              children={children}
+              selectedIds={selectedIds}
+              onToggle={onToggle}
+              toggleLabel={toggleLabel}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
