@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { i18n } from "@/i18n-config";
 
-type Params = {
+type PageProps = {
   params: { id: string; hash: string };
   searchParams: Record<string, string | string[] | undefined>;
 };
@@ -22,7 +22,7 @@ const toQueryString = (params: Record<string, string | string[] | undefined>) =>
   return query ? `?${query}` : "";
 };
 
-export default function EmailVerifyRedirect({ params, searchParams }: Params) {
+export default function EmailVerifyRedirect({ params, searchParams }: PageProps) {
   const defaultLocale = i18n.defaultLocale ?? "id";
   const query = toQueryString(searchParams);
 
