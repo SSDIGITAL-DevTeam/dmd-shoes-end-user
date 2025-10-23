@@ -1,6 +1,14 @@
-import { ASSET_URL } from "@/lib/env";
+import { ASSET_URL } from "./env";
 
 const ASSET_BASE = ASSET_URL.replace(/\/+$/, "");
+
+const STORAGE_PREFIXES = [
+  /^\/?storage\/app\/public\/?/i,
+  /^\/?app\/public\/?/i,
+  /^\/?public\/storage\/?/i,
+  /^\/?public\//i,
+  /^\/?storage\/?/i,
+];
 
 const toAbsoluteAsset = (value: string): string => {
   const trimmed = value.trim();
@@ -8,9 +16,11 @@ const toAbsoluteAsset = (value: string): string => {
   if (trimmed.startsWith("data:")) return trimmed;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
 
-  if (/^\/?storage\//i.test(trimmed)) {
-    const relative = trimmed.replace(/^\/?storage\/?/, "");
-    return `${ASSET_BASE}/${relative}`;
+  for (const prefix of STORAGE_PREFIXES) {
+    if (prefix.test(trimmed)) {
+      const relative = trimmed.replace(prefix, "");
+      return `${ASSET_BASE}/${relative}`;
+    }
   }
 
   return trimmed;

@@ -1,4 +1,4 @@
-import { hydrateAssets } from "@/lib/assets";
+import { hydrateAssets } from "./assets";
 
 const RAW_API = process.env.NEXT_PUBLIC_API_URL;
 const API = typeof RAW_API === "string" ? RAW_API.replace(/\/+$/, "") : null;

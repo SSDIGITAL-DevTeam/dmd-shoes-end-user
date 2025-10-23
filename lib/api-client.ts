@@ -1,6 +1,6 @@
 import { API_URL } from "@/lib/env";
 import { getStoredToken } from "@/lib/auth";
-import { hydrateAssets } from "@/lib/assets";
+import { hydrateAssets } from "./assets";
 
 export type ApiClientErrorShape = {
   status?: string | number | boolean;
