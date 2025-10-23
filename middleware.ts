@@ -24,11 +24,20 @@ export function middleware(request: NextRequest) {
   );
 
   if (pathnameIsMissingLocale) {
+    const normalizedPath =
+      pathname !== "/" ? pathname.replace(/\/+$/, "") || "/" : pathname;
+
+    const specialRoutes: Record<string, string> = {
+      "/reset-password": "/auth/reset-password",
+    };
+
+    const mappedPath = specialRoutes[normalizedPath] ?? normalizedPath;
+
     const cookieLocale = getCookieLocale(request);
     const locale = cookieLocale ?? i18n.defaultLocale; // => "id"
 
     const url = new URL(request.url);
-    url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+    url.pathname = `/${locale}${mappedPath === "/" ? "" : mappedPath}`;
     return NextResponse.redirect(url);
   }
 
