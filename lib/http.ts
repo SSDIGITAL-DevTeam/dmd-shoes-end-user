@@ -1,3 +1,5 @@
+import { hydrateAssets } from "@/lib/assets";
+
 const RAW_API = process.env.NEXT_PUBLIC_API_URL;
 const API = typeof RAW_API === "string" ? RAW_API.replace(/\/+$/, "") : null;
 
@@ -97,5 +99,5 @@ export async function apiFetch<T>(path: string, opt: FetcherOptions = {}) {
     throw new HttpError(res.status, reason, data);
   }
 
-  return data as T;
+  return hydrateAssets(data) as T;
 }

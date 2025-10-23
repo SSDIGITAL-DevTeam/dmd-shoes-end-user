@@ -1,5 +1,6 @@
 import { API_URL } from "@/lib/env";
 import { getStoredToken } from "@/lib/auth";
+import { hydrateAssets } from "@/lib/assets";
 
 export type ApiClientErrorShape = {
   status?: string | number | boolean;
@@ -109,16 +110,17 @@ export const apiFetch = async <T = unknown>(path: string, init?: ApiRequestInit)
 
   const response = await fetch(url, fetchInit);
   const payload = await parseBody(response);
+  const hydrated = hydrateAssets(payload);
 
   if (!response.ok) {
     const message =
-      (typeof payload === "object" && payload !== null && "message" in payload
-        ? String(payload.message)
+      (typeof hydrated === "object" && hydrated !== null && "message" in hydrated
+        ? String((hydrated as any).message)
         : response.statusText) || "Request failed";
-    throw new ApiError(response.status, message, payload);
+    throw new ApiError(response.status, message, hydrated);
   }
 
-  return payload as T;
+  return hydrated as T;
 };
 
 export const withAuth = (init: ApiRequestInit = {}): ApiRequestInit => {
