@@ -2,13 +2,13 @@
 
 import React, { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { HiCheckBadge } from "react-icons/hi2";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import InputPassword from "@/components/ui-custom/form/InputPassword";
 import { AuthService } from "@/services/auth.service";
 import { HttpError } from "@/lib/http";
+import type { Locale } from "@/i18n-config";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -20,13 +20,13 @@ type FormValues = {
   confirmPassword: string;
 };
 
-export default function FormChangePassword() {
-  const params = useParams<{ lang: string }>();
-  const lang = params?.lang ?? "id";
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
-  const token = searchParams.get("token") ?? "";
+type Props = {
+  lang: Locale;
+  email: string;
+  token: string;
+};
 
+export default function FormChangePassword({ lang, email, token }: Props) {
   const {
     handleSubmit,
     control,
