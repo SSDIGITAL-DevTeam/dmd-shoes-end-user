@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
 import { i18n } from "@/i18n-config";
 
-type SearchParams = {
-  [key: string]: string | string[] | undefined;
-};
+type SearchParams = Record<string, string | string[] | undefined>;
 
 const toQueryString = (params: SearchParams) => {
   const search = new URLSearchParams();
@@ -21,13 +19,13 @@ const toQueryString = (params: SearchParams) => {
   return query ? `?${query}` : "";
 };
 
-export default function ResetPasswordRedirect({
+export default async function ResetPasswordRedirect({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
+  const query = toQueryString(await searchParams);
   const defaultLocale = i18n.defaultLocale ?? "id";
-  const query = toQueryString(searchParams);
 
   redirect(`/${defaultLocale}/auth/reset-password${query}`);
 }
