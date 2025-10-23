@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import ProductSlugPage from "./_component/ProductSlugPage";
 import type { Locale } from "../../../../../../i18n-config";
@@ -60,11 +61,13 @@ export default async function ProductDetailRoute({
   }
 
   return (
-    <ProductSlugPage
-      lang={lang}
-      dictionaryProduct={dictionary}
-      product={product}
-      related={related}
-    />
+    <Suspense fallback={null}>
+      <ProductSlugPage
+        lang={lang}
+        dictionaryProduct={dictionary}
+        product={product}
+        related={related}
+      />
+    </Suspense>
   );
 }

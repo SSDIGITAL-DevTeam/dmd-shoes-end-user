@@ -1,4 +1,5 @@
 // app/[lang]/auth/register/page.tsx
+import { Suspense } from "react";
 import Image from "next/image";
 import FormRegister from "./_component/FormRegister"; // ✅ tambahkan import ini
 import type { PagePropsP, LangParamsP } from "@/types/next"; // ✅ pakai versi Promise
@@ -75,7 +76,9 @@ export default async function Register({ params }: PagePropsP<LangParamsP>) {
           </h1>
 
           {/* ✅ dict sudah normalized */}
-          <FormRegister dict={dict} />
+          <Suspense fallback={null}>
+            <FormRegister dict={dict} />
+          </Suspense>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { PagePropsP, LangParamsP } from "@/types/next";
 import Container from "@/components/ui-custom/Container";
 import ProfileForm from "./_component/ProfileForm";
@@ -12,7 +13,9 @@ export default async function ProfilePage({ params }: PagePropsP<LangParamsP>) {
       <h1 className="text-primary font-semibold text-[32px] leading-[140%]">
         {dictionary.title}
       </h1>
-      <ProfileForm dictionary={dictionary} />
+      <Suspense fallback={null}>
+        <ProfileForm dictionary={dictionary} />
+      </Suspense>
     </Container>
   );
 }
