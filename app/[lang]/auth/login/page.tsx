@@ -1,12 +1,14 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import FormLogin from "./_component/FormLogin";
 import { authLoginDict } from "@/dictionaries/auth/auth-login";
+import type { Locale } from "@/i18n-config";
 
 // Versi simpel tanpa helper types: params adalah Promise dan di-await
 export default async function LoginPage({
   params,
 }: {
-  params: Promise<{ lang: "id" | "en" }>;
+  params: Promise<{ lang: Locale }>;
 }) {
   const { lang } = await params;
   const t = authLoginDict[lang] ?? authLoginDict.id;
@@ -48,7 +50,9 @@ export default async function LoginPage({
           <h1 className="text-2xl font-bold mb-6 text-center text-primary">
             {t.title}
           </h1>
-          <FormLogin lang={lang} />
+          <Suspense fallback={null}>
+            <FormLogin lang={lang} />
+          </Suspense>
         </div>
       </div>
     </div>
