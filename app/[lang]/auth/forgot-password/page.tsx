@@ -1,8 +1,12 @@
 import Image from "next/image";
 import FormForgot from "./_component/FormForgot";
-import type { PagePropsP, LangParamsP } from "@/types/next";
+import type { Locale } from "@/i18n-config";
 
-export default async function ForgotPage({ params }: PagePropsP<LangParamsP>) {
+export default async function ForgotPage({
+  params,
+}: {
+  params: Promise<{ lang: Locale }>;
+}) {
   const { lang } = await params;
 
   return (
