@@ -1,5 +1,6 @@
-// services/auth.service.ts
-import { ApiError, apiFetch } from "@/lib/api-client";
+﻿// services/auth.service.ts
+import { ApiError } from "@/lib/api-client";
+import { apiFetch as httpFetch } from "@/lib/http";
 import {
   clearStoredToken,
   setStoredToken,
@@ -116,30 +117,30 @@ const logout = async () => {
 
 // === Perhatikan path sesuai routes Laravel (/v1/password/forgot & /v1/password/reset, /v1/email/resend)
 const forgotPassword = async (payload: ForgotPasswordPayload, lang?: string) =>
-  apiFetch<ApiResponse<null>>(withLang("/password/forgot", lang), {
+  httpFetch<ApiResponse<null>>(withLang("/api/password/forgot", lang), {
     method: "POST",
     body: payload,
     headers: lang ? { "Accept-Language": lang } : undefined,
   });
 
 const resetPassword = async (payload: ResetPasswordPayload, lang?: string) =>
-  apiFetch<ApiResponse<null>>(withLang("/password/reset", lang), {
+  httpFetch<ApiResponse<null>>(withLang("/api/password/reset", lang), {
     method: "POST",
     body: payload,
     headers: lang ? { "Accept-Language": lang } : undefined,
   });
 
 const resendVerification = async (payload: { email: string }, lang?: string) =>
-  apiFetch<ApiResponse<null>>(withLang("/email/resend", lang), {
+  httpFetch<ApiResponse<null>>(withLang("/api/email/resend", lang), {
     method: "POST",
     body: payload,
     headers: lang ? { "Accept-Language": lang } : undefined,
   });
 
-// verifikasi via link GET signed URL → biasanya tidak via API JSON.
+// Verifikasi via link GET signed URL biasanya tidak melalui API JSON.
 // Ini disediakan jika kamu punya endpoint POST alternatif.
 const verifyEmailCode = async (payload: { email: string; code: string }, lang?: string) =>
-  apiFetch<ApiResponse<null>>(withLang("/email/verify", lang), {
+  httpFetch<ApiResponse<null>>(withLang("/api/email/verify", lang), {
     method: "POST",
     body: payload,
     headers: lang ? { "Accept-Language": lang } : undefined,

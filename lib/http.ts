@@ -1,7 +1,16 @@
-const API = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
+const RAW_API = process.env.NEXT_PUBLIC_API_URL;
+const API = typeof RAW_API === "string" ? RAW_API.replace(/\/+$/, "") : null;
 
-if (!API) {
-  throw new Error("NEXT_PUBLIC_API_URL is not configured. Check your environment variables.");
+export class HttpError<T = any> extends Error {
+  status: number;
+  data: T | null;
+
+  constructor(status: number, message: string, data: T | null) {
+    super(message);
+    this.name = "HttpError";
+    this.status = status;
+    this.data = data;
+  }
 }
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -35,8 +44,21 @@ const toJsonBody = (body: any) => {
   return JSON.stringify(body);
 };
 
+const buildUrl = (path: string) => {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  if (path.startsWith("/api/")) {
+    return path;
+  }
+  if (!API) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured. Check your environment variables.");
+  }
+  return `${API}/${path.replace(/^\/+/, "")}`;
+};
+
 export async function apiFetch<T>(path: string, opt: FetcherOptions = {}) {
-  const url = `${API}/${path.replace(/^\/+/, "")}`;
+  const url = buildUrl(path);
   const jsonEncodedBody = toJsonBody(opt.body);
   const shouldMarkJson =
     jsonEncodedBody !== undefined &&
@@ -64,12 +86,15 @@ export async function apiFetch<T>(path: string, opt: FetcherOptions = {}) {
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
-    data = { message: text };
+    data = text ? ({ message: text } as any) : null;
   }
 
   if (!res.ok) {
-    const reason = data?.message ?? res.statusText ?? "Unknown error";
-    throw new Error(`API ${res.status}: ${reason}`);
+    const reason =
+      (data && typeof data === "object" && "message" in data
+        ? String((data as any).message ?? res.statusText)
+        : res.statusText) || "Unknown error";
+    throw new HttpError(res.status, reason, data);
   }
 
   return data as T;
