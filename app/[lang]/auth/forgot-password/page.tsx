@@ -1,11 +1,10 @@
 import Image from "next/image";
 import FormForgot from "./_component/FormForgot";
+import type { PagePropsP, LangParamsP } from "@/types/next";
 
-export default function ForgotPage({
-  params: { lang },
-}: {
-  params: { lang: "id" | "en" };
-}) {
+export default async function ForgotPage({ params }: PagePropsP<LangParamsP>) {
+  const { lang } = await params;
+
   return (
     <div className="flex h-screen">
       {/* Kiri - Gambar */}
