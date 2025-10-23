@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { i18n } from "@/i18n-config";
 
 type PageProps = {
-  params: { id: string; hash: string };
-  searchParams: Record<string, string | string[] | undefined>;
+  params: Promise<{ id: string; hash: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const toQueryString = (params: Record<string, string | string[] | undefined>) => {
@@ -22,7 +22,8 @@ const toQueryString = (params: Record<string, string | string[] | undefined>) =>
   return query ? `?${query}` : "";
 };
 
-export default function EmailVerifyRedirect({ params, searchParams }: PageProps) {
+export default async function EmailVerifyRedirect(props: PageProps) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const defaultLocale = i18n.defaultLocale ?? "id";
   const query = toQueryString(searchParams);
 
