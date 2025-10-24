@@ -100,9 +100,7 @@ export default function Navbar({
         { label: m.about_us ?? MENU_FALLBACK.about_us, href: "/about" },
         { label: m.contact_us ?? MENU_FALLBACK.contact_us, href: "/contact" },
     ];
-    const menu = isAuthenticated
-        ? [...baseMenu, { label: m.profile ?? MENU_FALLBACK.profile, href: "/profile" }]
-        : baseMenu;
+    const menu = baseMenu;
 
     // current section for active state
     const seg = pathname.split("/").filter(Boolean);

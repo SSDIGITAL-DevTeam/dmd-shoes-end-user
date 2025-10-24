@@ -373,10 +373,129 @@ export default function ProductSlugPage({
   const variantPricePrompt =
     product.pricing_mode === "per_variant" && !displayPrice
       ? detailDict.variantPricePrompt ??
-      (lang.startsWith("en")
-        ? "Select a variant to see the price."
-        : "Pilih varian untuk melihat harga.")
+        (lang.startsWith("en")
+          ? "Select a variant to see the price."
+          : "Pilih varian untuk melihat harga.")
       : null;
+  const sanitizedWhatsappNumber = useMemo(
+    () => CONTACT.whatsapp.replace(/\D/g, ""),
+    [],
+  );
+  const selectedOptionEntries = useMemo(
+    () =>
+      Object.entries(selectedOptions)
+        .map(
+          ([label, value]) =>
+            [label, normalizeLabel(value)] as [string, string],
+        )
+        .filter(([, value]) => Boolean(value)),
+    [selectedOptions],
+  );
+  const selectedVariantLabel = useMemo(() => {
+    if (!selectedVariant) return null;
+
+    const directLabel = normalizeLabel(selectedVariant.label_text);
+    if (directLabel) return directLabel;
+
+    if (typeof selectedVariant.label === "string") {
+      const label = normalizeLabel(selectedVariant.label);
+      if (label) return label;
+    } else if (selectedVariant.label) {
+      const labelByLang = normalizeLabel(
+        (selectedVariant.label as Record<string, string | undefined>)?.[lang],
+      );
+      if (labelByLang) return labelByLang;
+
+      const fallback = normalizeLabel(
+        (selectedVariant.label as Record<string, string | undefined>)?.id,
+      );
+      if (fallback) return fallback;
+    }
+
+    return null;
+  }, [selectedVariant, lang]);
+
+  const selectedPriceValue =
+    typeof selectedVariant?.price === "number"
+      ? selectedVariant.price
+      : resolvedPriceValue;
+  const formattedSelectedPrice =
+    typeof selectedPriceValue === "number"
+      ? formatCurrency(selectedPriceValue, lang)
+      : displayPrice;
+  const shareUrl = useMemo(() => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}${currentUrl}`;
+    }
+    return currentUrl;
+  }, [currentUrl]);
+  const shareIntro = lang.startsWith("en")
+    ? "Hello, I'm interested in this product:"
+    : "Halo, saya tertarik dengan produk berikut:";
+  const shareText = useMemo(() => {
+    const lines: string[] = [shareIntro];
+    const productLabel = lang.startsWith("en") ? "Product" : "Produk";
+    lines.push(`${productLabel}: ${fallbackName}`);
+
+    if (selectedVariantLabel) {
+      const variantLabel = lang.startsWith("en") ? "Variant" : "Varian";
+      lines.push(`${variantLabel}: ${selectedVariantLabel}`);
+    }
+
+    if (selectedOptionEntries.length > 0) {
+      lines.push(
+        lang.startsWith("en") ? "Selected options:" : "Pilihan yang dipilih:",
+      );
+      selectedOptionEntries.forEach(([label, value]) => {
+        lines.push(`- ${label}: ${value}`);
+      });
+    }
+
+    if (formattedSelectedPrice) {
+      lines.push(
+        `${priceLabel}: ${formattedSelectedPrice}${
+          priceSuffix ? ` (${priceSuffix})` : ""
+        }`,
+      );
+    }
+
+    if (shareUrl) {
+      const linkLabel = lang.startsWith("en") ? "Link" : "Tautan";
+      lines.push(`${linkLabel}: ${shareUrl}`);
+    }
+
+    return lines.join("\n");
+  }, [
+    fallbackName,
+    formattedSelectedPrice,
+    lang,
+    priceLabel,
+    priceSuffix,
+    selectedOptionEntries,
+    selectedVariantLabel,
+    shareIntro,
+    shareUrl,
+  ]);
+
+  const shareSubject = useMemo(
+    () =>
+      lang.startsWith("en")
+        ? `Inquiry about ${fallbackName}`
+        : `Tanya produk ${fallbackName}`,
+    [fallbackName, lang],
+  );
+
+  const whatsappHref = useMemo(() => {
+    const message = encodeURIComponent(shareText);
+    return `https://wa.me/${sanitizedWhatsappNumber}?text=${message}`;
+  }, [sanitizedWhatsappNumber, shareText]);
+
+  const emailHref = useMemo(() => {
+    const subject = encodeURIComponent(shareSubject);
+    const body = encodeURIComponent(shareText);
+    return `mailto:${CONTACT.email}?subject=${subject}&body=${body}`;
+  }, [shareSubject, shareText]);
+
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error" | "info";
     text: string;
@@ -757,14 +876,18 @@ export default function ProductSlugPage({
 
           <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-row">
             <Link
-              href={`https://wa.me/${CONTACT.whatsapp.replace(/\D/g, "")}`}
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex w-full items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-white transition hover:bg-green-600 lg:w-auto"
             >
               <FaWhatsapp size={22} aria-hidden="true" />
             </Link>
 
             <Link
-              href={`mailto:${CONTACT.email}`}
+              href={emailHref}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-white transition hover:bg-[#04264b] lg:w-auto"
             >
               <CiMail size={22} aria-hidden="true" />
