@@ -21,7 +21,7 @@ export default function ContactUsButton({
   className?: string;
 }) {
   const classes = [
-    "fixed right-6 bottom-6 z-[9999]",
+    "fixed right-6 bottom-6 z-40",
     "flex items-center gap-2 px-6 py-3 rounded-full shadow-lg",
     "bg-[#128C47] text-white hover:bg-[#0E7038] transition",
     className,
