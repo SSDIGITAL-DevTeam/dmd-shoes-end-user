@@ -12,7 +12,6 @@ type HomeVideoProps = {
   className?: string; // kontrol spacing dari parent
 };
 
-const FALLBACK_POSTER = "/assets/demo/demo-product-video.png";
 const FALLBACK_YOUTUBE = "https://www.youtube.com/embed/5h6hI7PWdAk";
 
 const toEmbedUrl = (url?: string | null) => {
@@ -23,11 +22,7 @@ const toEmbedUrl = (url?: string | null) => {
   return url;
 };
 
-export default function HomeVideo({
-  video,
-  posterFallback = FALLBACK_POSTER,
-  className,
-}: HomeVideoProps) {
+export default function HomeVideo({ video, className }: HomeVideoProps) {
   const [open, setOpen] = useState(false);
 
   const videoSrc = useMemo(() => {
@@ -41,42 +36,20 @@ export default function HomeVideo({
     return FALLBACK_YOUTUBE;
   }, [video]);
 
-  const poster = video?.cover_url ?? posterFallback;
-
   return (
     // tidak ada py default; biarkan parent yang atur via className
     <section className={clsx(className)}>
       <Container>
         <div className="w-full">
-          {!open ? (
-            <button
-              onClick={() => setOpen(true)}
-              className="relative block w-full focus:outline-none"
-              aria-label="Play video"
-            >
-              {/* poster dengan rasio video agar tidak loncat layout */}
-              <div className="relative w-full overflow-hidden bg-black/5 aspect-video">
-                <Image
-                  src={poster}
-                  alt="Product video preview"
-                  fill
-                  sizes="100vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            </button>
-          ) : (
-            <div className="aspect-video w-full overflow-hidden">
-              <iframe
-                className="h-full w-full"
-                src={videoSrc}
-                title="Homepage video"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
-            </div>
-          )}
+          <div className="aspect-video w-full overflow-hidden">
+            <iframe
+              className="h-full w-full"
+              src={videoSrc}
+              title="Homepage video"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          </div>
         </div>
       </Container>
     </section>
