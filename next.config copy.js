@@ -1,13 +1,20 @@
-// next.config.mjs  (atau next.config.js dengan "type":"module" di package.json)
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+// next.config.js
+const path = require("path");
 
 const resolveEnv = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.VITE_API_BASE_URL;
   const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL ?? process.env.VITE_ASSET_BASE_URL;
 
-  if (!apiUrl) throw new Error("Missing NEXT_PUBLIC_API_URL (fallbacks: VITE_API_BASE_URL). Please add it to .env.local.");
-  if (!assetUrl) throw new Error("Missing NEXT_PUBLIC_ASSET_URL (fallbacks: VITE_ASSET_BASE_URL). Please add it to .env.local.");
+  if (!apiUrl) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_API_URL (fallback: VITE_API_BASE_URL). Set it in .env.local"
+    );
+  }
+  if (!assetUrl) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_ASSET_URL (fallback: VITE_ASSET_BASE_URL). Set it in .env.local"
+    );
+  }
 
   return {
     NEXT_PUBLIC_API_URL: apiUrl,
@@ -20,23 +27,20 @@ const resolveEnv = () => {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    // Disable AVIF sementara
-    formats: ["image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "images.pexels.com", pathname: "/**" },
       { protocol: "https", hostname: "api.dmdshoeparts.com", pathname: "/storage/**" },
       { protocol: "https", hostname: "dmdshoeparts.com", pathname: "/storage/**" },
-      // ✅ Allow subdomain www
-      { protocol: "https", hostname: "www.dmdshoeparts.com", pathname: "/storage/**" },
-
       { protocol: "http", hostname: "localhost", pathname: "/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
     ],
-    // unoptimized: true, // opsi debug
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60,
   },
-  typescript: { ignoreBuildErrors: true },
+
+  typescript: { ignoreBuildErrors: process.env.NODE_ENV !== "production" },
   env: resolveEnv(),
-  outputFileTracingRoot: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
+  outputFileTracingRoot: path.resolve(__dirname),
 };
 
-export default nextConfig;
+module.exports = nextConfig;
