@@ -129,7 +129,7 @@ export default function ArticlePageClient({ lang }: ArticlePageClientProps) {
     ? (latest ?? articlesPreview[0] ?? null)
     : null;
 
-  const heroImage = asString((heroArticle as any)?.cover?.url);
+  const heroImage = asString((heroArticle as any)?.cover_url);
   const heroTitle = asString(heroArticle?.title);
   const heroSubtitle = asString(heroArticle?.subtitle ?? heroArticle?.excerpt);
   const heroAuthor = asString((heroArticle as any)?.author_name);
