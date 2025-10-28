@@ -32,7 +32,7 @@ const nextConfig = {
       { protocol: "http", hostname: "localhost", pathname: "/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
     ],
-    // unoptimized: true, // opsi debug
+    unoptimized: true, // opsi debug
   },
   typescript: { ignoreBuildErrors: true },
   env: resolveEnv(),
