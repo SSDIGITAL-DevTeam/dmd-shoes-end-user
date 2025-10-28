@@ -19,10 +19,13 @@ type ArticleSliderProps = {
 };
 
 function ArticleSlider({ articles, lang, readMoreLabel }: ArticleSliderProps) {
-  const items = useMemo(
-    () => articles.filter((a) => Boolean((a as any).slug ?? (a as any).slug_id)),
-    [articles]
-  );
+  const items = useMemo(() => {
+    const filtered = articles.filter(
+      (a) => Boolean((a as any).slug ?? (a as any).slug_id)
+    );
+    // ✅ Batasi maksimum 4 item
+    return filtered.slice(0, 4);
+  }, [articles]);
   if (!items.length) return null;
 
   return (
