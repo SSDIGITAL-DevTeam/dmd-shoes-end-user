@@ -1,5 +1,3 @@
-"use client";
-
 import type { HomepageHero } from "@/services/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -51,7 +49,7 @@ export default function HomeHero({
           src={desktopImage}
           alt={title}
           fill
-          loading="eager"
+          priority
           fetchPriority="high"
           quality={70}
           sizes="100vw"

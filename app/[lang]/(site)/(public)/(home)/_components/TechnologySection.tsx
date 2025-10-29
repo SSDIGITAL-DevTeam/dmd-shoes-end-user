@@ -1,68 +1,61 @@
-"use client";
-
-import React from "react";
 import Image from "next/image";
-import {
-  FaCog,
-  FaRecycle,
-  FaBullseye,
-  FaMoneyBillWave,
-  FaLayerGroup,
-} from "react-icons/fa";
-import Container from "@/components/ui-custom/Container";
-import { HiArrowRight } from "react-icons/hi";
 import Link from "next/link";
-import { Inter } from "next/font/google";
 import clsx from "clsx";
+import {
+  FaBullseye,
+  FaCog,
+  FaLayerGroup,
+  FaMoneyBillWave,
+  FaRecycle,
+} from "react-icons/fa";
+import { HiArrowRight } from "react-icons/hi";
+import { inter } from "@/config/font";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-export default function TechnologySection({
-  lang,
-  dict,
-  className,
-}: {
+type TechnologySectionProps = {
   lang: string;
   dict: any;
   className?: string;
-}) {
+};
+
+const containerClass = "mx-auto w-full max-w-[1200px] px-4 md:px-6";
+
+export default function TechnologySection({ lang, dict, className }: TechnologySectionProps) {
+  const featureConfig =
+    dict?.technology?.features ??
+    {};
+
   const features = [
     {
       icon: <FaCog size={20} />,
-      title: dict?.technology?.features?.fastProduction?.title,
-      description: dict?.technology?.features?.fastProduction?.description,
+      title: featureConfig?.fastProduction?.title,
+      description: featureConfig?.fastProduction?.description,
     },
     {
       icon: <FaRecycle size={20} />,
-      title: dict?.technology?.features?.recycledMaterial?.title,
-      description: dict?.technology?.features?.recycledMaterial?.description,
+      title: featureConfig?.recycledMaterial?.title,
+      description: featureConfig?.recycledMaterial?.description,
     },
     {
       icon: <FaBullseye size={20} />,
-      title: dict?.technology?.features?.precisionConsistency?.title,
-      description: dict?.technology?.features?.precisionConsistency?.description,
+      title: featureConfig?.precisionConsistency?.title,
+      description: featureConfig?.precisionConsistency?.description,
     },
     {
       icon: <FaMoneyBillWave size={20} />,
-      title: dict?.technology?.features?.costEfficiency?.title,
-      description: dict?.technology?.features?.costEfficiency?.description,
+      title: featureConfig?.costEfficiency?.title,
+      description: featureConfig?.costEfficiency?.description,
     },
     {
       icon: <FaLayerGroup size={20} />,
-      title: dict?.technology?.features?.scalability?.title,
-      description: dict?.technology?.features?.scalability?.description,
+      title: featureConfig?.scalability?.title,
+      description: featureConfig?.scalability?.description,
     },
   ];
 
   return (
-    // ganti root jadi <section> & tanpa py default
     <section className={clsx(inter.className, className)}>
-      <Container>
+      <div className={containerClass}>
         <div className="flex flex-col items-center gap-8 md:flex-row lg:gap-12">
-          {/* Left: Text & Features */}
           <div className="w-full md:w-1/2">
             <h2 className="mb-6 text-xl font-semibold leading-tight text-primary md:text-2xl">
               {dict?.technology?.heading}
@@ -71,9 +64,7 @@ export default function TechnologySection({
             <div className="space-y-5">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-start gap-4">
-                  <div className="flex-shrink-0 rounded bg-primary p-2 text-white">
-                    {feature.icon}
-                  </div>
+                  <div className="flex-shrink-0 rounded bg-primary p-2 text-white">{feature.icon}</div>
                   <div>
                     <h3 className="text-sm font-semibold text-[#000000] md:text-[15px]">
                       {feature.title}
@@ -94,20 +85,21 @@ export default function TechnologySection({
             </Link>
           </div>
 
-          {/* Right: Image */}
           <div className="flex w-full justify-center md:w-1/2">
-            <div className="relative aspect-video w-full max-w-[600px] overflow-hidden">
+            <div className="relative aspect-video w-full max-w-[600px] overflow-hidden rounded-lg">
               <Image
                 src="/assets/images/home/teknologi-unggulan.webp"
                 alt={dict?.technology?.imageAlt || ""}
                 fill
                 className="object-cover"
                 sizes="(min-width: 1024px) 600px, 90vw"
+                priority={false}
+                loading="lazy"
               />
             </div>
           </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

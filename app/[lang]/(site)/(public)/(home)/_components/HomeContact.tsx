@@ -1,46 +1,42 @@
-"use client";
-
-import Container from "@/components/ui-custom/Container";
+import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { HiArrowRight } from "react-icons/hi";
 import { inter } from "@/config/font";
-import clsx from "clsx";
 
-export default function HomeContact({
-  lang,
-  dict,
-  className, // NEW: control spacing from parent
-}: {
+type HomeContactProps = {
   lang: string;
   dict: any;
   className?: string;
-}) {
+};
+
+const containerClass = "mx-auto w-full max-w-[1200px] px-4 md:px-6";
+
+export default function HomeContact({ lang, dict, className }: HomeContactProps) {
   return (
     <section
       className={clsx(
         "bg-[#F5F5F5] pt-10 pb-16 sm:pt-14 sm:pb-18 md:pt-18 md:pb-18",
         inter.className,
-        className
+        className,
       )}
     >
-      <Container>
+      <div className={containerClass}>
         <div className="grid grid-cols-1 items-center gap-6 sm:gap-8 md:grid-cols-2">
-          {/* Gambar */}
           <div className="flex justify-center">
-            <div className="relative w-full max-w-[420px] aspect-video">
+            <div className="relative aspect-video w-full max-w-[420px] overflow-hidden rounded-lg">
               <Image
                 src="/assets/images/home/home-contact.webp"
                 alt="Sepatu"
                 fill
                 className="object-contain"
-                priority
+                priority={false}
+                loading="lazy"
                 sizes="(min-width: 768px) 420px, 90vw"
               />
             </div>
           </div>
 
-          {/* Konten */}
           <div className="text-center md:text-left">
             <h2 className="mb-2 text-xl font-semibold leading-snug text-gray-900 md:text-2xl">
               {dict?.contact?.heading}
@@ -56,7 +52,7 @@ export default function HomeContact({
             </Link>
           </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

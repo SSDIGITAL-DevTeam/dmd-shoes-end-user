@@ -1,9 +1,6 @@
 "use client";
 
 import React, { CSSProperties } from "react";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
 
 type ContainerProps = {
   children: React.ReactNode;
