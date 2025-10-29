@@ -1,16 +1,16 @@
 // app/[lang]/sitemap/pages.xml/route.ts
-import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, safeJsonFetch, xml } from "@/lib/sitemap";
+import { buildUrlsetXML, fmtDate, LOCALES, ORIGIN, xml } from "@/lib/sitemap";
 
 export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ lang: string }> }   // ✅ Next 15 expects Promise
+  { params }: { params: Promise<{ lang: string }> }
 ) {
-  const { lang: rawLang } = await params;              // ✅ must await
+  const { lang: rawLang } = await params;
   const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
-  // Halaman statis per-locale
+  // ✅ HANYA 3 URL: /, /about, /contact (urut sesuai gambar)
   const staticPages = ["", "about", "contact"].map((p) => ({
     loc: `${ORIGIN}/${lang}/${p}`.replace(/\/$/, ""),
     lastmod: fmtDate(),
@@ -18,16 +18,5 @@ export async function GET(
     priority: 0.6,
   }));
 
-  // Meta pages dari backend (privacy, terms, dsb)
-  const metaPages = (await safeJsonFetch(`${API_URL}/meta/pages`)) as any[] | null;
-  const metaList = Array.isArray(metaPages) ? metaPages : [];
-
-  const metaUrls = metaList.map((m) => ({
-    loc: `${ORIGIN}/${lang}/${m.slug}`,
-    lastmod: fmtDate(m.updated_at),
-    changefreq: "monthly" as const,
-    priority: 0.6,
-  }));
-
-  return new Response(buildUrlsetXML([...staticPages, ...metaUrls]), xml());
+  return new Response(buildUrlsetXML(staticPages), xml());
 }
