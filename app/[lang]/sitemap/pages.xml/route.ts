@@ -1,25 +1,29 @@
-import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, RUNTIME, safeJsonFetch, xml } from "../../../../lib/sitemap";
+// app/[lang]/pages-sitemap.xml/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { RUNTIME, LOCALES, ORIGIN, API_BASE, fetchAll, urlsetXML, fmtDate, xmlHeaders } from "@/lib/sitemap";
+
 export const runtime = RUNTIME;
 
-type Ctx = { params?: { lang?: string } };
+export async function GET(req: NextRequest, { params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  const active = (LOCALES as readonly string[]).includes(lang) ? lang : "id";
+  if (!API_BASE) return NextResponse.json({ message: "NEXT_PUBLIC_API_URL not set" }, { status: 500 });
 
-export async function GET(_req: Request, ctx: Ctx) {
-  const lang = (LOCALES as readonly string[]).includes(ctx.params?.lang ?? "") ? ctx.params!.lang : "id";
-
-  const staticPages = ["", "about", "contact"].map(p => ({
-    loc: `${ORIGIN}/${lang}/${p}`.replace(/\/$/, ""),
+  const staticPages = ["", "about", "contact"].map((p) => ({
+    loc: `${ORIGIN}/${active}/${p}`.replace(/\/$/, ""),
     lastmod: fmtDate(),
-    changefreq: "monthly",
+    changefreq: "monthly" as const,
     priority: 0.6,
   }));
 
-  const metaPages: any[] = (await safeJsonFetch(`${API_URL}/meta/pages`)) as any[];
-  const metaUrls = metaPages.map(m => ({
-    loc: `${ORIGIN}/${lang}/${m.slug}`,
+  const metaPages = await fetchAll<any>(`${API_BASE}/meta/pages`, req, 200);
+  const metaUrls = metaPages.map((m) => ({
+    loc: `${ORIGIN}/${active}/${m.slug}`,
     lastmod: fmtDate(m.updated_at),
-    changefreq: "monthly",
+    changefreq: "monthly" as const,
     priority: 0.6,
   }));
 
-  return new Response(buildUrlsetXML([...staticPages, ...metaUrls]), xml());
+  const xml = urlsetXML([...staticPages, ...metaUrls]);
+  return new NextResponse(xml, { status: 200, headers: xmlHeaders() });
 }
