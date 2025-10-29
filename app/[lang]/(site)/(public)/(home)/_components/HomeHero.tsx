@@ -51,7 +51,9 @@ export default function HomeHero({
           src={desktopImage}
           alt={title}
           fill
-          priority
+          loading="eager"
+          fetchPriority="high"
+          quality={70}
           sizes="100vw"
           className="object-cover object-center"
         />
@@ -69,6 +71,8 @@ export default function HomeHero({
           alt={title}
           fill
           priority
+          fetchPriority="high"
+          quality={70}
           sizes="100vw"
           className="object-cover object-center"
         />

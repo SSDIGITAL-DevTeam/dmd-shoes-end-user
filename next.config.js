@@ -16,10 +16,9 @@ const resolveEnv = () => {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    // Hosting statik / tanpa Node: pakai URL asli, bukan /_next/image
-    unoptimized: true,
-    // Matikan AVIF (iOS lama), tetap dukung WebP bila device mampu, fallback ke JPEG/PNG
-    formats: ["image/webp"],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [320, 420, 640, 768, 960, 1080, 1200, 1600],
+    imageSizes: [64, 96, 128, 192, 256, 384],
     remotePatterns: [
       { protocol: "https", hostname: "images.pexels.com", pathname: "/**" },
       { protocol: "https", hostname: "api.dmdshoeparts.com", pathname: "/storage/**" },
@@ -28,11 +27,44 @@ const nextConfig = {
       { protocol: "http", hostname: "localhost", pathname: "/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
     ],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 60 * 60,
+  },
+  experimental: {
+    optimizePackageImports: ["@tanstack/react-query", "react-icons"],
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error"] } : false,
+  },
+  modularizeImports: {
+    "react-icons/(?<path>.*)": {
+      transform: "react-icons/{{ path }}/{{member}}",
+    },
   },
   typescript: { ignoreBuildErrors: process.env.NODE_ENV !== "production" },
   env: resolveEnv(),
   outputFileTracingRoot: path.resolve(__dirname),
+  async headers() {
+    return [
+      {
+        source: "/:all*(js|css)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/:all*(png|jpg|jpeg|gif|svg|webp|avif|ico)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/:all*(woff|woff2|ttf|otf)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

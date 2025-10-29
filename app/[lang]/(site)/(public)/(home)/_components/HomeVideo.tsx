@@ -46,8 +46,10 @@ export default function HomeVideo({ video, className }: HomeVideoProps) {
               className="h-full w-full"
               src={videoSrc}
               title="Homepage video"
+              loading="lazy"
               allow="autoplay; encrypted-media"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
             />
           </div>
         </div>

@@ -33,6 +33,8 @@ type HeaderDictionary = {
     localeTitle?: string; // "Bahasa" / "Language"
 };
 
+const NAVBAR_HEIGHT = "72px"; // fixed height used to avoid runtime layout measurements
+
 const MENU_FALLBACK = {
     home: "Home",
     products: "Products",
@@ -60,17 +62,8 @@ export default function Navbar({
     const router = useRouter();
 
     const [isOpen, setIsOpen] = useState(false);
-    const [navH, setNavH] = useState(0);
     const [isAccountMenuOpen, setAccountMenuOpen] = useState(false);
-    const navRef = useRef<HTMLDivElement>(null);
     const desktopAccountRef = useRef<HTMLDivElement>(null);
-
-    // ukur tinggi navbar untuk spacer & sidebar top
-    useEffect(() => {
-        if (navRef.current) {
-            setNavH(navRef.current.getBoundingClientRect().height || 0);
-        }
-    }, []);
 
     // auth & wishlist
     const { token, user, isHydrated, logout } = useAuthStore((s) => ({
@@ -147,8 +140,8 @@ export default function Navbar({
     return (
         <Fragment>
             {/* NAVBAR */}
-            <nav ref={navRef} className="fixed inset-x-0 top-0 z-50 w-full bg-primary">
-                <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 md:px-6 py-2.5">
+            <nav className="fixed inset-x-0 top-0 z-50 w-full bg-primary shadow-sm" style={{ minHeight: NAVBAR_HEIGHT }}>
+                <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between px-4 md:px-6 py-2.5">
                     {/* MOBILE BAR: burger + logo + wishlist */}
                     <div className="flex w-full items-center justify-between lg:hidden">
                         {/* kiri: burger */}
@@ -283,7 +276,7 @@ export default function Navbar({
             </nav>
 
             {/* spacer agar konten tidak tertutup navbar */}
-            <div style={{ height: navH }} />
+            <div style={{ height: NAVBAR_HEIGHT }} aria-hidden />
 
             {/* overlay */}
             {isOpen && (
@@ -298,7 +291,7 @@ export default function Navbar({
                 id="mobile-sidebar"
                 className={`fixed left-0 z-50 w-full max-w-[260px] transform bg-white transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
-                style={{ top: navH, height: `calc(100% - ${navH}px)` }}
+                style={{ top: NAVBAR_HEIGHT, height: `calc(100% - ${NAVBAR_HEIGHT})` }}
             >
                 <div className="flex h-full flex-col overflow-y-auto pb-6">
                     <nav className="flex-1">
