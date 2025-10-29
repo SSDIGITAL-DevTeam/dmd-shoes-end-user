@@ -1,14 +1,20 @@
 // app/sitemap.xml/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { LOCALES, ORIGIN, indexXML, fmtDate, xmlHeaders } from "@/lib/sitemap";
+import { buildSitemapIndexXML, fmtDate, ORIGIN, LOCALES, xml } from "@/lib/sitemap";
 
 export const runtime = "nodejs";
+export async function GET() {
+  const items: Array<{ loc: string; lastmod: string }> = [];
 
-export async function GET(_req: NextRequest) {
-  const items = LOCALES.map((lang) => ({
-    loc: `${ORIGIN}/${lang}/sitemap_index.xml`,
-    lastmod: fmtDate(),
-  }));
-  const xml = indexXML(items);
-  return new NextResponse(xml, { status: 200, headers: xmlHeaders() });
+  for (const lang of LOCALES) {
+    items.push(
+      { loc: `${ORIGIN}/${lang}/sitemap.xml`, lastmod: fmtDate() },
+      { loc: `${ORIGIN}/${lang}/sitemaps/articles.xml`, lastmod: fmtDate() },
+      { loc: `${ORIGIN}/${lang}/sitemaps/products.xml`, lastmod: fmtDate() },
+      { loc: `${ORIGIN}/${lang}/sitemaps/categories.xml`, lastmod: fmtDate() },
+      { loc: `${ORIGIN}/${lang}/sitemaps/pages.xml`, lastmod: fmtDate() },
+    );
+  }
+
+  const xmlStr = buildSitemapIndexXML(items);
+  return new Response(xmlStr, xml());
 }

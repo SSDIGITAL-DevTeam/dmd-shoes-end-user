@@ -1,23 +1,17 @@
-// app/[lang]/articles-sitemap.xml/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { LOCALES, ORIGIN, API_BASE, fetchAll, urlsetXML, fmtDate, xmlHeaders } from "@/lib/sitemap";
+import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, RUNTIME, safeJsonFetch, xml } from "../../../../lib/sitemap";
+export const runtime = RUNTIME;
 
-export const runtime = "nodejs";
+type Ctx = { params?: { lang?: string } };
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params;
-  const active = (LOCALES as readonly string[]).includes(lang) ? lang : "id";
-  if (!API_BASE) return NextResponse.json({ message: "NEXT_PUBLIC_API_URL not set" }, { status: 500 });
+export async function GET(_req: Request, ctx: Ctx) {
+  const lang = (LOCALES as readonly string[]).includes(ctx.params?.lang ?? "") ? ctx.params!.lang : "id";
+  const articles: any[] = (await safeJsonFetch(`${API_URL}/articles?per_page=999`)) as any[];
 
-  const items = await fetchAll<any>(`${API_BASE}/articles`, req, 100);
-
-  const urls = items.map((a) => ({
-    loc: `${ORIGIN}/${active}/articles/${a.slug}`, // ganti jika slug bilingual
+  const urls = articles.map(a => ({
+    loc: `${ORIGIN}/${lang}/articles/${a.slug}`,   // ganti ke slug_id/slug_en jika ada
     lastmod: fmtDate(a.updated_at),
     changefreq: "weekly",
     priority: 0.8,
   }));
-
-  const xml = urlsetXML(urls);
-  return new NextResponse(xml, { status: 200, headers: xmlHeaders() });
+  return new Response(buildUrlsetXML(urls), xml());
 }
