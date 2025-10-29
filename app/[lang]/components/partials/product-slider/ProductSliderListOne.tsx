@@ -36,15 +36,21 @@ function ProductSliderItem({
   imageClassName,
 }: ProductSliderItemProps) {
   if (!image?.src) {
-    return <div className={clsx("relative w-full overflow-hidden bg-black/5 min-h-[160px]",
-      sliderHeightClass)} />;
+    return (
+      <div
+        className={clsx(
+          "relative w-full overflow-hidden bg-black/5 min-h-[160px]",
+          sliderHeightClass
+        )}
+      />
+    );
   }
 
   const node = (
     <div
       className={clsx(
         "relative w-full overflow-hidden bg-black/5",
-        "min-h-[160px]",                 // fallback supaya nggak 0px
+        "min-h-[160px]", // fallback supaya nggak 0px
         sliderHeightClass
       )}
     >
@@ -60,7 +66,11 @@ function ProductSliderItem({
   );
 
   return image.href ? (
-    <Link href={image.href} className="block w-full" aria-label={image.alt ?? image.name ?? "slide"}>
+    <Link
+      href={image.href}
+      className="block w-full"
+      aria-label={image.alt ?? image.name ?? "slide"}
+    >
       {node}
     </Link>
   ) : (
@@ -77,7 +87,10 @@ export default function ProductSliderListOne({
   // mobile tidak crop, md+ full-bleed
   imageClassName = "object-contain md:object-cover",
 }: ProductSliderListProps) {
-  const filteredImages = useMemo(() => images.filter((img) => Boolean(img.src)), [images]);
+  const filteredImages = useMemo(
+    () => images.filter((img) => Boolean(img.src)),
+    [images]
+  );
 
   const totalSlides = filteredImages.length;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -85,10 +98,14 @@ export default function ProductSliderListOne({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (totalSlides === 0 ? 0 : (prev + 1) % totalSlides));
+    setCurrentIndex((prev) =>
+      totalSlides === 0 ? 0 : (prev + 1) % totalSlides
+    );
   };
   const prevSlide = () => {
-    setCurrentIndex((prev) => (totalSlides === 0 ? 0 : (prev - 1 + totalSlides) % totalSlides));
+    setCurrentIndex((prev) =>
+      totalSlides === 0 ? 0 : (prev - 1 + totalSlides) % totalSlides
+    );
   };
   const togglePlay = () => setIsPlaying((prev) => !prev);
 
@@ -124,8 +141,12 @@ export default function ProductSliderListOne({
             imageClassName={imageClassName}
           />
         ) : (
-          <div className={clsx("relative w-full overflow-hidden bg-black/5 min-h-[160px]",
-            sliderHeightClass)} />
+          <div
+            className={clsx(
+              "relative w-full overflow-hidden bg-black/5 min-h-[160px]",
+              sliderHeightClass
+            )}
+          />
         )}
       </div>
 
@@ -144,14 +165,14 @@ export default function ProductSliderListOne({
 
           <div className="flex items-center gap-2">
             {Array.from({ length: totalSlides }).map((_, idx) => (
-              <button
+              <div
                 key={idx}
-                type="button"
-                onClick={() => setCurrentIndex(idx)}
-                aria-label={`Pindah ke slide ${idx + 1}`}
+                aria-label={`Slide ${idx + 1}`}
                 className={clsx(
                   "h-2 w-2 rounded-full transition",
-                  idx === currentIndex ? "bg-[#121212]" : "bg-[rgba(18,18,18,0.5)] hover:bg-[rgba(18,18,18,0.7)]"
+                  idx === currentIndex
+                    ? "bg-[#121212]"
+                    : "bg-[rgba(18,18,18,0.5)]"
                 )}
               />
             ))}
