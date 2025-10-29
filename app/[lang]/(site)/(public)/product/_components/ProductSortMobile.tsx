@@ -139,7 +139,7 @@ export default function ProductSortMobile({
               type="button"
               aria-haspopup="listbox"
               aria-expanded={listOpen}
-              className="w-full h-11 rounded border border-[#E0E0E0] bg-white px-3 pr-8 text-sm text-left
+              className="w-full h-11 rounded-lg border border-[#E0E0E0] bg-white px-3 pr-8 text-sm text-left
                          focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
               onClick={() => setListOpen((v) => !v)}
               onKeyDown={(e) => {
@@ -162,7 +162,7 @@ export default function ProductSortMobile({
               <ul
                 role="listbox"
                 tabIndex={-1}
-                className="absolute left-0 right-0 z-50 mt-2 max-h-60 overflow-auto rounded border border-[#E0E0E0] bg-white shadow-lg divide-y divide-[#F1F5F9]"
+                className="absolute left-0 right-0 z-50 mt-2 max-h-60 overflow-auto rounded-lg border border-[#E0E0E0] bg-white shadow-lg divide-y divide-[#F1F5F9]"
               >
                 {options.map((opt, idx) => {
                   const selected = opt.value === value;

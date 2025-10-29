@@ -57,7 +57,7 @@ export default function ButtonWishlist({
         onClick={onClick}
         disabled={disabled || isLoading}
         className={clsx(
-          "flex w-full items-center justify-center gap-2 rounded-[8px] border border-primary px-4 py-2 text-primary transition hover:bg-primary/5 lg:w-auto",
+          "flex w-full items-center justify-center gap-2 rounded-lg border border-primary px-4 py-2 text-primary transition hover:bg-primary/5 lg:w-auto",
           (disabled || isLoading) && "cursor-not-allowed opacity-70",
         )}
       >
@@ -99,13 +99,13 @@ export default function ButtonWishlist({
             <div className="flex flex-col gap-3">
               <Link
                 href={loginHref}
-                className="w-full rounded-[8px] bg-primary py-2 text-[18px] font-medium leading-[150%] text-white"
+                className="w-full rounded-lg bg-primary py-2 text-[18px] font-medium leading-[150%] text-white"
               >
                 {loginLabel}
               </Link>
               <Link
                 href={registerHref}
-                className="w-full rounded-[8px] border border-primary py-2 text-[18px] font-medium leading-[150%] text-primary"
+                className="w-full rounded-lg border border-primary py-2 text-[18px] font-medium leading-[150%] text-primary"
               >
                 {registerLabel}
               </Link>
