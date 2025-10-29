@@ -11,7 +11,7 @@ export async function GET(
   const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
   // ✅ HANYA 3 URL: /, /about, /contact (urut sesuai gambar)
-  const staticPages = ["", "about", "contact"].map((p) => ({
+  const staticPages = ["", "about", "contact", "product", "article"].map((p) => ({
     loc: `${ORIGIN}/${lang}/${p}`.replace(/\/$/, ""),
     lastmod: fmtDate(),
     changefreq: "monthly" as const,
