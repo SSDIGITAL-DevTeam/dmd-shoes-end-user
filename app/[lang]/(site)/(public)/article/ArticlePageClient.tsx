@@ -192,7 +192,7 @@ export default function ArticlePageClient({ lang }: ArticlePageClientProps) {
 
               <form
                 onSubmit={handleSearchSubmit}
-                className="relative w-full sm:w-[360px]"
+                className="relative rounded-lg w-full sm:w-[360px]"
                 role="search"
                 aria-label={
                   dictionary.search_label ||
@@ -219,7 +219,7 @@ export default function ArticlePageClient({ lang }: ArticlePageClientProps) {
                       ? "Search articles..."
                       : "Cari artikel...")
                   }
-                  className="h-[44px] w-full rounded border border-[#003663] bg-white pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
+                  className="h-[44px] w-full rounded-lg border border-[#003663] bg-white pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
                 />
                 <button type="submit" className="sr-only">
                   {dictionary.search_label ||

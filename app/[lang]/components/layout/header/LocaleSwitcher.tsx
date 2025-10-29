@@ -54,7 +54,7 @@ export default function LocaleSwitcher() {
         onClick={() => setOpen((p) => !p)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded px-2 py-1.5 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
+        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
       >
         <span className="[&>svg]:w-5 [&>svg]:h-5">{active?.flag}</span>
         <span className="text-sm uppercase">{active?.code}</span>

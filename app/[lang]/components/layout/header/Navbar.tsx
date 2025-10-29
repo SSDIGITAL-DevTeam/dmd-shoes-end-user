@@ -228,13 +228,13 @@ export default function Navbar({
                             <>
                                 <Link
                                     href={`/${lang}/auth/register`}
-                                    className="rounded border border-white px-4 py-2 text-sm md:text-[15px] font-medium text-white transition hover:bg-white/10"
+                                    className="rounded-lg border border-white px-4 py-2 text-sm md:text-[15px] font-medium text-white transition hover:bg-white/10"
                                 >
                                     {authLabels.register}
                                 </Link>
                                 <Link
                                     href={`/${lang}/auth/login`}
-                                    className="rounded bg-white px-4 py-2 text-sm md:text-[15px] font-semibold text-primary transition hover:bg-white/90"
+                                    className="rounded-lg bg-white px-4 py-2 text-sm md:text-[15px] font-semibold text-primary transition hover:bg-white/90"
                                 >
                                     {authLabels.login}
                                 </Link>
@@ -319,14 +319,14 @@ export default function Navbar({
                                 <Link
                                     href={`/${lang}/auth/register`}
                                     onClick={() => setIsOpen(false)}
-                                    className="px-4 py-3 text-[16px] font-medium text-primary border border-primary text-center"
+                                    className="rounded-lg border border-primary px-4 py-3 text-[16px] font-medium text-primary text-center"
                                 >
                                     {authLabels.register}
                                 </Link>
                                 <Link
                                     href={`/${lang}/auth/login`}
                                     onClick={() => setIsOpen(false)}
-                                    className="px-4 py-3 text-[16px] font-medium bg-primary text-white text-center"
+                                    className="rounded-lg bg-primary px-4 py-3 text-[16px] font-medium text-white text-center"
                                 >
                                     {authLabels.login}
                                 </Link>
