@@ -4,8 +4,8 @@ import HomePageClient from "./HomePageClient";
 import { BootstrapService, type HomeBootstrapResponse } from "@/services/bootstrap.service";
 
 export const metadata = {
-  title: "About Our Company",
-  description: "Learn more about our company",
+  title: "Home - DMD ShoeParts Manufacturing",
+  description: "Innovative solutions for the future of footwear components",
 };
 
 export default async function IndexPage({ params }: PagePropsP<LangParamsP>) {
