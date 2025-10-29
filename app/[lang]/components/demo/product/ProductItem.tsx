@@ -111,7 +111,7 @@ export default function ProductItem({
 
   return (
     <div
-      className={`${assistant.className} group flex w-full flex-col bg-white shadow-sm transition hover:shadow-lg overflow-hidden`}
+      className={`${assistant.className} group flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-lg`}
     >
       <Link href={href} className="block">
         {/* FOTO FULL, TANPA PADDING */}

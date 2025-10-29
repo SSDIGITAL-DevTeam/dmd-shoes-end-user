@@ -24,7 +24,7 @@ export default function ProductSliderItem({
   return (
     <div
       className={clsx(
-        "relative w-full overflow-hidden rounded",
+        "relative w-full overflow-hidden rounded-t-lg",
         "min-h-[160px]",          // fallback biar gak 0px saat CSS belum ke-load
         heightClass
       )}

@@ -13,7 +13,7 @@ type ProductSliderItemProps = {
 
 export default function ProductSliderItem({ image }: ProductSliderItemProps) {
   return (
-    <div className="w-1/3 relative aspect-square rounded overflow-hidden">
+    <div className="w-1/3 relative aspect-square overflow-hidden rounded-lg">
       <Image
         src={image.src}
         alt={image.alt || image.name || "product"}

@@ -39,7 +39,7 @@ function ProductSliderItem({
     return (
       <div
         className={clsx(
-          "relative w-full overflow-hidden bg-black/5 min-h-[160px]",
+          "relative w-full overflow-hidden rounded-t-lg bg-black/5 min-h-[160px]",
           sliderHeightClass
         )}
       />
@@ -49,7 +49,7 @@ function ProductSliderItem({
   const node = (
     <div
       className={clsx(
-        "relative w-full overflow-hidden bg-black/5",
+        "relative w-full overflow-hidden rounded-t-lg bg-black/5",
         "min-h-[160px]", // fallback supaya nggak 0px
         sliderHeightClass
       )}
@@ -133,7 +133,7 @@ export default function ProductSliderListOne({
   return (
     <Container>
       {/* Area gambar slider */}
-      <div className="flex overflow-hidden">
+      <div className="flex overflow-hidden rounded-t-lg">
         {totalSlides > 0 ? (
           <ProductSliderItem
             image={filteredImages[currentIndex]}
@@ -143,7 +143,7 @@ export default function ProductSliderListOne({
         ) : (
           <div
             className={clsx(
-              "relative w-full overflow-hidden bg-black/5 min-h-[160px]",
+              "relative w-full overflow-hidden rounded-t-lg bg-black/5 min-h-[160px]",
               sliderHeightClass
             )}
           />
@@ -151,7 +151,7 @@ export default function ProductSliderListOne({
       </div>
 
       {/* Kontrol */}
-      <div className="flex items-center justify-center space-x-4 border border-[#12121214]">
+      <div className="flex items-center justify-center space-x-4 border border-[#12121214] rounded-b-lg">
         <div className="py-2 flex items-center justify-center space-x-4">
           <button
             type="button"

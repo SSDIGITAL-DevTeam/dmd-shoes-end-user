@@ -107,7 +107,7 @@ export default function ProductPromo({
         <Link
           href={viewAllHref}
           className={`${assistant.className} inline-flex items-center justify-center
-              rounded-md px-4 py-2 md:px-5 md:py-2.5
+              rounded-lg px-4 py-2 md:px-5 md:py-2.5
               text-sm md:text-[15px] font-semibold
               text-primary bg-white border border-primary
               shadow-sm transition

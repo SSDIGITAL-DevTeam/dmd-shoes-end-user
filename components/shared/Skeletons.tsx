@@ -12,7 +12,7 @@ const baseSkeletonClass =
 export function ProductCardSkeleton({ className }: SkeletonProps) {
   return (
     <div className={clsx("space-y-3", className)}>
-      <div className={clsx(baseSkeletonClass, "aspect-[3/4] w-full")} />
+      <div className={clsx(baseSkeletonClass, "aspect-[3/4] w-full rounded-lg")} />
       <div className="space-y-2">
         <div className={clsx(baseSkeletonClass, "h-4 w-3/4")} />
         <div className={clsx(baseSkeletonClass, "h-3 w-1/2")} />
