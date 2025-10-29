@@ -1,5 +1,5 @@
 import { buildSitemapIndexXML, fmtDate, LOCALES, ORIGIN, xml, RUNTIME } from "../../../../lib/sitemap";
-export const runtime = RUNTIME;
+export const runtime = "nodejs";
 
 type Ctx = { params?: { lang?: string } };
 

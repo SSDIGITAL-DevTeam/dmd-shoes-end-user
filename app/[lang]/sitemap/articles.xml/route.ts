@@ -1,5 +1,5 @@
 import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, RUNTIME, safeJsonFetch, xml } from "../../../../lib/sitemap";
-export const runtime = RUNTIME;
+export const runtime = "nodejs";
 
 type Ctx = { params?: { lang?: string } };
 
