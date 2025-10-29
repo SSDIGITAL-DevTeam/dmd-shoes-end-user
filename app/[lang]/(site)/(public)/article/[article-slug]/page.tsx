@@ -42,14 +42,69 @@ const formatPublishedDate = (value?: string, locale = "id") => {
 
 const formatContent = (raw?: string | null) => {
   if (!raw) return "";
-  const escaped = raw.trim();
-  if (!escaped) return "";
-  const paragraphs = escaped
-    .split(/\n{2,}/)
-    .map((p) => p.replace(/\n/g, "<br />").trim())
-    .filter(Boolean);
-  if (!paragraphs.length) return `<p>${escaped}</p>`;
-  return paragraphs.map((p) => `<p>${p}</p>`).join("");
+  const trimmed = raw.replace(/\r\n/g, "\n").trim();
+  if (!trimmed) return "";
+
+  const blocks: string[] = [];
+  let paragraphBuffer: string[] = [];
+  let currentList: { type: "ul" | "ol"; items: string[] } | null = null;
+
+  const flushParagraph = () => {
+    if (!paragraphBuffer.length) return;
+    blocks.push(`<p>${paragraphBuffer.join("<br />")}</p>`);
+    paragraphBuffer = [];
+  };
+
+  const flushList = () => {
+    if (!currentList) return;
+    const { type, items } = currentList;
+    const className =
+      type === "ul"
+        ? "my-4 list-disc list-inside space-y-2"
+        : "my-4 list-decimal list-inside space-y-2";
+    blocks.push(
+      `<${type} class="${className}">${items
+        .map((item) => `<li>${item}</li>`)
+        .join("")}</${type}>`
+    );
+    currentList = null;
+  };
+
+  trimmed.split("\n").forEach((rawLine) => {
+    const line = rawLine.trim();
+
+    // Blank line -> break paragraphs or lists
+    if (!line) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+
+    const unorderedMatch = /^[-*]\s+/.test(line);
+    const orderedMatch = /^\d+[.)]\s+/.test(line);
+
+    if (unorderedMatch || orderedMatch) {
+      flushParagraph();
+      const type: "ul" | "ol" = unorderedMatch ? "ul" : "ol";
+      const content = line.replace(unorderedMatch ? /^[-*]\s+/ : /^\d+[.)]\s+/, "");
+
+      if (!currentList || currentList.type !== type) {
+        flushList();
+        currentList = { type, items: [] };
+      }
+      currentList.items.push(content);
+      return;
+    }
+
+    // Regular paragraph line
+    flushList();
+    paragraphBuffer.push(line);
+  });
+
+  flushParagraph();
+  flushList();
+
+  return blocks.join("");
 };
 
 const filterRelatedArticles = (articles: Article[], current: Article | null) => {
