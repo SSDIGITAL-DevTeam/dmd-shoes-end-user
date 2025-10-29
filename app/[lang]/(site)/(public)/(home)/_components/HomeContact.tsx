@@ -46,7 +46,7 @@ export default function HomeContact({ lang, dict, className }: HomeContactProps)
             </p>
             <Link
               href={`/${lang}/contact`}
-              className="inline-flex items-center rounded-md bg-[#003663] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#002244] md:px-5 md:py-2.5 md:text-[15px]"
+              className="inline-flex items-center rounded-lg bg-[#003663] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#002244] md:px-5 md:py-2.5 md:text-[15px]"
             >
               {dict?.contact?.button} <HiArrowRight className="ml-2 h-5 w-5" />
             </Link>

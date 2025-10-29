@@ -301,7 +301,7 @@ export default function FilterUkuran({
           setOpen(true);
         }}
         className={`inline-flex h-[40px] items-center justify-center gap-2
-              rounded-[4px] border border-[#003663] bg-white px-3 text-sm
+              rounded-lg border border-[#003663] bg-white px-3 text-sm
               text-[#003663] shadow-sm transition
               hover:border-[#002a4f] hover:text-[#002a4f]
               focus:outline-none focus:ring-2 focus:ring-[#003663]/30
@@ -357,7 +357,7 @@ export default function FilterUkuran({
                   value={draft.heel_min ?? ""}
                   onChange={handleInput("heel_min")}
                   placeholder={labels.min}
-                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                  className="w-24 rounded-lg border px-2 py-1 text-[14px]"
                 />
                 <span className="text-sm text-[#121212]/60">{labels.heelUnit}</span>
                 <div className="h-[1px] w-4 bg-[#121212]/60" />
@@ -366,7 +366,7 @@ export default function FilterUkuran({
                   value={draft.heel_max ?? ""}
                   onChange={handleInput("heel_max")}
                   placeholder={labels.max}
-                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                  className="w-24 rounded-lg border px-2 py-1 text-[14px]"
                 />
                 <span className="text-sm text-[#121212]/60">{labels.heelUnit}</span>
               </div>
@@ -395,7 +395,7 @@ export default function FilterUkuran({
                   value={draft.size_min ?? ""}
                   onChange={handleInput("size_min")}
                   placeholder={labels.min}
-                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                  className="w-24 rounded-lg border px-2 py-1 text-[14px]"
                 />
                 <span className="text-sm text-[#121212]/60">{labels.sizeUnit}</span>
                 <div className="h-[1px] w-4 bg-[#121212]/60" />
@@ -404,7 +404,7 @@ export default function FilterUkuran({
                   value={draft.size_max ?? ""}
                   onChange={handleInput("size_max")}
                   placeholder={labels.max}
-                  className="w-24 rounded-[4px] border px-2 py-1 text-[14px]"
+                  className="w-24 rounded-lg border px-2 py-1 text-[14px]"
                 />
                 <span className="text-sm text-[#121212]/60">{labels.sizeUnit}</span>
               </div>
@@ -422,7 +422,7 @@ export default function FilterUkuran({
             <button
               type="button"
               onClick={apply}
-              className="rounded-md bg-[#003663] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#002a4f]"
+              className="rounded-lg bg-[#003663] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#002a4f]"
             >
               {labels.apply}
             </button>

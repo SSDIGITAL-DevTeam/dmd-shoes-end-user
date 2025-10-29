@@ -62,7 +62,7 @@ export default function ProductSortDesktop({
           type="button"
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="h-[40px] w-full rounded-[4px] border border-[#003663] bg-white
+          className="h-[40px] w-full rounded-lg border border-[#003663] bg-white
                      px-3 pr-8 text-left text-sm leading-none text-[#003663]
                      focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
           onClick={() => setOpen(v => !v)}
@@ -87,7 +87,7 @@ export default function ProductSortDesktop({
           <ul
             role="listbox"
             tabIndex={-1}
-            className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded
+            className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-lg
                        border border-[#E0E0E0] bg-white shadow-lg"
           >
             {options.map((opt, idx) => {

@@ -43,7 +43,7 @@ const ProductChoice: React.FC<ProductChoiceProps> = ({
             type="button"
             onClick={() => handleClick(option)}
             className={clsx(
-              "rounded-[4px] border px-4 py-2 text-[14px] font-semibold leading-[150%] tracking-[-0.6%] transition-colors",
+              "rounded-lg border px-4 py-2 text-[14px] font-semibold leading-[150%] tracking-[-0.6%] transition-colors",
               activeValue === option
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-[#EEEEEE] text-[#121212] hover:bg-blue-50",

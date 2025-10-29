@@ -64,7 +64,7 @@ export default function TechnologySection({ lang, dict, className }: TechnologyS
             <div className="space-y-5">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-start gap-4">
-                  <div className="flex-shrink-0 rounded bg-primary p-2 text-white">{feature.icon}</div>
+                  <div className="flex-shrink-0 rounded-lg bg-primary p-2 text-white">{feature.icon}</div>
                   <div>
                     <h3 className="text-sm font-semibold text-[#000000] md:text-[15px]">
                       {feature.title}
@@ -79,7 +79,7 @@ export default function TechnologySection({ lang, dict, className }: TechnologyS
 
             <Link
               href={`/${lang}/product`}
-              className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 md:px-5 md:py-2.5 md:text-[15px]"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 md:px-5 md:py-2.5 md:text-[15px]"
             >
               {dict?.technology?.button} <HiArrowRight size={18} />
             </Link>

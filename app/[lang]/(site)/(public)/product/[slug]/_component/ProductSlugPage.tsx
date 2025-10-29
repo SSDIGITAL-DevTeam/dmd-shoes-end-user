@@ -763,7 +763,7 @@ export default function ProductSlugPage({
                       previewRefs.current[index] = node;
                     }}
                     onClick={() => setActiveIndex(index)}
-                    className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border transition ${activeIndex === index
+                    className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border transition ${activeIndex === index
                       ? "border-primary"
                       : "border-gray-200 hover:border-primary"
                       }`}
@@ -784,7 +784,7 @@ export default function ProductSlugPage({
                 <button
                   type="button"
                   onClick={handlePreviewNext}
-                  className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
                   aria-label={lang.startsWith("en") ? "Next image" : "Gambar berikutnya"}
                 >
                   <FaChevronRight />
@@ -879,7 +879,7 @@ export default function ProductSlugPage({
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-green-500 px-4 py-2 text-white transition hover:bg-green-600 lg:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-white transition hover:bg-green-600 lg:w-auto"
             >
               <FaWhatsapp size={22} aria-hidden="true" />
             </Link>
@@ -888,7 +888,7 @@ export default function ProductSlugPage({
               href={emailHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-white transition hover:bg-[#04264b] lg:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-white transition hover:bg-[#04264b] lg:w-auto"
             >
               <CiMail size={22} aria-hidden="true" />
             </Link>
