@@ -91,9 +91,15 @@ const buildQueryFromState = (state: ProductFiltersState): URLSearchParams => {
   if (state.size_min !== undefined) params.set("size_min", String(state.size_min));
   if (state.size_max !== undefined) params.set("size_max", String(state.size_max));
   if (state.page > 1) params.set("page", String(state.page));
-  params.set("per_page", String(state.per_page));
-  if (state.sort) params.set("sort", state.sort);
-  if (state.dir) params.set("dir", state.dir);
+  if (state.per_page !== DEFAULT_STATE.per_page) {
+    params.set("per_page", String(state.per_page));
+  }
+  if (state.sort && state.sort !== DEFAULT_STATE.sort) {
+    params.set("sort", state.sort);
+  }
+  if (state.dir && state.dir !== DEFAULT_STATE.dir) {
+    params.set("dir", state.dir);
+  }
   return params;
 };
 
