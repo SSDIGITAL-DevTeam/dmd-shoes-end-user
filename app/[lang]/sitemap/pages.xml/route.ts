@@ -1,23 +1,31 @@
-import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, RUNTIME, safeJsonFetch, xml } from "../../../../lib/sitemap";
+// app/[lang]/sitemap/pages.xml/route.ts
+import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, safeJsonFetch, xml } from "@/lib/sitemap";
+
 export const runtime = "nodejs";
 
-type Ctx = { params?: { lang?: string } };
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ lang: string }> }   // ✅ Next 15 expects Promise
+) {
+  const { lang: rawLang } = await params;              // ✅ must await
+  const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
-export async function GET(_req: Request, ctx: Ctx) {
-  const lang = (LOCALES as readonly string[]).includes(ctx.params?.lang ?? "") ? ctx.params!.lang : "id";
-
-  const staticPages = ["", "about", "contact"].map(p => ({
+  // Halaman statis per-locale
+  const staticPages = ["", "about", "contact"].map((p) => ({
     loc: `${ORIGIN}/${lang}/${p}`.replace(/\/$/, ""),
     lastmod: fmtDate(),
-    changefreq: "monthly",
+    changefreq: "monthly" as const,
     priority: 0.6,
   }));
 
-  const metaPages: any[] = (await safeJsonFetch(`${API_URL}/meta/pages`)) as any[];
-  const metaUrls = metaPages.map(m => ({
+  // Meta pages dari backend (privacy, terms, dsb)
+  const metaPages = (await safeJsonFetch(`${API_URL}/meta/pages`)) as any[] | null;
+  const metaList = Array.isArray(metaPages) ? metaPages : [];
+
+  const metaUrls = metaList.map((m) => ({
     loc: `${ORIGIN}/${lang}/${m.slug}`,
     lastmod: fmtDate(m.updated_at),
-    changefreq: "monthly",
+    changefreq: "monthly" as const,
     priority: 0.6,
   }));
 
