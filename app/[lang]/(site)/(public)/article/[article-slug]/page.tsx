@@ -80,13 +80,16 @@ const formatContent = (raw?: string | null) => {
       return;
     }
 
-    const unorderedMatch = /^[-*]\s+/.test(line);
+    const unorderedMatch = /^([-*•‣])\s+/.test(line);
     const orderedMatch = /^\d+[.)]\s+/.test(line);
 
     if (unorderedMatch || orderedMatch) {
       flushParagraph();
       const type: "ul" | "ol" = unorderedMatch ? "ul" : "ol";
-      const content = line.replace(unorderedMatch ? /^[-*]\s+/ : /^\d+[.)]\s+/, "");
+      const content = line.replace(
+        unorderedMatch ? /^([-*•‣])\s+/ : /^\d+[.)]\s+/,
+        ""
+      );
 
       if (!currentList || currentList.type !== type) {
         flushList();
