@@ -1,17 +1,27 @@
-import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, RUNTIME, safeJsonFetch, xml } from "../../../../lib/sitemap";
+// app/[lang]/sitemap/articles.xml/route.ts
+import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, safeJsonFetch, xml } from "@/lib/sitemap";
+
 export const runtime = "nodejs";
 
-type Ctx = { params?: { lang?: string } };
+// ✅ Next.js 15: params wajib berupa Promise & harus di‐await
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ lang: string }> }
+) {
+  const { lang: rawLang } = await params; // <- wajib di-await
+  const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
-export async function GET(_req: Request, ctx: Ctx) {
-  const lang = (LOCALES as readonly string[]).includes(ctx.params?.lang ?? "") ? ctx.params!.lang : "id";
-  const articles: any[] = (await safeJsonFetch(`${API_URL}/articles?per_page=999`)) as any[];
+  // NOTE: ini hanya ambil halaman pertama. Jika butuh semua artikel, tambahkan auto-paginate.
+  const articles = (await safeJsonFetch(`${API_URL}/articles?per_page=999`)) as any[] | null;
+  const list = Array.isArray(articles) ? articles : [];
 
-  const urls = articles.map(a => ({
-    loc: `${ORIGIN}/${lang}/articles/${a.slug}`,   // ganti ke slug_id/slug_en jika ada
+  const urls = list.map((a) => ({
+    // kalau slug bilingual: const slug = lang === "id" ? a.slug_id : a.slug_en;
+    loc: `${ORIGIN}/${lang}/articles/${a.slug}`,
     lastmod: fmtDate(a.updated_at),
-    changefreq: "weekly",
+    changefreq: "weekly" as const,
     priority: 0.8,
   }));
+
   return new Response(buildUrlsetXML(urls), xml());
 }
