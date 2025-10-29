@@ -17,7 +17,7 @@ export async function GET(
 
   const urls = list.map((a) => ({
     // kalau slug bilingual: const slug = lang === "id" ? a.slug_id : a.slug_en;
-    loc: `${ORIGIN}/${lang}/articles/${a.slug}`,
+    loc: `${ORIGIN}/${lang}/article/${a.slug}`,
     lastmod: fmtDate(a.updated_at),
     changefreq: "weekly" as const,
     priority: 0.8,
