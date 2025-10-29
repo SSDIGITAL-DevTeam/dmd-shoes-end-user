@@ -11,7 +11,7 @@ export async function GET(
   const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
   // NOTE: backend biasanya paginate; kita pakai per_page besar.
-  const categories = (await safeJsonFetch(`${API_URL}/categories?per_page=999`)) as any[] | null;
+  const categories = (await safeJsonFetch(`${API_URL}/categories`)) as any[] | null;
   const list = Array.isArray(categories) ? categories : [];
 
   const urls = list.map((c) => ({

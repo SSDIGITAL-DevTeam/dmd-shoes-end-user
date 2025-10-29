@@ -12,7 +12,7 @@ export async function GET(
   const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
   // Ambil list produk (note: endpoint ini ter-paginate; pakai per_page besar)
-  const products = (await safeJsonFetch(`${API_URL}/products?per_page=999`)) as any[] | null;
+  const products = (await safeJsonFetch(`${API_URL}/products`)) as any[] | null;
   const list = Array.isArray(products) ? products : [];
 
   const urls = list.map((p) => ({

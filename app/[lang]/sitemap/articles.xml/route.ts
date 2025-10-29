@@ -12,7 +12,7 @@ export async function GET(
   const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
   // NOTE: ini hanya ambil halaman pertama. Jika butuh semua artikel, tambahkan auto-paginate.
-  const articles = (await safeJsonFetch(`${API_URL}/articles?per_page=999`)) as any[] | null;
+  const articles = (await safeJsonFetch(`${API_URL}/articles`)) as any[] | null;
   const list = Array.isArray(articles) ? articles : [];
 
   const urls = list.map((a) => ({
