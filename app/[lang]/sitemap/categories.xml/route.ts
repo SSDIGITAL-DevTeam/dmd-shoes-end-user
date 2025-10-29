@@ -1,8 +1,8 @@
 // app/[lang]/categories-sitemap.xml/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { RUNTIME, LOCALES, ORIGIN, API_BASE, fetchAll, urlsetXML, fmtDate, xmlHeaders } from "@/lib/sitemap";
+import { LOCALES, ORIGIN, API_BASE, fetchAll, urlsetXML, fmtDate, xmlHeaders } from "@/lib/sitemap";
 
-export const runtime = RUNTIME;
+export const runtime = "nodejs";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
