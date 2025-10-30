@@ -21,7 +21,7 @@ import { inter, lato } from "@/config/font";
 import ProductPagination from "./ProductPagination";
 
 /* =========================
-   Helpers (function declaration → hoisted)
+   Helpers
    ========================= */
 function getChildrenIds(cats: Category[], parentId: number): number[] {
   return cats.filter((c) => c.parent_id === parentId).map((c) => c.id);
@@ -30,17 +30,11 @@ function hasChildren(cats: Category[], id: number): boolean {
   return cats.some((c) => c.parent_id === id);
 }
 
-/**
- * Props diterima dari page (server component) yang mem-pass 'lang' & dictionary terjemahan.
- */
 type ProductPageProps = {
   lang: string;
   dictionaryProduct: any;
 };
 
-/**
- * State filter yang diikat ke URLSearchParams agar shareable dan bisa di-refresh tanpa hilang.
- */
 type ProductFiltersState = {
   search: string;
   categoryIds: number[];
@@ -63,29 +57,33 @@ const DEFAULT_STATE: ProductFiltersState = {
   dir: "desc",
 };
 
-/** Helper: parse angka dari query string dengan aman */
 const parseNumber = (value: string | null) => {
   if (!value) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
-/** Helper: parse daftar kategori (comma separated) dari query string */
 const parseCategories = (value: string | null) =>
   value
     ? value
-      .split(",")
-      .map((v) => Number(v.trim()))
-      .filter((v) => Number.isFinite(v))
+        .split(",")
+        .map((v) => Number(v.trim()))
+        .filter((v) => Number.isFinite(v))
     : [];
 
-/** Serialize state -> URLSearchParams (untuk sinkronisasi URL) */
+/**
+ * 🔧 Serialize state → URL
+ * PERBAIKAN: kategori TIDAK lagi ditaruh ke URL
+ */
 const buildQueryFromState = (state: ProductFiltersState): URLSearchParams => {
   const params = new URLSearchParams();
   if (state.search) params.set("search", state.search);
-  if (state.categoryIds.length) {
-    params.set("category_ids", state.categoryIds.join(","));
-  }
+
+  // ❌ JANGAN kirim kategori ke URL
+  // if (state.categoryIds.length) {
+  //   params.set("category_ids", state.categoryIds.join(","));
+  // }
+
   if (state.heel_min !== undefined) params.set("heel_min", String(state.heel_min));
   if (state.heel_max !== undefined) params.set("heel_max", String(state.heel_max));
   if (state.size_min !== undefined) params.set("size_min", String(state.size_min));
@@ -103,10 +101,13 @@ const buildQueryFromState = (state: ProductFiltersState): URLSearchParams => {
   return params;
 };
 
-/** Deserialize URLSearchParams -> state (untuk initial load & navigasi back/forward) */
+/**
+ * Deserialize URL → state
+ * (boleh tetap baca category_ids kalau memang ada di URL)
+ */
 const buildStateFromSearchParams = (searchParams: URLSearchParams): ProductFiltersState => ({
   search: searchParams.get("search") ?? "",
-  categoryIds: parseCategories(searchParams.get("category_ids")),
+  categoryIds: parseCategories(searchParams.get("category_ids")), // masih boleh
   heel_min: parseNumber(searchParams.get("heel_min")),
   heel_max: parseNumber(searchParams.get("heel_max")),
   size_min: parseNumber(searchParams.get("size_min")),
@@ -117,10 +118,13 @@ const buildStateFromSearchParams = (searchParams: URLSearchParams): ProductFilte
   dir: (searchParams.get("dir") as "asc" | "desc" | null) ?? DEFAULT_STATE.dir,
 });
 
-/** Adapter: map state -> input untuk hook useProducts (API list product) */
-const buildQueryInput = (state: ProductFiltersState, lang: string): Parameters<typeof useProducts>[0] => ({
+const buildQueryInput = (
+  state: ProductFiltersState,
+  lang: string
+): Parameters<typeof useProducts>[0] => ({
   lang,
   search: state.search || undefined,
+  // ✅ kirim ke API dari STATE
   category_ids: state.categoryIds.length ? state.categoryIds.join(",") : undefined,
   heel_min: state.heel_min,
   heel_max: state.heel_max,
@@ -140,26 +144,24 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
   const searchParamsString = searchParams.toString();
   const [isPending, startTransition] = useTransition();
 
-  /** State untuk membuka sidebar kategori pada mobile */
   const [openCategory, setOpenCategory] = useState(false);
 
-  /** State filter tersinkron dengan URL */
   const [filters, setFilters] = useState<ProductFiltersState>(() =>
-    buildStateFromSearchParams(new URLSearchParams(searchParams.toString())),
+    buildStateFromSearchParams(new URLSearchParams(searchParams.toString()))
   );
 
-  /** Sinkronkan state saat URL berubah (misal back/forward) */
+  // sinkron saat URL berubah (back/forward)
   useEffect(() => {
     const paramsState = buildStateFromSearchParams(new URLSearchParams(searchParamsString));
     setFilters((prev) => ({ ...prev, ...paramsState }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParamsString]);
 
-  /** Update state + push ke URL tanpa scroll (UX halus) */
   const updateFilters = useCallback((updater: (prev: ProductFiltersState) => ProductFiltersState) => {
     setFilters((prev) => updater(prev));
   }, []);
 
+  // ❗ efek yang nulis ke URL
   useEffect(() => {
     const params = buildQueryFromState(filters);
     const nextQuery = params.toString();
@@ -172,37 +174,34 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
     });
   }, [filters, pathname, router, searchParamsString, startTransition]);
 
-  /** Params untuk query products */
   const productsParams = useMemo(() => buildQueryInput(filters, lang), [filters, lang]);
 
-  /** Opsi sort diturunkan dari dictionary (fallback ID) */
   const sortOptions = useMemo(
     () => [
       { label: dictionaryProduct?.sort?.newest ?? "Produk Terpopuler", value: "favorites_count:desc" },
       { label: dictionaryProduct?.sort?.priceLow ?? "Harga Terendah", value: "price:asc" },
       { label: dictionaryProduct?.sort?.priceHigh ?? "Harga Tertinggi", value: "price:desc" },
     ],
-    [dictionaryProduct],
+    [dictionaryProduct]
   );
 
-  /** Nilai tampilan select (format: field:dir) */
   const selectedSortValue =
-    filters.sort && filters.dir ? `${filters.sort}:${filters.dir}` : filters.sort ? `${filters.sort}:asc` : "favorites_count:desc";
+    filters.sort && filters.dir
+      ? `${filters.sort}:${filters.dir}`
+      : filters.sort
+      ? `${filters.sort}:asc`
+      : "favorites_count:desc";
 
-  /** Fetch daftar produk (termasuk meta filter utk FilterUkuran) */
-  const { products, filters: filterMeta, isLoading, isError, error, refetch } = useProducts(productsParams);
+  const { products, filters: filterMeta, isLoading, isError, error, refetch } =
+    useProducts(productsParams);
 
-  /** Fetch kategori untuk sidebar kiri */
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categories.list({ lang }),
     queryFn: () => CategoryService.list({ lang, per_page: 20 }),
   });
 
-  // ====== Derived data ======
   const isMutating = isPending;
   const categories: Category[] = categoriesQuery.data?.data ?? [];
-
-  // ====== Handlers ======
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -212,8 +211,6 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
   const handleCategoryToggle = (categoryId: number) => {
     const isParent = hasChildren(categories, categoryId);
     const children = isParent ? getChildrenIds(categories, categoryId) : [];
-
-    // Cari parent dari sebuah child (kalau yang diklik child)
     const parentId = categories.find((c) => c.id === categoryId)?.parent_id ?? null;
 
     updateFilters((prev) => {
@@ -222,21 +219,16 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
       const bundle = [categoryId, ...children];
 
       if (isSelected) {
-        // Uncheck parent/child ⇒ lepas id itu + seluruh anak kalau parent
         bundle.forEach((id) => ids.delete(id));
 
-        // Jika yang dilepas adalah child, dan parent ada dalam set, cek:
-        // jika tidak ada child yang tersisa, lepas parent juga (opsional)
         if (!isParent && parentId) {
           const siblings = getChildrenIds(categories, parentId);
           const anySiblingSelected = siblings.some((id) => ids.has(id));
           if (!anySiblingSelected) ids.delete(parentId);
         }
       } else {
-        // Check parent/child ⇒ tambah id + semua anak kalau parent
         bundle.forEach((id) => ids.add(id));
 
-        // Jika yang dicentang child, dan semua sibling sekarang terpilih, auto-check parent
         if (!isParent && parentId) {
           const siblings = getChildrenIds(categories, parentId);
           const allSiblingsSelected = siblings.every((id) => ids.has(id));
@@ -284,7 +276,6 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
     }));
   };
 
-  // Pagination typing safety
   const pagination = products satisfies Pagination<ProductCard>;
   const totalPages = pagination.last_page ?? 1;
   const totalItems = pagination.total ?? products.data.length ?? 0;
@@ -334,9 +325,9 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
                   {dictionaryProduct?.searchPlaceholder || "Search products"}
                 </label>
                 <FaSearch
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
-                />
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
+                  />
                 <input
                   id="product-search"
                   type="search"
@@ -353,7 +344,7 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
               </div>
             </div>
 
-            {/* Mobile sort trigger */}
+            {/* Mobile sort */}
             <div className="lg:hidden">
               <ProductSortMobile
                 value={selectedSortValue}
@@ -369,7 +360,7 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
             </div>
           </div>
 
-          {/* Mobile search + filter buttons */}
+          {/* Mobile search + filter */}
           <div className="space-y-3 lg:hidden">
             <div className="relative">
               <label htmlFor="product-search-mobile" className="sr-only">
@@ -398,7 +389,12 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
                 aria-expanded={openCategory}
                 aria-controls="mobile-category-panel"
               >
-                <Image src="/assets/svg/icon/icon-category-filter.svg" alt="" width={16} height={16} />
+                <Image
+                  src="/assets/svg/icon/icon-category-filter.svg"
+                  alt=""
+                  width={16}
+                  height={16}
+                />
                 <span className="font-medium">
                   {dictionaryProduct?.filterCategory || "Filter Category"}
                 </span>
@@ -422,14 +418,17 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
           </div>
         </header>
 
-        {/* Layout 2 kolom */}
+        {/* Layout */}
         <div className="flex gap-6">
-          {/* Overlay mobile */}
+          {/* overlay mobile */}
           {openCategory ? (
-            <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setOpenCategory(false)} />
+            <div
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+              onClick={() => setOpenCategory(false)}
+            />
           ) : null}
 
-          {/* Sidebar kategori – mobile */}
+          {/* sidebar mobile */}
           <aside
             className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white
               px-[32px] py-[24px] [--sidepad:32px]
@@ -457,7 +456,7 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
             />
           </aside>
 
-          {/* Sidebar kategori – desktop */}
+          {/* sidebar desktop */}
           <aside className="hidden w-64 rounded-lg bg-white px-[32px] py-[24px] [--sidepad:32px] lg:block">
             <div>
               <h3 className={`${lato.className} mb-3 text-lg font-semibold text-primary lg:text-black`}>
@@ -477,7 +476,7 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
             />
           </aside>
 
-          {/* Grid produk + pagination */}
+          {/* konten produk */}
           <main className="flex-1">
             <ApiBoundary
               isLoading={isLoading || isMutating}
@@ -490,9 +489,11 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
                   ))}
                 </div>
               }
-              empty={<div className="py-12 text-center text-sm text-gray-500">
-                {dictionaryProduct?.empty || "Produk tidak ditemukan."}
-              </div>}
+              empty={
+                <div className="py-12 text-center text-sm text-gray-500">
+                  {dictionaryProduct?.empty || "Produk tidak ditemukan."}
+                </div>
+              }
               isEmpty={(products?.data?.length ?? 0) === 0}
               onRetry={refetch}
             >
@@ -518,4 +519,3 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
     </div>
   );
 }
-
