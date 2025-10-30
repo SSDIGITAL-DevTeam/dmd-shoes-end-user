@@ -1,4 +1,3 @@
-// lib/fetcher.ts
 const DEFAULT_TIMEOUT_MS = 5000;
 
 export async function fetchJson<T>(
