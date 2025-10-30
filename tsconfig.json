@@ -39,8 +39,7 @@
                     "**/*.ts",
                     "**/*.tsx",
                     "next.config.js",
-                    ".next/types/**/*.ts",
-                    "app/[lang]/components/partials/product-slider/ProductSliderListThreet.sx"
+                    ".next/types/**/*.ts"
                 ],
     "exclude":  [
                     "node_modules"
