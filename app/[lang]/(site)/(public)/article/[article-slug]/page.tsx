@@ -20,7 +20,8 @@ const resolveLang = (value: unknown): string => {
   return "id";
 };
 
-const resolveDictionary = (lang: string) => (lang.startsWith("id") ? idDictionary : enDictionary);
+const resolveDictionary = (lang: string) =>
+  lang.startsWith("id") ? idDictionary : enDictionary;
 
 const asString = (v: unknown): string | undefined =>
   typeof v === "string" && v.trim() ? v : undefined;
@@ -30,11 +31,10 @@ const formatPublishedDate = (value?: string, locale = "id") => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   try {
-    return new Intl.DateTimeFormat(locale.startsWith("id") ? "id-ID" : "en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(date);
+    return new Intl.DateTimeFormat(
+      locale.startsWith("id") ? "id-ID" : "en-US",
+      { year: "numeric", month: "long", day: "numeric" }
+    ).format(date);
   } catch {
     return value;
   }
@@ -42,78 +42,32 @@ const formatPublishedDate = (value?: string, locale = "id") => {
 
 const formatContent = (raw?: string | null) => {
   if (!raw) return "";
-  const trimmed = raw.replace(/\r\n/g, "\n").trim();
-  if (!trimmed) return "";
+  const html = raw.trim();
+  if (!html) return "";
 
-  const blocks: string[] = [];
-  let paragraphBuffer: string[] = [];
-  let currentList: { type: "ul" | "ol"; items: string[] } | null = null;
+  // biarkan HTML TinyMCE apa adanya
+  const looksLikeHtml = /<\/?(p|ul|ol|li|h[1-6]|br|strong|em|blockquote|a|img|figure|table)\b/i.test(
+    html
+  );
+  if (looksLikeHtml) return html;
 
-  const flushParagraph = () => {
-    if (!paragraphBuffer.length) return;
-    blocks.push(`<p>${paragraphBuffer.join("<br />")}</p>`);
-    paragraphBuffer = [];
-  };
+  const normalized = html.replace(/\r\n/g, "\n");
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map((p) => p.replace(/\n/g, "<br />").trim())
+    .filter(Boolean);
 
-  const flushList = () => {
-    if (!currentList) return;
-    const { type, items } = currentList;
-    const className =
-      type === "ul"
-        ? "my-4 list-disc list-inside space-y-2"
-        : "my-4 list-decimal list-inside space-y-2";
-    blocks.push(
-      `<${type} class="${className}">${items
-        .map((item) => `<li>${item}</li>`)
-        .join("")}</${type}>`
-    );
-    currentList = null;
-  };
-
-  trimmed.split("\n").forEach((rawLine) => {
-    const line = rawLine.trim();
-
-    // Blank line -> break paragraphs or lists
-    if (!line) {
-      flushParagraph();
-      flushList();
-      return;
-    }
-
-    const unorderedMatch = /^([-*•‣])\s+/.test(line);
-    const orderedMatch = /^\d+[.)]\s+/.test(line);
-
-    if (unorderedMatch || orderedMatch) {
-      flushParagraph();
-      const type: "ul" | "ol" = unorderedMatch ? "ul" : "ol";
-      const content = line.replace(
-        unorderedMatch ? /^([-*•‣])\s+/ : /^\d+[.)]\s+/,
-        ""
-      );
-
-      if (!currentList || currentList.type !== type) {
-        flushList();
-        currentList = { type, items: [] };
-      }
-      currentList.items.push(content);
-      return;
-    }
-
-    // Regular paragraph line
-    flushList();
-    paragraphBuffer.push(line);
-  });
-
-  flushParagraph();
-  flushList();
-
-  return blocks.join("");
+  return paragraphs.length
+    ? paragraphs.map((p) => `<p>${p}</p>`).join("")
+    : `<p>${normalized}</p>`;
 };
 
 const filterRelatedArticles = (articles: Article[], current: Article | null) => {
   if (!articles.length) return [];
   const currentKey = current ? (current as any).slug ?? (current as any).id : null;
-  return articles.filter((a) => ((a as any).slug ?? (a as any).id) !== currentKey).slice(0, 6);
+  return articles
+    .filter((a) => ((a as any).slug ?? (a as any).id) !== currentKey)
+    .slice(0, 6);
 };
 
 export default function ArticleDetailPage() {
@@ -159,7 +113,10 @@ export default function ArticleDetailPage() {
     );
   }
 
-  const titleText = asString((article as any).title_text) ?? asString((article as any).title) ?? "";
+  const titleText =
+    asString((article as any).title_text) ??
+    asString((article as any).title) ??
+    "";
   const contentText = asString((article as any).content_text) ?? "";
   const contentHtml = formatContent(contentText);
 
@@ -169,14 +126,15 @@ export default function ArticleDetailPage() {
     FALLBACK_COVER;
 
   const rawDateTime =
-    asString((article as any).published_at) ?? asString((article as any).created_at);
-
+    asString((article as any).published_at) ??
+    asString((article as any).created_at);
   const publishedLabel = formatPublishedDate(rawDateTime, lang);
 
   return (
     <div className="min-h-screen bg-white">
       <main>
         <Container className="mx-auto w-full max-w-2xl px-4 py-8 sm:max-w-3xl md:max-w-4xl sm:py-10">
+          {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-4">
             <ol className="flex flex-wrap items-center gap-2 text-sm">
               <li>
@@ -197,6 +155,7 @@ export default function ArticleDetailPage() {
             </ol>
           </nav>
 
+          {/* Article */}
           <article>
             <header className="mb-3">
               <h1 className="text-[28px] font-bold leading-tight text-[#003663] sm:text-[34px]">
@@ -206,11 +165,18 @@ export default function ArticleDetailPage() {
               <p className="mt-2 flex flex-wrap gap-2 text-sm text-[#003663]/90">
                 {asString((article as any).author_name) ? (
                   <span className="font-medium">
-                    {dictionary.by_author.replace("{{author}}", (article as any).author_name as string)}
+                    {dictionary.by_author.replace(
+                      "{{author}}",
+                      (article as any).author_name as string
+                    )}
                   </span>
                 ) : null}
-                {asString((article as any).author_name) && publishedLabel ? <span>·</span> : null}
-                {publishedLabel ? <time dateTime={rawDateTime}>{publishedLabel}</time> : null}
+                {asString((article as any).author_name) && publishedLabel ? (
+                  <span>·</span>
+                ) : null}
+                {publishedLabel ? (
+                  <time dateTime={rawDateTime}>{publishedLabel}</time>
+                ) : null}
               </p>
             </header>
 
@@ -225,15 +191,38 @@ export default function ArticleDetailPage() {
               />
             </figure>
 
-            <div className="prose prose-neutral max-w-none text-gray-700 prose-h2:mt-6 prose-h2:text-xl prose-h2:font-bold">
+            {/* Konten artikel dengan spacing & list style seragam */}
+            <div className="article-content prose prose-neutral max-w-none text-gray-700 prose-h2:mt-6 prose-h2:text-xl prose-h2:font-bold prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1">
               {contentHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
               ) : (
                 <p>{dictionary.content_empty}</p>
               )}
             </div>
+
+            {/* CSS override agar bullet & spacing sama seperti editor */}
+            <style jsx global>{`
+              .article-content ul,
+              .article-content ol {
+                list-style: revert;
+                padding-left: 1.5rem;
+                margin-top: 0.75rem;
+                margin-bottom: 0.75rem;
+              }
+              .article-content ul { list-style-type: disc; }
+              .article-content ol { list-style-type: decimal; }
+              .article-content li { display: list-item; margin-top: 0.25rem; margin-bottom: 0.25rem; }
+              .article-content li::marker { color: rgba(55, 65, 81, 1); } /* gray-700 */
+              .article-content p { margin-top: 0.75rem; margin-bottom: 0.75rem; }
+              .article-content h2,
+              .article-content h3 {
+                margin-top: 1.5rem;
+                margin-bottom: 0.75rem;
+              }
+            `}</style>
           </article>
 
+          {/* Related section */}
           <section aria-labelledby="related-articles" className="pt-10">
             <h2 id="related-articles" className="mb-4 text-lg font-bold text-[#121212]">
               {dictionary.related}
