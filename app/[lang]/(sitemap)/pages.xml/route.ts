@@ -3,6 +3,10 @@ import { buildUrlsetXML, fmtDate, LOCALES, ORIGIN, xml } from "@/lib/sitemap";
 
 export const runtime = "nodejs";
 
+export function generateStaticParams() {
+  return LOCALES.map((lang) => ({ lang }));
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ lang: string }> }
@@ -10,7 +14,6 @@ export async function GET(
   const { lang: rawLang } = await params;
   const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
 
-  // ✅ HANYA 3 URL: /, /about, /contact (urut sesuai gambar)
   const staticPages = ["", "about", "contact", "product", "article"].map((p) => ({
     loc: `${ORIGIN}/${lang}/${p}`.replace(/\/$/, ""),
     lastmod: fmtDate(),

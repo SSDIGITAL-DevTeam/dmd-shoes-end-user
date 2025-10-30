@@ -15,6 +15,10 @@ const BASE_URL =
 
 const LOCALES = ["id", "en"] as const;
 
+export function generateStaticParams() {
+  return LOCALES.map((lang) => ({ lang }));
+}
+
 export default function robots({
   params,
 }: {
