@@ -52,7 +52,7 @@ export default function HomeHero({
           priority
           fetchPriority="high"
           quality={70}
-          sizes="100vw"
+          sizes="(max-width: 1024px) 100vw, 1200px"
           className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-black/55" aria-hidden />

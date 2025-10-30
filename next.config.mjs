@@ -25,6 +25,7 @@ const nextConfig = {
       { protocol: "https", hostname: "api.dmdshoeparts.com", pathname: "/storage/**" },
       { protocol: "https", hostname: "dmdshoeparts.com", pathname: "/storage/**" },
       { protocol: "https", hostname: "www.dmdshoeparts.com", pathname: "/storage/**" },
+      { protocol: "https", hostname: "i.ytimg.com", pathname: "/**" },
       { protocol: "http", hostname: "localhost", pathname: "/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
     ],

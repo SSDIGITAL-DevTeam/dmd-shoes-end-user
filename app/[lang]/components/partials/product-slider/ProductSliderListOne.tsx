@@ -58,7 +58,7 @@ function ProductSliderItem({
         src={image.src}
         alt={image.alt || "product image"}
         fill
-        sizes="100vw"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
         className={clsx("w-full h-full", imageClassName ?? "object-cover")}
         priority={false}
       />
@@ -165,14 +165,17 @@ export default function ProductSliderListOne({
 
           <div className="flex items-center gap-2">
             {Array.from({ length: totalSlides }).map((_, idx) => (
-              <div
+              <button
                 key={idx}
-                aria-label={`Slide ${idx + 1}`}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                aria-label={`Pindah ke slide ${idx + 1}`}
+                aria-current={idx === currentIndex}
                 className={clsx(
-                  "h-2 w-2 rounded-full transition",
+                  "h-2 w-2 rounded-full transition focus:outline-none",
                   idx === currentIndex
                     ? "bg-[#121212]"
-                    : "bg-[rgba(18,18,18,0.5)]"
+                    : "bg-[rgba(18,18,18,0.5)] hover:bg-[rgba(18,18,18,0.7)]"
                 )}
               />
             ))}
