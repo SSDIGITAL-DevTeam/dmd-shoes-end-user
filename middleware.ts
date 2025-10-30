@@ -7,6 +7,14 @@ const TOKEN_COOKIE_NAME = "token";
 const protectedRoutes = ["/profile", "/wishlist"];
 const authPages = ["/auth/login", "/auth/register"];
 
+// ✅ daftar route root yang TIDAK boleh dipaksa pakai /id
+const ROOT_BYPASS_ROUTES = new Set([
+  "/sitemap.xml",
+  "/robots.txt",
+  "/routes.txt", // kalau kamu pakai
+  "/llms.txt",   // kalau kamu pakai
+]);
+
 function getCookieLocale(request: NextRequest): string | null {
   const cookie =
     request.cookies.get("NEXT_LOCALE")?.value ||
@@ -18,9 +26,15 @@ function getCookieLocale(request: NextRequest): string | null {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // ✅ 1. BYPASS: jangan tambahkan /id untuk file root ini
+  if (ROOT_BYPASS_ROUTES.has(pathname)) {
+    return NextResponse.next();
+  }
+
+  // ✅ 2. logic lama kamu mulai dari sini
   // belum ada prefix locale?
   const pathnameIsMissingLocale = i18n.locales.every(
-    (l) => !pathname.startsWith(`/${l}/`) && pathname !== `/${l}`
+    (l) => !pathname.startsWith(`/${l}/`) && pathname !== `/${l}`,
   );
 
   if (pathnameIsMissingLocale) {
@@ -45,7 +59,7 @@ export function middleware(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const locale = segments[0] ?? i18n.defaultLocale;
   const rawRoute = segments.slice(1).join("/");
-  const route = (`/${rawRoute}`).replace(/\/$/, "") || "/";
+  const route = `/${rawRoute}`.replace(/\/$/, "") || "/";
   const token = request.cookies.get(TOKEN_COOKIE_NAME)?.value;
 
   if (!token) {
@@ -54,9 +68,7 @@ export function middleware(request: NextRequest) {
     );
 
     if (needsAuth) {
-      return NextResponse.redirect(
-        new URL(`/${locale}/auth/login`, request.url),
-      );
+      return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.url));
     }
   } else {
     const visitingAuthPage = authPages.some((page) => route.startsWith(page));
