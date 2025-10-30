@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { FaSearch } from "react-icons/fa";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import CategoriesList from "./CategoriesList";
 import Container from "@/components/ui-custom/Container";
@@ -57,152 +56,55 @@ const DEFAULT_STATE: ProductFiltersState = {
   dir: "desc",
 };
 
-const parseNumber = (value: string | null) => {
-  if (!value) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
-const parseCategories = (value: string | null) =>
-  value
-    ? value
-        .split(",")
-        .map((v) => Number(v.trim()))
-        .filter((v) => Number.isFinite(v))
-    : [];
-
-/**
- * 🔧 Serialize state → URL
- * PERBAIKAN: kategori TIDAK lagi ditaruh ke URL
- */
-const buildQueryFromState = (state: ProductFiltersState): URLSearchParams => {
-  const params = new URLSearchParams();
-  if (state.search) params.set("search", state.search);
-
-  // ❌ JANGAN kirim kategori ke URL
-  // if (state.categoryIds.length) {
-  //   params.set("category_ids", state.categoryIds.join(","));
-  // }
-
-  if (state.heel_min !== undefined) params.set("heel_min", String(state.heel_min));
-  if (state.heel_max !== undefined) params.set("heel_max", String(state.heel_max));
-  if (state.size_min !== undefined) params.set("size_min", String(state.size_min));
-  if (state.size_max !== undefined) params.set("size_max", String(state.size_max));
-  if (state.page > 1) params.set("page", String(state.page));
-  if (state.per_page !== DEFAULT_STATE.per_page) {
-    params.set("per_page", String(state.per_page));
-  }
-  if (state.sort && state.sort !== DEFAULT_STATE.sort) {
-    params.set("sort", state.sort);
-  }
-  if (state.dir && state.dir !== DEFAULT_STATE.dir) {
-    params.set("dir", state.dir);
-  }
-  return params;
-};
-
-/**
- * Deserialize URL → state
- * (boleh tetap baca category_ids kalau memang ada di URL)
- */
-const buildStateFromSearchParams = (searchParams: URLSearchParams): ProductFiltersState => ({
-  search: searchParams.get("search") ?? "",
-  categoryIds: parseCategories(searchParams.get("category_ids")), // masih boleh
-  heel_min: parseNumber(searchParams.get("heel_min")),
-  heel_max: parseNumber(searchParams.get("heel_max")),
-  size_min: parseNumber(searchParams.get("size_min")),
-  size_max: parseNumber(searchParams.get("size_max")),
-  page: parseNumber(searchParams.get("page")) ?? 1,
-  per_page: parseNumber(searchParams.get("per_page")) ?? DEFAULT_STATE.per_page,
-  sort: searchParams.get("sort") ?? DEFAULT_STATE.sort,
-  dir: (searchParams.get("dir") as "asc" | "desc" | null) ?? DEFAULT_STATE.dir,
-});
-
-const buildQueryInput = (
-  state: ProductFiltersState,
-  lang: string
-): Parameters<typeof useProducts>[0] => ({
-  lang,
-  search: state.search || undefined,
-  // ✅ kirim ke API dari STATE
-  category_ids: state.categoryIds.length ? state.categoryIds.join(",") : undefined,
-  heel_min: state.heel_min,
-  heel_max: state.heel_max,
-  size_min: state.size_min,
-  size_max: state.size_max,
-  page: state.page,
-  per_page: state.per_page,
-  sort: state.sort,
-  dir: state.dir,
-  view: "card",
-});
-
 export default function ProductPage({ lang, dictionaryProduct }: ProductPageProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const searchParamsString = searchParams.toString();
-  const [isPending, startTransition] = useTransition();
-
+  const [filters, setFilters] = useState<ProductFiltersState>(DEFAULT_STATE);
   const [openCategory, setOpenCategory] = useState(false);
 
-  const [filters, setFilters] = useState<ProductFiltersState>(() =>
-    buildStateFromSearchParams(new URLSearchParams(searchParams.toString()))
+  const updateFilters = useCallback(
+    (updater: (prev: ProductFiltersState) => ProductFiltersState) => {
+      setFilters((prev) => updater(prev));
+    },
+    []
   );
 
-  // sinkron saat URL berubah (back/forward)
-  useEffect(() => {
-    const paramsState = buildStateFromSearchParams(new URLSearchParams(searchParamsString));
-    setFilters((prev) => ({ ...prev, ...paramsState }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParamsString]);
-
-  const updateFilters = useCallback((updater: (prev: ProductFiltersState) => ProductFiltersState) => {
-    setFilters((prev) => updater(prev));
-  }, []);
-
-  // ❗ efek yang nulis ke URL
-  useEffect(() => {
-    const params = buildQueryFromState(filters);
-    const nextQuery = params.toString();
-    if (nextQuery === searchParamsString) {
-      return;
-    }
-
-    startTransition(() => {
-      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-    });
-  }, [filters, pathname, router, searchParamsString, startTransition]);
-
-  const productsParams = useMemo(() => buildQueryInput(filters, lang), [filters, lang]);
-
-  const sortOptions = useMemo(
-    () => [
-      { label: dictionaryProduct?.sort?.newest ?? "Produk Terpopuler", value: "favorites_count:desc" },
-      { label: dictionaryProduct?.sort?.priceLow ?? "Harga Terendah", value: "price:asc" },
-      { label: dictionaryProduct?.sort?.priceHigh ?? "Harga Tertinggi", value: "price:desc" },
-    ],
-    [dictionaryProduct]
-  );
-
-  const selectedSortValue =
-    filters.sort && filters.dir
-      ? `${filters.sort}:${filters.dir}`
-      : filters.sort
-      ? `${filters.sort}:asc`
-      : "favorites_count:desc";
-
-  const { products, filters: filterMeta, isLoading, isError, error, refetch } =
-    useProducts(productsParams);
-
+  // Ambil kategori
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categories.list({ lang }),
-    queryFn: () => CategoryService.list({ lang, per_page: 20 }),
+    queryFn: () => CategoryService.list({ lang, per_page: 50 }),
   });
 
-  const isMutating = isPending;
   const categories: Category[] = categoriesQuery.data?.data ?? [];
 
+  // Ambil produk (otomatis refetch setiap filters berubah)
+  const productsParams = useMemo<Parameters<typeof useProducts>[0]>(
+  () => ({
+    lang,
+    search: filters.search || undefined,
+    category_ids: filters.categoryIds.length ? filters.categoryIds.join(",") : undefined,
+    heel_min: filters.heel_min,
+    heel_max: filters.heel_max,
+    size_min: filters.size_min,
+    size_max: filters.size_max,
+    page: filters.page,
+    per_page: filters.per_page,
+    sort: filters.sort,
+    dir: filters.dir,
+    view: "card",
+  }),
+  [filters, lang]
+);
+
+const {
+  products,
+  filters: filterMeta,
+  isLoading,
+  isError,
+  error,
+  refetch,
+} = useProducts(productsParams);
+
+
+  /* ---------- Handlers ---------- */
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     updateFilters((prev) => ({ ...prev, search: value, page: 1 }));
@@ -262,10 +164,6 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
     }));
   };
 
-  const handlePageChange = (page: number) => {
-    updateFilters((prev) => ({ ...prev, page }));
-  };
-
   const handleSortChange = (value: string) => {
     const [sortField, sortDir] = value.split(":");
     updateFilters((prev) => ({
@@ -276,15 +174,37 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
     }));
   };
 
+  const handlePageChange = (page: number) => {
+    updateFilters((prev) => ({ ...prev, page }));
+  };
+
+  /* ---------- Derived ---------- */
   const pagination = products satisfies Pagination<ProductCard>;
   const totalPages = pagination.last_page ?? 1;
   const totalItems = pagination.total ?? products.data.length ?? 0;
+
+  const sortOptions = useMemo(
+    () => [
+      { label: dictionaryProduct?.sort?.newest ?? "Produk Terpopuler", value: "favorites_count:desc" },
+      { label: dictionaryProduct?.sort?.priceLow ?? "Harga Terendah", value: "price:asc" },
+      { label: dictionaryProduct?.sort?.priceHigh ?? "Harga Tertinggi", value: "price:desc" },
+    ],
+    [dictionaryProduct]
+  );
+
+  const selectedSortValue =
+    filters.sort && filters.dir
+      ? `${filters.sort}:${filters.dir}`
+      : filters.sort
+      ? `${filters.sort}:asc`
+      : "favorites_count:desc";
 
   const sortDictionary = dictionaryProduct?.sort ?? {};
   const sizeFilterDictionary = dictionaryProduct?.sizeFilter;
   const baseAllProductsLabel =
     dictionaryProduct?.allProducts ?? (lang === "en" ? "All Products" : "Semua Produk");
 
+  /* ---------- Render ---------- */
   return (
     <div className={`${inter.className} bg-[#F5F5F5]`}>
       <Container className="py-8">
@@ -321,13 +241,10 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
 
               {/* Search */}
               <div className="relative">
-                <label htmlFor="product-search" className="sr-only">
-                  {dictionaryProduct?.searchPlaceholder || "Search products"}
-                </label>
                 <FaSearch
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
-                  />
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
+                />
                 <input
                   id="product-search"
                   type="search"
@@ -336,11 +253,7 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
                   value={filters.search}
                   onChange={handleSearchChange}
                   className="h-[40px] w-full rounded-lg border border-[#003663] bg-white px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
-                  aria-describedby="search-help"
                 />
-                <span id="search-help" className="sr-only">
-                  Type to filter products, results update automatically.
-                </span>
               </div>
             </div>
 
@@ -350,136 +263,35 @@ export default function ProductPage({ lang, dictionaryProduct }: ProductPageProp
                 value={selectedSortValue}
                 options={sortOptions}
                 onChange={handleSortChange}
-                dictionary={{
-                  trigger: sortDictionary.trigger,
-                  modalTitle: sortDictionary.modalTitle,
-                  label: sortDictionary.label,
-                  close: sortDictionary.close,
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Mobile search + filter */}
-          <div className="space-y-3 lg:hidden">
-            <div className="relative">
-              <label htmlFor="product-search-mobile" className="sr-only">
-                {dictionaryProduct?.searchPlaceholder || "Search products"}
-              </label>
-              <FaSearch
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#003663]"
-              />
-              <input
-                id="product-search-mobile"
-                type="search"
-                inputMode="search"
-                placeholder={dictionaryProduct?.searchPlaceholder || "Search products..."}
-                value={filters.search}
-                onChange={handleSearchChange}
-                className="h-[40px] w-full rounded-lg border border-[#003663] bg-white px-3 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#003663]/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setOpenCategory(true)}
-                className="flex items-center justify-center gap-2 rounded-lg border border-[#003663] bg-white px-3 py-2 text-sm text-[#003663] shadow-sm transition hover:border-[#002a4f] hover:text-[#002a4f]"
-                aria-haspopup="dialog"
-                aria-expanded={openCategory}
-                aria-controls="mobile-category-panel"
-              >
-                <Image
-                  src="/assets/svg/icon/icon-category-filter.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                />
-                <span className="font-medium">
-                  {dictionaryProduct?.filterCategory || "Filter Category"}
-                </span>
-              </button>
-
-              <FilterUkuran
-                heel={filterMeta?.heel_height_cm}
-                size={filterMeta?.size_eu}
-                values={{
-                  heel_min: filters.heel_min,
-                  heel_max: filters.heel_max,
-                  size_min: filters.size_min,
-                  size_max: filters.size_max,
-                }}
-                onApply={handleFilterApply}
-                onReset={handleFilterReset}
-                dictionary={sizeFilterDictionary}
-                locale={lang}
+                dictionary={sortDictionary}
               />
             </div>
           </div>
         </header>
 
-        {/* Layout */}
         <div className="flex gap-6">
-          {/* overlay mobile */}
-          {openCategory ? (
-            <div
-              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-              onClick={() => setOpenCategory(false)}
-            />
-          ) : null}
-
-          {/* sidebar mobile */}
-          <aside
-            className={`fixed top-0 right-0 z-50 h-full w-[320px] transform bg-white
-              px-[32px] py-[24px] [--sidepad:32px]
-              shadow-lg transition-transform duration-300 lg:hidden
-              ${openCategory ? "translate-x-0" : "translate-x-full"}`}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className={`${lato.className} text-lg font-semibold text-[#003663]`}>
-                {dictionaryProduct?.productCategory || "Kategori Produk"}
-              </h2>
-              <button onClick={() => setOpenCategory(false)} className="text-xl">
-                &times;
-              </button>
-            </div>
-            <CategoriesList
-              categories={categories}
-              dictionary={{
-                allProducts: baseAllProductsLabel,
-                empty: dictionaryProduct?.categoriesEmpty,
-              }}
-              selectedIds={filters.categoryIds}
-              onToggle={handleCategoryToggle}
-              totalCount={totalItems}
-              locale={lang}
-            />
-          </aside>
-
-          {/* sidebar desktop */}
+          {/* Sidebar desktop */}
           <aside className="hidden w-64 rounded-lg bg-white px-[32px] py-[24px] [--sidepad:32px] lg:block">
-            <div>
-              <h3 className={`${lato.className} mb-3 text-lg font-semibold text-primary lg:text-black`}>
-                {dictionaryProduct?.productCategory || "Kategori Produk"}
-              </h3>
-            </div>
+            <h3 className={`${lato.className} mb-3 text-lg font-semibold text-primary`}>
+              {dictionaryProduct?.productCategory || "Kategori Produk"}
+            </h3>
             <CategoriesList
               categories={categories}
+              selectedIds={filters.categoryIds}
+              onToggle={handleCategoryToggle}
               dictionary={{
                 allProducts: baseAllProductsLabel,
                 empty: dictionaryProduct?.categoriesEmpty,
               }}
-              selectedIds={filters.categoryIds}
-              onToggle={handleCategoryToggle}
               totalCount={totalItems}
               locale={lang}
             />
           </aside>
 
-          {/* konten produk */}
+          {/* Produk grid */}
           <main className="flex-1">
             <ApiBoundary
-              isLoading={isLoading || isMutating}
+              isLoading={isLoading}
               isError={isError}
               error={error}
               skeleton={
