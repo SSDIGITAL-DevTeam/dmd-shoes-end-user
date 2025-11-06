@@ -76,18 +76,44 @@ const formatTemplate = (template: string, replacements: Record<string, string>) 
 const normalizeLabel = (value?: string | null) =>
   (value ?? "").toString().trim();
 
-const extractVariantTokens = (variant: ProductVariant): string[] => {
+const normalizeForMatch = (input: unknown): string => {
+  if (input === null || input === undefined) return "";
+  return input
+    .toString()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    // Use an ASCII-friendly fallback (letters a-z and digits) to avoid unicode property escapes
+    .replace(/[^0-9a-z]+/g, " ")
+    .trim();
+};
+
+const extractVariantTokens = (variant: ProductVariant): Set<string> => {
   const tokens = new Set<string>();
 
+  const appendToken = (value: string) => {
+    const normalized = normalizeForMatch(value);
+    if (!normalized) return;
+    if (!tokens.has(normalized)) {
+      tokens.add(normalized);
+    }
+    normalized.split(/\s+/).forEach((part) => {
+      if (part) tokens.add(part);
+    });
+  };
+
   const pushTokensFromValue = (value: unknown) => {
-    if (!value) return;
+    if (value === null || value === undefined) return;
     if (typeof value === "string") {
       value
         .split("|")
         .map((part) => part.split(":").pop() ?? part)
-        .map((part) => part.trim().toLowerCase())
-        .filter(Boolean)
-        .forEach((token) => tokens.add(token));
+        .forEach((segment) => appendToken(segment));
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((inner) => pushTokensFromValue(inner));
       return;
     }
 
@@ -95,13 +121,16 @@ const extractVariantTokens = (variant: ProductVariant): string[] => {
       Object.values(value as Record<string, unknown>).forEach((inner) =>
         pushTokensFromValue(inner),
       );
+      return;
     }
+
+    appendToken(String(value));
   };
 
   pushTokensFromValue(variant.label_text);
   pushTokensFromValue(variant.label);
 
-  return Array.from(tokens);
+  return tokens;
 };
 
 const ensurePreviewImages = (
@@ -334,9 +363,8 @@ export default function ProductSlugPage({
     }
 
     const normalizedSelections = requiredAttributes
-      .map((attribute) => selectedOptions[attribute.label])
-      .filter((value): value is string => Boolean(value && value.trim()))
-      .map((value) => value.toLowerCase().trim());
+      .map((attribute) => normalizeForMatch(selectedOptions[attribute.label]))
+      .filter((value): value is string => Boolean(value));
 
     if (
       normalizedSelections.length === 0 ||
@@ -348,9 +376,9 @@ export default function ProductSlugPage({
     return (
       variantData.find((variant) => {
         const tokens = extractVariantTokens(variant);
-        if (!tokens.length) return false;
+        if (tokens.size === 0) return false;
         return normalizedSelections.every((selection) =>
-          tokens.some((token) => token.includes(selection)),
+          tokens.has(selection),
         );
       }) ?? null
     );
