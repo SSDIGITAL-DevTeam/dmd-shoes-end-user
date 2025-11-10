@@ -78,8 +78,8 @@ export default function ProductItem({
     (product as { variants_data?: { price?: number | string | null }[] }).variants_data,
   )
     ? ((product as { variants_data?: { price?: number | string | null }[] }).variants_data || [])
-      .map((variant) => parsePrice(variant.price))
-      .filter((value): value is number => value !== null)
+        .map((variant) => parsePrice(variant.price))
+        .filter((value): value is number => value !== null)
     : [];
 
   const variantLowestPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null;
@@ -87,66 +87,75 @@ export default function ProductItem({
   let lowestPrice: number | null = null;
 
   if (pricingMode === "per_variant") {
-    // per-variant -> utamakan price_min dari API, fallback ke harga varian atau price produk jika tersedia
-    lowestPrice =
-      productPriceMin ??
-      variantLowestPrice ??
-      productPrice ??
-      null;
+    lowestPrice = productPriceMin ?? variantLowestPrice ?? productPrice ?? null;
   } else {
-    // single (default) -> pakai harga produk, fallback ke price_min atau harga varian
-    lowestPrice =
-      productPrice ??
-      productPriceMin ??
-      variantLowestPrice ??
-      null;
+    lowestPrice = productPrice ?? productPriceMin ?? variantLowestPrice ?? null;
   }
 
   const priceLabel = formatCurrency(lowestPrice) ?? "-";
   const href = `/${locale}/product/${product.slug ?? product.id}`;
   const favoritesCount =
-    typeof product.favorites_count === "number"
-      ? product.favorites_count
-      : null;
+    typeof product.favorites_count === "number" ? product.favorites_count : null;
 
   return (
     <div
-      className={`${assistant.className} group flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-lg`}
+      className={`${assistant.className} group flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm transition hover:shadow-lg`}
     >
-      <Link href={href} className="block">
-        {/* FOTO FULL, TANPA PADDING */}
+      <Link href={href} className="flex h-full flex-col">
+        {/* FOTO */}
         <div className="relative aspect-square w-full">
           <Image
             src={imageUrl}
             alt={displayName}
             fill
             sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 20vw"
-            className="object-cover"     // pastikan cover biar tak ada letterbox
-            priority={false}
+            className="object-cover"
           />
         </div>
 
-        {/* PADDING CUMA DI TEKS */}
-        <div className="space-y-2 p-2 md:p-3">
-          <div className={`${inter.className} text-sm font-semibold leading-[130%] text-[#121212] md:text-[15px]`}>
-            {displayName}
-          </div>
-
-          {product.category_name ? (
-            <div className="text-xs text-[#121212]/70 md:text-sm">{product.category_name}</div>
-          ) : null}
-
-          <div className="flex flex-wrap items-center gap-2 text-[#121212]">
-            <span className="text-sm font-semibold">{priceLabel}</span>
-            <span className="text-xs text-[#121212]/70 md:text-sm">/ {locale === "en" ? "pair" : "pasang"}</span>
-          </div>
-
-          {favoritesCount !== null ? (
-            <div className="mt-1 inline-flex items-center gap-1 text-xs text-[#F97316] md:text-sm">
-              <FaHeart className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />
-              <span>{favoritesCount}</span>
+        {/* TEKS */}
+        <div className="flex flex-1 flex-col justify-between p-2 md:p-3">
+          {/* Bagian atas: judul */}
+          <div>
+            <div
+              className={`${inter.className} text-sm font-semibold leading-[130%] text-[#121212] md:text-[15px]`}
+              style={{
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {displayName}
             </div>
-          ) : null}
+          </div>
+
+          {/* Bagian bawah: kategori, harga, fav */}
+          <div className="mt-2 flex flex-col justify-end">
+            {product.category_name ? (
+              <div className="text-xs text-[#121212]/70 md:text-sm">
+                {product.category_name}
+              </div>
+            ) : (
+              <div className="h-[18px] md:h-[20px]" aria-hidden />
+            )}
+
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[#121212]">
+              <span className="text-sm font-semibold">{priceLabel}</span>
+              <span className="text-xs text-[#121212]/70 md:text-sm">
+                / {locale === "en" ? "pair" : "pasang"}
+              </span>
+            </div>
+
+            {favoritesCount !== null ? (
+              <div className="mt-2 inline-flex items-center gap-1 text-xs text-[#F97316] md:text-sm">
+                <FaHeart className="h-3 w-3 md:h-3.5 md:w-3.5" aria-hidden="true" />
+                <span>{favoritesCount}</span>
+              </div>
+            ) : (
+              <div className="mt-2 h-[16px]" aria-hidden />
+            )}
+          </div>
         </div>
       </Link>
     </div>
