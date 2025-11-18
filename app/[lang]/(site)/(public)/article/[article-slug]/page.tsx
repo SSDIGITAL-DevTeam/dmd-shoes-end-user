@@ -11,6 +11,9 @@ import { useArticles } from "@/hooks/useArticles";
 import enDictionary from "@/dictionaries/article/en.json";
 import idDictionary from "@/dictionaries/article/id.json";
 import type { Article } from "@/services/types";
+import ArticleSchema from "@/app/seo/schema/ArticleSchema";
+import BreadcrumbSchema from "@/app/seo/schema/BreadcumbSchema";
+import { getAbsoluteUrl } from "@/lib/site";
 
 const FALLBACK_COVER = "/assets/demo/article/article-item.webp";
 
@@ -130,10 +133,45 @@ export default function ArticleDetailPage() {
     asString((article as any).created_at);
   const publishedLabel = formatPublishedDate(rawDateTime, lang);
 
+  const canonicalArticleUrl = getAbsoluteUrl(`/${lang}/article/${slug}`);
+  const breadcrumbItems = [
+    {
+      name: dictionary.breadcrumb_home,
+      url: getAbsoluteUrl(`/${lang}`),
+    },
+    {
+      name: dictionary.breadcrumb_articles,
+      url: getAbsoluteUrl(`/${lang}/article`),
+    },
+    {
+      name: titleText || slug,
+      url: canonicalArticleUrl,
+    },
+  ];
+  const summary =
+    asString((article as any).excerpt) ??
+    (contentText ? contentText.slice(0, 200) : titleText);
+  const updatedAt = asString((article as any).updated_at) ?? undefined;
+  const authorName =
+    asString((article as any).author_name) ?? "DMD Shoe Parts";
+
   return (
-    <div className="min-h-screen bg-white">
-      <main>
-        <Container className="mx-auto w-full max-w-2xl px-4 py-8 sm:max-w-3xl md:max-w-4xl sm:py-10">
+    <>
+      <ArticleSchema
+        title={titleText || slug}
+        description={summary || titleText}
+        slug={slug}
+        coverImage={cover}
+        publishedAt={rawDateTime ?? new Date().toISOString()}
+        updatedAt={updatedAt}
+        authorName={authorName}
+        lang={lang}
+        url={canonicalArticleUrl}
+      />
+      <BreadcrumbSchema items={breadcrumbItems} />
+      <div className="min-h-screen bg-white">
+        <main>
+          <Container className="mx-auto w-full max-w-2xl px-4 py-8 sm:max-w-3xl md:max-w-4xl sm:py-10">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-4">
             <ol className="flex flex-wrap items-center gap-2 text-sm">
@@ -236,5 +274,6 @@ export default function ArticleDetailPage() {
         </Container>
       </main>
     </div>
+    </>
   );
 }

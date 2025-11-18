@@ -1,5 +1,3 @@
-"use client";
-
 interface FAQItem {
   question: string;
   answer: string;
@@ -18,9 +16,9 @@ export default function FAQSchema({ faq }: FAQSchemaProps) {
       name: item.question,
       acceptedAnswer: {
         "@type": "Answer",
-        text: item.answer
-      }
-    }))
+        text: item.answer,
+      },
+    })),
   };
 
   return (

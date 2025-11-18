@@ -1,5 +1,3 @@
-"use client";
-
 interface ProductSchemaProps {
   name: string;
   description: string;
@@ -12,6 +10,8 @@ interface ProductSchemaProps {
   url: string;
 }
 
+import { getAbsoluteUrl } from "@/lib/site";
+
 export default function ProductSchema({
   name,
   description,
@@ -21,14 +21,14 @@ export default function ProductSchema({
   price,
   currency = "IDR",
   availability = "InStock",
-  url
+  url,
 }: ProductSchemaProps) {
   const data = {
     "@context": "https://schema.org/",
     "@type": "Product",
     name,
     description,
-    image: images,
+    image: images.map((img) => getAbsoluteUrl(img)),
     sku,
     brand: { "@type": "Brand", name: brand },
     offers: {
@@ -36,8 +36,8 @@ export default function ProductSchema({
       priceCurrency: currency,
       price: price.toString(),
       availability: `https://schema.org/${availability}`,
-      url
-    }
+      url: getAbsoluteUrl(url),
+    },
   };
 
   return (

@@ -5,6 +5,7 @@ import AuthInitializer from "@/components/providers/AuthInitializer";
 import ToastProvider from "@/components/providers/ToastProvider";
 import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 import HubungiKamiButton from "@/components/ui/ContactUs";
+import OrganizationSchema from "@/app/seo/schema/OrganitazionSchema";
 import { inter, assistant, lato, poppins, plusJakartaSans } from "./config/font";
 import "../global.css";
 
@@ -51,6 +52,7 @@ export default async function RootLayout({
     <html lang={safeLang}>
       <body className={bodyClass} suppressHydrationWarning>
         <ReactQueryProvider>
+          <OrganizationSchema />
           <AuthInitializer />
           <ToastProvider />
           <main>{children}</main>

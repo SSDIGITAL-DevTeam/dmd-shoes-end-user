@@ -1,16 +1,28 @@
-"use client";
+import { CDN_LOGO_PATH, SITE_ORIGIN, getAbsoluteUrl } from "@/lib/site";
 
-export default function OrganizationSchema() {
+type OrganizationSchemaProps = {
+  name?: string;
+  url?: string;
+  logo?: string;
+  sameAs?: string[];
+};
+
+export default function OrganizationSchema({
+  name = "DMD Shoe Parts",
+  url = SITE_ORIGIN,
+  logo = getAbsoluteUrl(CDN_LOGO_PATH),
+  sameAs = [
+    "https://www.instagram.com/dmdshoeparts",
+    "https://www.facebook.com/dmdshoeparts",
+  ],
+}: OrganizationSchemaProps) {
   const data = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "DMD Shoe Parts",
-    "url": "https://www.dmdshoeparts.com",
-    "logo": "https://www.dmdshoeparts.com/logo.png",
-    "sameAs": [
-      "https://www.instagram.com/dmdshoeparts",
-      "https://www.facebook.com/dmdshoeparts"
-    ]
+    name,
+    url,
+    logo,
+    sameAs,
   };
 
   return (

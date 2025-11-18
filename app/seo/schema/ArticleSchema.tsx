@@ -1,5 +1,3 @@
-"use client";
-
 interface ArticleSchemaProps {
   title: string;
   description: string;
@@ -8,7 +6,11 @@ interface ArticleSchemaProps {
   publishedAt: string;
   updatedAt?: string;
   authorName?: string;
+  lang?: string;
+  url?: string;
 }
+
+import { getAbsoluteUrl } from "@/lib/site";
 
 export default function ArticleSchema(props: ArticleSchemaProps) {
   const {
@@ -19,14 +21,24 @@ export default function ArticleSchema(props: ArticleSchemaProps) {
     publishedAt,
     updatedAt,
     authorName = "DMD Shoes",
+    lang = "id",
+    url,
   } = props;
+
+  const canonicalUrl =
+    url ??
+    getAbsoluteUrl(
+      slug.startsWith("/")
+        ? slug
+        : `/${lang.replace(/^\//, "")}/article/${slug.replace(/^\//, "")}`,
+    );
 
   const schema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: title,
     description,
-    image: coverImage,
+    image: coverImage ? getAbsoluteUrl(coverImage) : undefined,
     author: {
       "@type": "Person",
       name: authorName,
@@ -41,7 +53,7 @@ export default function ArticleSchema(props: ArticleSchemaProps) {
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://www.dmdshoeparts.com/article/${slug}`,
+      "@id": canonicalUrl,
     },
     datePublished: publishedAt,
     dateModified: updatedAt ?? publishedAt,
