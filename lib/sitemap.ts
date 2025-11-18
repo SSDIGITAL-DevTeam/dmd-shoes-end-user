@@ -1,66 +1,359 @@
-// lib/sitemap.ts
-export const RUNTIME = "nodejs";
-export const LOCALES = ["id", "en"] as const;
-export type Locale = (typeof LOCALES)[number];
+// src/lib/seo/sitemap.ts (DMD version)
 
-export const ORIGIN =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV === "production"
-    ? "https://www.dmdshoeparts.com"
-    : "http://localhost:3000");
+import path from "node:path";
+import { promises as fs } from "node:fs";
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.dmdshoeparts.com/api/v1";
+export type Locale = "id" | "en";
+export const LOCALES: Locale[] = ["id", "en"];
 
-export function xml(headers = {}) {
-  return {
-    headers: {
-      "content-type": "application/xml; charset=utf-8",
-      "Cache-Control": "public, max-age=3600, s-maxage=3600",
-      ...headers,
-    },
-  } as const;
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+  "https://www.dmdshoeparts.com";
+
+export const ORIGIN = SITE_URL;
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+  "https://api.dmdshoeparts.com/api/v1";
+
+const DEFAULT_LASTMOD = new Date().toISOString();
+const MAX_URLS_PER_SITEMAP = 10_000;
+
+export type SitemapEntry = {
+  loc: string;
+  lastmod?: string;
+  changefreq?:
+    | "always"
+    | "hourly"
+    | "daily"
+    | "weekly"
+    | "monthly"
+    | "yearly"
+    | "never";
+  priority?: number;
+};
+
+type PaginatedResponse<T> = {
+  data?: T[];
+  pagination?: {
+    page?: number;
+    totalPages?: number;
+  };
+  meta?: {
+    current_page?: number;
+    last_page?: number;
+  };
+};
+
+const PROJECT_ROOT = path.join(process.cwd());
+
+/**
+ * Static pages DMD – isi path tanpa prefix /{lang}
+ * Nanti di-join dengan lang di getStaticPageEntries()
+ */
+const STATIC_PAGES: Array<{
+  path: string;
+  file: string;
+  priority?: number;
+}> = [
+  { path: "", file: "src/app/(site)/[lang]/page.tsx", priority: 0.9 }, // /id, /en
+  {
+    path: "about",
+    file: "src/app/(site)/[lang]/about/page.tsx",
+    priority: 0.7,
+  },
+  {
+    path: "contact",
+    file: "src/app/(site)/[lang]/contact/page.tsx",
+    priority: 0.6,
+  },
+  {
+    path: "product",
+    file: "src/app/(site)/[lang]/product/page.tsx",
+    priority: 0.8,
+  },
+  {
+    path: "article",
+    file: "src/app/(site)/[lang]/article/page.tsx",
+    priority: 0.7,
+  },
+  // tambahkan static page lain di sini kalau ada
+];
+
+const toAbsoluteUrl = (slug: string) => {
+  if (!slug) return SITE_URL;
+  const normalized = slug.startsWith("/") ? slug : `/${slug}`;
+  return `${SITE_URL}${normalized}`
+    .replace(/(?<!:)\/{2,}/g, "/")
+    .replace("https:/", "https://");
+};
+
+const toIsoString = (value?: string | Date | null) => {
+  if (!value) return DEFAULT_LASTMOD;
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return DEFAULT_LASTMOD;
+  return date.toISOString();
+};
+
+// kompatibel dengan fmtDate lama
+export function fmtDate(value?: string | Date | null) {
+  return toIsoString(value);
 }
-export function fmtDate(d?: string | number | Date) {
-  try { return new Date(d || Date.now()).toISOString(); } catch { return new Date().toISOString(); }
-}
-export async function safeJsonFetch<T = any>(url: string, ms = 6000): Promise<T | []> {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms);
+
+async function getFileTimestamp(relativePath: string) {
   try {
-    const res = await fetch(url, {
-      // ⬇️ matikan cache Next untuk fetch ini
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-      signal: ctrl.signal,
-    });
-    if (!res.ok) return [];
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) return [];
-    const data = (await res.json()) as any;
-    return (data?.data as T) ?? [];
+    const filePath = path.join(PROJECT_ROOT, relativePath);
+    const stats = await fs.stat(filePath);
+    return stats.mtime.toISOString();
   } catch {
-    return [];
-  } finally {
-    clearTimeout(t);
+    return DEFAULT_LASTMOD;
   }
 }
-function esc(s: string) {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
+
+async function fetchJson<T>(
+  endpoint: string,
+  params: Record<string, string | number | boolean | undefined> = {},
+): Promise<T | null> {
+  if (!API_URL) return null;
+
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    searchParams.append(key, String(value));
+  });
+
+  const url = `${API_URL}${endpoint}${
+    searchParams.toString() ? `?${searchParams.toString()}` : ""
+  }`;
+
+  const response = await fetch(url, {
+    next: { revalidate: 3600 },
+  });
+
+  if (!response.ok) return null;
+
+  return (await response.json()) as T;
 }
-export function buildSitemapIndexXML(items: Array<{ loc: string; lastmod?: string }>) {
-  const body = items.map(i => `<sitemap><loc>${esc(i.loc)}</loc>${i.lastmod?`<lastmod>${esc(i.lastmod)}</lastmod>`:""}</sitemap>`).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?>`+
-         `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</sitemapindex>`;
+
+/**
+ * Fetch paginated dengan dukungan struktur Laravel / custom
+ */
+async function fetchPaginatedCollection<T>(
+  endpoint: string,
+  params: Record<string, string | number | boolean | undefined> = {},
+) {
+  const results: T[] = [];
+  let nextPage = 1;
+  const limit = Number(params.limit ?? 100);
+
+  while (results.length < MAX_URLS_PER_SITEMAP) {
+    const payload = await fetchJson<PaginatedResponse<T>>(endpoint, {
+      ...params,
+      page: nextPage,
+      limit,
+    });
+
+    if (!payload) break;
+
+    const chunk = payload.data ?? [];
+    results.push(...chunk);
+
+    // dukung dua gaya pagination (pagination / meta)
+    const p = payload.pagination;
+    const m = payload.meta;
+
+    const totalPages = p?.totalPages ?? m?.last_page;
+    const currentPage = p?.page ?? m?.current_page ?? nextPage;
+
+    if (!totalPages || currentPage >= totalPages) break;
+
+    nextPage = currentPage + 1;
+  }
+
+  return results.slice(0, MAX_URLS_PER_SITEMAP);
 }
-export function buildUrlsetXML(urls: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: number }>) {
-  const body = urls.map(u =>
-    `<url><loc>${esc(u.loc)}</loc>`+
-    (u.lastmod?`<lastmod>${esc(u.lastmod)}</lastmod>`:"")+
-    (u.changefreq?`<changefreq>${esc(u.changefreq)}</changefreq>`:"")+
-    (typeof u.priority==="number"?`<priority>${u.priority}</priority>`:"")+
-    `</url>`
-  ).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?>`+
-         `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`;
+
+/**
+ * STATIC PAGES – per-locale
+ */
+export async function getStaticPageEntries(
+  lang: Locale,
+): Promise<SitemapEntry[]> {
+  return Promise.all(
+    STATIC_PAGES.map(async ({ path, file, priority }) => {
+      // ganti placeholder [lang] di path file
+      const filePath = file.replace("[lang]", lang);
+
+      const slug =
+        path === ""
+          ? `/${lang}`
+          : `/${lang}/${path.replace(/^\/+/, "").replace(/\/+$/, "")}`;
+
+      return {
+        loc: toAbsoluteUrl(slug),
+        lastmod: await getFileTimestamp(filePath),
+        changefreq: "monthly" as const,
+        priority,
+      };
+    }),
+  );
+}
+
+/**
+ * ARTICLES – /{lang}/article/[slug]
+ */
+type DmdArticle = {
+  slug: string;
+  updated_at?: string;
+  created_at?: string;
+};
+
+export async function getArticleEntries(
+  lang: Locale,
+): Promise<SitemapEntry[]> {
+  const articles =
+    (await fetchPaginatedCollection<DmdArticle>("/articles", {
+      lang,
+      status: "Published",
+      limit: 100,
+    })) ?? [];
+
+  return articles.map((article) => ({
+    loc: toAbsoluteUrl(`${lang}/article/${article.slug}`),
+    lastmod: toIsoString(article.updated_at ?? article.created_at),
+    changefreq: "weekly",
+    priority: 0.8,
+  }));
+}
+
+/**
+ * PRODUCTS – /{lang}/product/[slug]
+ */
+type DmdProduct = {
+  slug: string;
+  updated_at?: string;
+  created_at?: string;
+};
+
+export async function getProductEntries(
+  lang: Locale,
+): Promise<SitemapEntry[]> {
+  const products =
+    (await fetchPaginatedCollection<DmdProduct>("/products", {
+      // kalau backend-mu terima lang juga, boleh tambahkan:
+      // lang,
+      status: "Active",
+      limit: 200,
+    })) ?? [];
+
+  return products.map((product) => ({
+    loc: toAbsoluteUrl(`/${lang}/product/${product.slug}`),
+    lastmod: toIsoString(product.updated_at ?? product.created_at),
+    changefreq: "weekly",
+    priority: 0.7,
+  }));
+}
+
+/**
+ * Kalau kamu punya kategori artikel / kategori produk, bisa mirip getDynamicEntries()
+ * Untuk sekarang bisa dikosongkan atau dihapus.
+ */
+export async function getDynamicEntries(
+  _lang: Locale,
+): Promise<SitemapEntry[]> {
+  return [];
+}
+
+/**
+ * <urlset> – TANPA xml-stylesheet (tidak pakai XSL)
+ */
+export function renderSitemapXml(urls: SitemapEntry[]) {
+  const items = urls
+    .map(
+      (url) => `<url>
+  <loc>${url.loc}</loc>
+  ${url.lastmod ? `<lastmod>${url.lastmod}</lastmod>` : ""}
+  ${url.changefreq ? `<changefreq>${url.changefreq}</changefreq>` : ""}
+  ${
+    typeof url.priority === "number"
+      ? `<priority>${url.priority.toFixed(1)}</priority>`
+      : ""
+  }
+</url>`,
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${items}
+</urlset>`;
+}
+
+/**
+ * <sitemapindex> – untuk index per-locale atau per-child (pages/articles/products)
+ */
+export function renderSitemapIndex(
+  items: Array<{ loc: string; lastmod?: string }>,
+) {
+  const body = items
+    .map(
+      (item) => `<sitemap>
+  <loc>${item.loc}</loc>
+  ${item.lastmod ? `<lastmod>${item.lastmod}</lastmod>` : ""}
+</sitemap>`,
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}
+</sitemapindex>`;
+}
+
+/**
+ * Endpoint yang kamu punya per-locale: /{lang}/pages.xml, /{lang}/article.xml, /{lang}/product.xml
+ */
+export const SITEMAP_ENDPOINTS = [
+  "pages",
+  "article",
+  "product",
+  // tambah "dynamic" kalau nanti dipakai
+] as const;
+
+export function xmlHeaders() {
+  return {
+    "Content-Type": "application/xml; charset=utf-8",
+    "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+  };
+}
+
+// kompatibel dengan helper lama xml()
+export function xml(extraHeaders: Record<string, string> = {}) {
+  return {
+    headers: {
+      ...xmlHeaders(),
+      ...extraHeaders,
+    },
+  };
+}
+
+/**
+ * Helper kalau mau generate link child sitemap dari /{lang}/sitemap.xml
+ */
+export function getChildSitemapUrl(
+  lang: Locale,
+  slug: (typeof SITEMAP_ENDPOINTS)[number],
+) {
+  return `${SITE_URL}/${lang}/${slug}.xml`;
+}
+
+// kompatibel dengan nama helper lama
+export function buildSitemapIndexXML(
+  items: Array<{ loc: string; lastmod?: string }>,
+) {
+  return renderSitemapIndex(items);
+}
+
+export function buildUrlsetXML(urls: SitemapEntry[]) {
+  return renderSitemapXml(urls);
 }

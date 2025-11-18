@@ -1,28 +1,21 @@
-// app/[lang]/sitemap/products.xml/route.ts
-import { API_URL, buildUrlsetXML, fmtDate, LOCALES, ORIGIN, safeJsonFetch, xml } from "@/lib/sitemap";
+import {
+  getProductEntries,
+  renderSitemapXml,
+  xmlHeaders,
+  type Locale,
+} from "@/lib/sitemap";
 
 export const runtime = "nodejs";
-
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
+export const revalidate = 1800;
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ lang: string }> }
+  { params }: { params: Promise<{ lang: Locale }> },
 ) {
-  const { lang: rawLang } = await params;
-  const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
+  const { lang } = await params;
 
-  const products = (await safeJsonFetch(`${API_URL}/products`)) as any[] | null;
-  const list = Array.isArray(products) ? products : [];
+  const entries = await getProductEntries(lang);
+  const xml = renderSitemapXml(entries);
 
-  const urls = list.map((p) => ({
-    loc: `${ORIGIN}/${lang}/product/${p.slug}`,
-    lastmod: fmtDate(p.updated_at),
-    changefreq: "weekly" as const,
-    priority: 0.9,
-  }));
-
-  return new Response(buildUrlsetXML(urls), xml());
+  return new Response(xml, { headers: xmlHeaders() });
 }

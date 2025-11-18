@@ -1,25 +1,18 @@
-// app/[lang]/sitemap/pages.xml/route.ts
-import { buildUrlsetXML, fmtDate, LOCALES, ORIGIN, xml } from "@/lib/sitemap";
+import {
+  getStaticPageEntries,
+  renderSitemapXml,
+  xmlHeaders,
+  type Locale,
+} from "@/lib/sitemap";
 
 export const runtime = "nodejs";
-
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
+export const revalidate = 1800;
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ lang: string }> }
+  { params }: { params: { lang: Locale } },
 ) {
-  const { lang: rawLang } = await params;
-  const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
-
-  const staticPages = ["", "about", "contact", "product", "article"].map((p) => ({
-    loc: `${ORIGIN}/${lang}/${p}`.replace(/\/$/, ""),
-    lastmod: fmtDate(),
-    changefreq: "monthly" as const,
-    priority: 0.6,
-  }));
-
-  return new Response(buildUrlsetXML(staticPages), xml());
+  const entries = await getStaticPageEntries(params.lang);
+  const xml = renderSitemapXml(entries);
+  return new Response(xml, { headers: xmlHeaders() });
 }

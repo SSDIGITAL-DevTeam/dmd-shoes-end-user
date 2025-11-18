@@ -1,12 +1,23 @@
-import { buildSitemapIndexXML, fmtDate, LOCALES, ORIGIN, xml } from "@/lib/sitemap";
+// app/sitemap.xml/route.ts
+import {
+  LOCALES,
+  ORIGIN,
+  renderSitemapIndex,
+  xmlHeaders,
+} from "@/lib/sitemap";
 
 export const runtime = "nodejs";
+export const revalidate = 3600;
 
 export async function GET() {
-  const items = LOCALES.map((locale) => ({
-    loc: `${ORIGIN}/${locale}/sitemap.xml`,
-    lastmod: fmtDate(),
-  }));
+  const now = new Date().toISOString();
 
-  return new Response(buildSitemapIndexXML(items), xml());
+  const xml = renderSitemapIndex(
+    LOCALES.map((lang) => ({
+      loc: `${ORIGIN}/${lang}/sitemap.xml`,
+      lastmod: now,
+    })),
+  );
+
+  return new Response(xml, { headers: xmlHeaders() });
 }

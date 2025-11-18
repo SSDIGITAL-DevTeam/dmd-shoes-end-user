@@ -1,6 +1,14 @@
-import { buildSitemapIndexXML, fmtDate, LOCALES, ORIGIN, xml } from "@/lib/sitemap";
+import {
+  buildSitemapIndexXML,
+  fmtDate,
+  LOCALES,
+  ORIGIN,
+  xml,
+  type Locale,
+} from "@/lib/sitemap";
 
 export const runtime = "nodejs";
+export const revalidate = 1800;
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
@@ -8,10 +16,12 @@ export function generateStaticParams() {
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ lang: string }> }
+  { params }: { params: Promise<{ lang: Locale }> },
 ) {
+  // ✅ params di-await dulu
   const { lang: rawLang } = await params;
-  const lang = (LOCALES as readonly string[]).includes(rawLang) ? rawLang : "id";
+
+  const lang: Locale = LOCALES.includes(rawLang) ? rawLang : "id";
 
   const items = [
     { loc: `${ORIGIN}/${lang}/article.xml`, lastmod: fmtDate() },
@@ -19,5 +29,6 @@ export async function GET(
     { loc: `${ORIGIN}/${lang}/pages.xml`, lastmod: fmtDate() },
   ];
 
-  return new Response(buildSitemapIndexXML(items), xml());
+  const body = buildSitemapIndexXML(items);
+  return new Response(body, xml());
 }
