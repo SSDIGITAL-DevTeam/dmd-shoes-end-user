@@ -1,9 +1,36 @@
-import "./global.css";
-import { assistant, inter, lato, plusJakartaSans, poppins } from "@/config/font";
+// src/app/layout.tsx (DMD)
 
-export const metadata = {
+import "./global.css";
+import type { Metadata } from "next";
+import {
+  assistant,
+  inter,
+  lato,
+  plusJakartaSans,
+  poppins,
+} from "@/config/font";
+import OrganizationSchema from "@/../../app/seo/schema/OrganitazionSchema";
+
+// Metadata utama untuk seluruh site
+export const metadata: Metadata = {
   title: "DMD ShoeParts Manufacturing",
-  description: "E-commerce sepatu by DMD",
+  description:
+    "DMD ShoeParts menyediakan berbagai kebutuhan sparepart dan perlengkapan sepatu berkualitas untuk industri dan UMKM.",
+  metadataBase: new URL("https://www.dmdshoeparts.com"),
+  openGraph: {
+    title: "DMD ShoeParts Manufacturing",
+    description:
+      "Pusat sparepart dan perlengkapan sepatu berkualitas dengan pilihan produk lengkap.",
+    url: "https://www.dmdshoeparts.com",
+    siteName: "DMD ShoeParts",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DMD ShoeParts Manufacturing",
+    description:
+      "E-commerce sparepart dan perlengkapan sepatu dari DMD ShoeParts.",
+  },
 };
 
 const assetPreconnects = [
@@ -12,14 +39,28 @@ const assetPreconnects = [
   "https://www.dmdshoeparts.com",
 ];
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="id">
       <head>
+        {/* Preconnect untuk font & asset, sama seperti sebelumnya */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         {assetPreconnects.map((href) => (
-          <link key={href} rel="preconnect" href={href} crossOrigin="anonymous" />
+          <link
+            key={href}
+            rel="preconnect"
+            href={href}
+            crossOrigin="anonymous"
+          />
         ))}
       </head>
       <body
@@ -32,6 +73,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "antialiased min-h-screen bg-[var(--surface)] text-[var(--text-primary)]",
         ].join(" ")}
       >
+        {/* ✅ Structured data Organization, sama konsepnya dengan Octobees */}
+        <OrganizationSchema />
+
         {children}
       </body>
     </html>
