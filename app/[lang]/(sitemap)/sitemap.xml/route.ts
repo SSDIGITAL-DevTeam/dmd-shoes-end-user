@@ -3,8 +3,8 @@ import {
   fmtDate,
   LOCALES,
   ORIGIN,
+  resolveLocaleParam,
   xml,
-  type Locale,
 } from "@/lib/sitemap";
 
 export const runtime = "nodejs";
@@ -14,15 +14,11 @@ export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ lang: Locale }> },
-) {
-  // ✅ params di-await dulu
+type LangRouteContext = { params: Promise<{ lang: string }> };
+
+export async function GET(_req: Request, { params }: LangRouteContext) {
   const { lang: rawLang } = await params;
-
-  const lang: Locale = LOCALES.includes(rawLang) ? rawLang : "id";
-
+  const lang = resolveLocaleParam(rawLang);
   const items = [
     { loc: `${ORIGIN}/${lang}/article.xml`, lastmod: fmtDate() },
     { loc: `${ORIGIN}/${lang}/product.xml`, lastmod: fmtDate() },

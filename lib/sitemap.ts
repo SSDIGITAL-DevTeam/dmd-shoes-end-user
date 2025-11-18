@@ -6,6 +6,16 @@ import { promises as fs } from "node:fs";
 export type Locale = "id" | "en";
 export const LOCALES: Locale[] = ["id", "en"];
 
+export function isLocale(value: unknown): value is Locale {
+  return (
+    typeof value === "string" && (LOCALES as ReadonlyArray<string>).includes(value)
+  );
+}
+
+export function resolveLocaleParam(value: string | null | undefined): Locale {
+  return isLocale(value) ? value : LOCALES[0];
+}
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
   "https://www.dmdshoeparts.com";
