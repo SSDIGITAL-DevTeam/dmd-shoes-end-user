@@ -8,11 +8,22 @@ import HubungiKamiButton from "@/components/ui/ContactUs";
 import OrganizationSchema from "@/app/seo/schema/OrganitazionSchema";
 import { inter, assistant, lato, poppins, plusJakartaSans } from "./config/font";
 import "../global.css";
+import { generateMetadata as buildMetadata } from "@/app/utils/generateMetadata";
+import { pageMetadata } from "@/constant/metadata";
 
-export const metadata = {
-  title: "DMD Shoes",
-  description: "DMD Shoes",
-};
+export async function generateMetadata() {
+  const metaTag = pageMetadata.home;
+  return buildMetadata({
+    title: metaTag.title,
+    description: metaTag.description,
+    keywords: metaTag.keywords,
+    path: "/",
+    locale: metaTag.openGraph.locale,
+    openGraphOverride: metaTag.openGraph,
+    twitterOverride: metaTag.twitter,
+    cmsPath: "home",
+  });
+}
 
 export async function generateStaticParams() {
   return i18n.locales.map((lang) => ({ lang }));
