@@ -23,6 +23,7 @@ export const defaultMetadata = {
   creator: defaultAuthor,
   publisher: defaultAuthor,
 
+  
   icons: {
     icon: defaultImage,
     shortcut: defaultImage,
