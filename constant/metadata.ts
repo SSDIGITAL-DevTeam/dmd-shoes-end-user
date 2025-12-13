@@ -22,7 +22,6 @@ export const defaultMetadata = {
   authors: [{ name: defaultAuthor, url: metadataBase.toString() }],
   creator: defaultAuthor,
   publisher: defaultAuthor,
-
   
   icons: {
     icon: defaultImage,
