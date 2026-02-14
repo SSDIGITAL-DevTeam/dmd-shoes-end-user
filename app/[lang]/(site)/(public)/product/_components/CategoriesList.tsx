@@ -25,23 +25,34 @@ type GroupedCategory = {
 const toCountValue = (value?: number | null): number =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
-const aggregateParentCount = (parent: Category, children: Category[]): number => {
+const aggregateParentCount = (
+  parent: Category,
+  children: Category[],
+): number => {
   const parentCount = toCountValue(parent.products_count);
-  const childTotal = children.reduce((sum, child) => sum + toCountValue(child.products_count), 0);
+  const childTotal = children.reduce(
+    (sum, child) => sum + toCountValue(child.products_count),
+    0,
+  );
   if (parentCount > 0 && parentCount >= childTotal) return parentCount;
   return parentCount + childTotal;
 };
 
 /** 🔹 Sorting helper */
 const getName = (c: Category) =>
-  c.name_text?.toLowerCase() ?? c.name?.id?.toLowerCase() ?? c.slug?.toLowerCase() ?? "";
+  c.name_text?.toLowerCase() ??
+  c.name?.id?.toLowerCase() ??
+  c.slug?.toLowerCase() ??
+  "";
 
 /** ===== Filter kategori yang punya produk + urut abjad ===== */
 const buildGroups = (categories: Category[]): GroupedCategory[] => {
   const hasOwnProducts = (c: Category) => toCountValue(c.products_count) > 0;
 
   // 🔹 Sort global ascending
-  const sortedCats = [...categories].sort((a, b) => getName(a).localeCompare(getName(b)));
+  const sortedCats = [...categories].sort((a, b) =>
+    getName(a).localeCompare(getName(b)),
+  );
 
   const parents = sortedCats.filter((cat) => !cat.parent_id);
   const childrenOf = (pid: number) =>
@@ -51,7 +62,7 @@ const buildGroups = (categories: Category[]): GroupedCategory[] => {
 
   for (const parent of parents) {
     const children = childrenOf(parent.id).sort((a, b) =>
-      getName(a).localeCompare(getName(b))
+      getName(a).localeCompare(getName(b)),
     );
     const total = aggregateParentCount(parent, children);
     if (total > 0) grouped.push({ parent, children });
@@ -59,11 +70,14 @@ const buildGroups = (categories: Category[]): GroupedCategory[] => {
 
   const parentIds = new Set(parents.map((p) => p.id));
   const orphans = sortedCats.filter(
-    (cat) => cat.parent_id && !parentIds.has(cat.parent_id) && hasOwnProducts(cat)
+    (cat) =>
+      cat.parent_id && !parentIds.has(cat.parent_id) && hasOwnProducts(cat),
   );
 
   return [
-    ...grouped.sort((a, b) => getName(a.parent).localeCompare(getName(b.parent))),
+    ...grouped.sort((a, b) =>
+      getName(a.parent).localeCompare(getName(b.parent)),
+    ),
     ...orphans.map((cat) => ({ parent: cat, children: [] as Category[] })),
   ];
 };
@@ -85,16 +99,22 @@ function CategoryRow({
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = children.length > 0;
 
-  const selectedChildrenCount = children.filter((c) => selectedIds.includes(c.id)).length;
-  const allChildrenSelected = hasChildren && selectedChildrenCount === children.length;
-  const someChildrenSelected = hasChildren && selectedChildrenCount > 0 && !allChildrenSelected;
+  const selectedChildrenCount = children.filter((c) =>
+    selectedIds.includes(c.id),
+  ).length;
+  const allChildrenSelected =
+    hasChildren && selectedChildrenCount === children.length;
+  const someChildrenSelected =
+    hasChildren && selectedChildrenCount > 0 && !allChildrenSelected;
 
   const parentRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (parentRef.current) parentRef.current.indeterminate = someChildrenSelected;
+    if (parentRef.current)
+      parentRef.current.indeterminate = someChildrenSelected;
   }, [someChildrenSelected]);
 
-  const isParentChecked = selectedIds.includes(parent.id) || allChildrenSelected;
+  const isParentChecked =
+    selectedIds.includes(parent.id) || allChildrenSelected;
 
   return (
     <div className="space-y-3">
@@ -128,11 +148,21 @@ function CategoryRow({
             className="text-gray-500 hover:text-gray-700 transition p-1"
           >
             {isOpen ? (
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
                 <path d="M5 12l5-5 5 5H5z" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
                 <path d="M5 8l5 5 5-5H5z" />
               </svg>
             )}
@@ -154,9 +184,12 @@ function CategoryRow({
                 />
                 <span className="leading-[1.4]">
                   {(() => {
-                    const base = child.name_text ?? child.name?.id ?? child.slug;
+                    const base =
+                      child.name_text ?? child.name?.id ?? child.slug;
                     const count = toCountValue(child.products_count);
-                    const countText = count ? new Intl.NumberFormat().format(count) : null;
+                    const countText = count
+                      ? new Intl.NumberFormat().format(count)
+                      : null;
                     return countText ? `${base} (${countText})` : base;
                   })()}
                 </span>
@@ -179,7 +212,10 @@ export default function CategoriesList({
 }: CategoriesListProps) {
   const safeCategories = categories ?? [];
 
-  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale ?? undefined), [locale]);
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale ?? undefined),
+    [locale],
+  );
   const formatCount = (value?: number | null) =>
     typeof value === "number" && Number.isFinite(value)
       ? numberFormatter.format(value)
@@ -187,11 +223,20 @@ export default function CategoriesList({
 
   const groups = useMemo(() => buildGroups(safeCategories), [safeCategories]);
 
-  const totalAllProducts = useMemo(
-    () =>
-      groups.reduce((sum, g) => sum + aggregateParentCount(g.parent, g.children), 0),
-    [groups]
-  );
+  // Hitung total produk dari semua kategori dan subkategori
+  let totalAllProducts = groups.reduce((sum, g) => {
+    // Parent
+    let parentCount = toCountValue(g.parent.products_count);
+    // Semua children
+    let childrenCount = g.children.reduce(
+      (childSum, child) => childSum + toCountValue(child.products_count),
+      0,
+    );
+    return sum + parentCount + childrenCount;
+  }, 0);
+  // if (typeof totalCount === "number" && Number.isFinite(totalCount) && totalCount > 0) {
+  //   totalAllProducts = totalCount;
+  // }
 
   const formattedTotal = formatCount(totalAllProducts);
   const allLabel = dictionary?.allProducts ?? "Semua Produk";
@@ -206,7 +251,9 @@ export default function CategoriesList({
     <div className={`${lato.className} space-y-4`}>
       {/* All Products + separator */}
       <div className="px-0">
-        <div className="text-[14px] text-[#121212]/80">{allProductsDisplay}</div>
+        <div className="text-[14px] text-[#121212]/80">
+          {allProductsDisplay}
+        </div>
         <div
           role="separator"
           aria-orientation="horizontal"
