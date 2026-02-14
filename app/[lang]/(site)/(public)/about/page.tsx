@@ -4,14 +4,25 @@ import { getDictionaryAbout } from "../../../../../dictionaries/about/get-dictio
 import About from "./_component/About";
 import FeaturesSection from "./_component/FeaturesSection";
 import HelpSection from "./_component/HelpSection";
+import { generateMetadata as buildMetadata } from "@/app/utils/generateMetadata";
+import { pageMetadata } from "@/constant/metadata";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 export const revalidate = 0;
 
-export const metadata = {
-  title: "About Our Company",
-  description: "Learn more about our company",
-};
+export async function generateMetadata() {
+  const meta = pageMetadata.about;
+  return buildMetadata({
+    title: meta.title,
+    description: meta.description,
+    keywords: meta.keywords,
+    path: "/about",
+    locale: meta.openGraph.locale,
+    openGraphOverride: meta.openGraph,
+    twitterOverride: meta.twitter,
+    cmsPath: "about",
+  });
+}
 
 export default async function AboutPage({ params }: PagePropsP<LangParamsP>) {
   const { lang } = await params;

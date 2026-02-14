@@ -2,11 +2,22 @@ import type { PagePropsP, LangParamsP } from "@/types/next";
 import { getDictionaryAbout as getDictionaryHome } from "../../../../../dictionaries/home/get-dictionary-home";
 import HomePageClient from "./HomePageClient";
 import { BootstrapService, type HomeBootstrapResponse } from "@/services/bootstrap.service";
+import { generateMetadata as buildMetadata } from "@/app/utils/generateMetadata";
+import { pageMetadata } from "@/constant/metadata";
 
-export const metadata = {
-  title: "Home - DMD ShoeParts Manufacturing",
-  description: "Innovative solutions for the future of footwear components",
-};
+export async function generateMetadata() {
+  const meta = pageMetadata.home;
+  return buildMetadata({
+    title: meta.title,
+    description: meta.description,
+    keywords: meta.keywords,
+    path: "/",
+    locale: meta.openGraph.locale,
+    openGraphOverride: meta.openGraph,
+    twitterOverride: meta.twitter,
+    cmsPath: "home",
+  });
+}
 
 export default async function IndexPage({ params }: PagePropsP<LangParamsP>) {
   const { lang } = await params;
