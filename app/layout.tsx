@@ -10,6 +10,7 @@ import {
   poppins,
 } from "@/config/font";
 import OrganizationSchema from "@/../../app/seo/schema/OrganitazionSchema";
+import { Analytics } from "@vercel/analytics/next";
 
 // Metadata utama untuk seluruh site
 export const metadata: Metadata = {
@@ -77,6 +78,7 @@ export default function RootLayout({
         <OrganizationSchema />
 
         {children}
+        <Analytics />
       </body>
     </html>
   );
