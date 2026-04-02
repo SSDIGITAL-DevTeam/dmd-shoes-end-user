@@ -48,9 +48,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "i.ytimg.com", pathname: "/**" },
       { protocol: "http", hostname: "localhost", pathname: "/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/**" },
+      // Local development IP addresses
+      { protocol: "http", hostname: "192.168.100.95", pathname: "/storage/**" },
+      { protocol: "http", hostname: "10.5.0.2", pathname: "/storage/**" },
     ],
     minimumCacheTTL: 60 * 60,
     qualities: [70, 75],
+    unoptimized: process.env.NODE_ENV === "development",
   },
   experimental: {
     optimizePackageImports: ["@tanstack/react-query", "react-icons"],

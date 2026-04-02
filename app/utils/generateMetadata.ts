@@ -12,12 +12,10 @@ const DEFAULT_IMAGE = `${DEFAULT_BASE_URL}/images/og-default-dmd.png`; // ganti 
 
 const BRAND_NAME = "DMD Shoes";
 
-// Kalau backend DMD punya tabel meta page seperti Octobees:
-// misal GET /api/v1/meta/pages/{slug}
-// Sesuaikan tipe MetaTag dan endpoint di bawah.
-type MetaTag = {
-  value: string;     // key, mis: "title", "description", "og:title"
-  content: string;   // isi nilai
+type CmsMetaTag = {
+  attr?: string;
+  identifier?: string; // key, mis: "title", "description", "og:title"
+  content?: string | null;
 };
 
 // ========================================
@@ -93,41 +91,54 @@ const parseRobots = (value?: string): Metadata["robots"] | undefined => {
   };
 };
 
+const normalizeCmsLocale = (value?: string) => {
+  const normalized = (value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-");
+
+  if (normalized.startsWith("en")) return "en";
+  return "id";
+};
+
 // === BAGIAN YANG NGAMBIL META DARI CMS BACKEND DMD ===
 // Kalau backend-mu belum punya meta CMS, fungsi ini akan selalu
 // return null dan tidak mengganggu apa pun.
 const fetchCmsOverrides = async (
   cmsPath?: string,
+  locale?: string,
 ): Promise<CmsOverrides | null> => {
   if (!cmsPath) return null;
 
   try {
-    // SESUAIKAN ENDPOINT INI DENGAN BACKEND DMD
-    // Contoh kalau punya endpoint /api/v1/meta/pages/{slug}
-    const response = await axiosInstance.get(`/meta/pages/${cmsPath}`, {
-      timeout: 5000,
-    });
+    const response = await axiosInstance.get(
+      `/meta/by-slug/${encodeURIComponent(cmsPath)}`,
+      {
+        params: { locale: normalizeCmsLocale(locale) },
+        timeout: 5000,
+      },
+    );
 
-    const meta = response?.data?.data?.meta as MetaTag[] | undefined;
+    const meta = response?.data?.data as CmsMetaTag[] | undefined;
     if (!meta?.length) return null;
 
-    const getValue = (key: string) =>
-      meta.find((item) => item.value === key)?.content?.trim();
+    const getValue = (identifier: string) =>
+      meta.find((item) => item.identifier === identifier)?.content?.trim();
 
     const keywordsValue = getValue("keywords");
     const keywords = keywordsValue
       ? keywordsValue.split(",").map((item) => item.trim()).filter(Boolean)
       : undefined;
 
-    const ogImages = getValue("og:images");
-    const twitterImages = getValue("twitter:images");
+    const ogImages = getValue("og:image") || getValue("og:images");
+    const twitterImages = getValue("twitter:image") || getValue("twitter:images");
 
     return {
       title: getValue("title"),
       description: getValue("description"),
       keywords,
       canonical: getValue("canonical"),
-      robots: parseRobots(getValue("robot")),
+      robots: parseRobots(getValue("robot") || getValue("robots")),
       openGraph: {
         title: getValue("og:title"),
         description: getValue("og:description"),
@@ -148,9 +159,12 @@ const fetchCmsOverrides = async (
         images: twitterImages || undefined,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
     // kalau gagal, jangan bikin build meledak; cukup abaikan override
-    console.error("generateMetadata: failed to fetch CMS meta", error);
+    // 404 = slug meta belum tersedia
+    if (error?.response?.status !== 404) {
+      console.error("generateMetadata: failed to fetch CMS meta", error);
+    }
     return null;
   }
 };
@@ -178,6 +192,7 @@ export async function generateMetadata({
   // cmsPath default ke slug path (home, career, dsb.)
   const cmsOverrides = await fetchCmsOverrides(
     cmsPath ?? (normalizedPath.replace(/^\//, "") || "home"),
+    locale,
   );
 
   const resolvedTitle = cmsOverrides?.title || title;

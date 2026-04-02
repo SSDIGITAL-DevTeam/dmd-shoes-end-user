@@ -74,6 +74,7 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/line-clamp"),
+    // @tailwindcss/line-clamp sudah tidak diperlukan di Tailwind CSS v3.3+
+    // Line clamp sudah built-in: gunakan class line-clamp-{n}
   ],
 };

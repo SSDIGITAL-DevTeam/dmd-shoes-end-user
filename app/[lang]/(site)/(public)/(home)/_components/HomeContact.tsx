@@ -24,15 +24,16 @@ export default function HomeContact({ lang, dict, className }: HomeContactProps)
       <div className={containerClass}>
         <div className="grid grid-cols-1 items-center gap-6 sm:gap-8 md:grid-cols-2">
           <div className="flex justify-center">
-            <div className="relative aspect-video w-full max-w-[420px] overflow-hidden rounded-lg">
+            <div className="flex w-full justify-center">
               <Image
-                src="/assets/images/home/home-contact.webp"
-                alt="Sepatu"
-                fill
-                className="object-contain"
+                src="/assets/images/home/cs-cewe.png"
+                alt="Customer service DMD Shoes"
+                width={1080}
+                height={1350}
+                className="h-auto w-[180px] sm:w-[210px] md:w-[235px]"
                 priority={false}
                 loading="lazy"
-                sizes="(min-width: 768px) 420px, 90vw"
+                sizes="(min-width: 768px) 235px, (min-width: 640px) 210px, 180px"
               />
             </div>
           </div>
