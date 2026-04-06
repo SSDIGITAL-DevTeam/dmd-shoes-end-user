@@ -1,0 +1,59 @@
+# ==============================================
+# CircleCI Configuration - PNPM VERSION
+# Optimized for Next.js 14 + Supabase
+# ==============================================
+
+version: 2.1
+
+commands:
+  install-deps:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pnpm-deps-v9-{{ checksum "pnpm-lock.yaml" }}
+            - pnpm-deps-v9-
+      - run:
+          name: Setup PNPM
+          command: corepack enable pnpm && pnpm -v
+      - run:
+          name: Install dependencies
+          command: pnpm install --frozen-lockfile --prefer-offline
+      - save_cache:
+          paths:
+            - ~/.local/share/pnpm/store
+            - node_modules
+          key: pnpm-deps-v9-{{ checksum "pnpm-lock.yaml" }}
+
+jobs:
+  # ✅ Lint + Type Checking
+  lint-typecheck:
+    docker:
+      - image: node:22-slim
+    resource_class: small
+    steps:
+      - install-deps
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run format:check
+
+  # ✅ Test Production Build
+  build-test:
+    docker:
+      - image: node:22-slim
+    resource_class: medium
+    environment:
+      SKIP_ENV_VALIDATION: "true"
+      NODE_ENV: "production"
+    steps:
+      - install-deps
+      - run: pnpm run build
+
+workflows:
+  version: 2
+  test-pipeline:
+    jobs:
+      - lint-typecheck
+      - build-test:
+          requires:
+            - lint-typecheck
