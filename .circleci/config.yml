@@ -1,6 +1,5 @@
 # ==============================================
-# CircleCI Configuration - PNPM VERSION
-# Optimized for Next.js 14 + Supabase
+# ✅ CircleCI Configuration - SESUAI package.json project ini
 # ==============================================
 
 version: 2.1
@@ -26,18 +25,29 @@ commands:
           key: pnpm-deps-v9-{{ checksum "pnpm-lock.yaml" }}
 
 jobs:
-  # ✅ Lint + Type Checking
-  lint-typecheck:
+  # ✅ 1. Type Check Typescript
+  typecheck:
     docker:
       - image: node:22-slim
     resource_class: small
     steps:
       - install-deps
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - run: pnpm run format:check
+      - run:
+          name: TypeScript Type Check
+          command: npx tsc --noEmit
 
-  # ✅ Test Production Build
+  # ✅ 2. Run Unit Test
+  test:
+    docker:
+      - image: node:22-slim
+    resource_class: small
+    steps:
+      - install-deps
+      - run:
+          name: Run Unit Tests
+          command: pnpm run test
+
+  # ✅ 3. Test Production Build
   build-test:
     docker:
       - image: node:22-slim
@@ -47,13 +57,17 @@ jobs:
       NODE_ENV: "production"
     steps:
       - install-deps
-      - run: pnpm run build
+      - run:
+          name: Build Next.js Application
+          command: pnpm run build
 
 workflows:
   version: 2
   test-pipeline:
     jobs:
-      - lint-typecheck
+      - typecheck
+      - test
       - build-test:
           requires:
-            - lint-typecheck
+            - typecheck
+            - test
