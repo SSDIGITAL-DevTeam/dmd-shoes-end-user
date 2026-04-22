@@ -36,9 +36,15 @@ const buildVideoPoster = (video?: HomepageVideo) =>
   video?.cover_url && video.cover_url.trim().length > 0 ? video.cover_url : undefined;
 
 export default function HomeVideo({ video, className }: HomeVideoProps) {
+  if (!video) return null;
+
   const youTubeId =
-    video?.mode === "youtube" ? extractYouTubeId(video.url ?? video.file_url ?? undefined) : null;
+    video.mode === "youtube" ? extractYouTubeId(video.url ?? video.file_url ?? undefined) : null;
   const poster = buildVideoPoster(video);
+
+  if (!youTubeId && !video.file_url) {
+    return null;
+  }
 
   return (
     <section className={clsx(className)}>
@@ -51,20 +57,16 @@ export default function HomeVideo({ video, className }: HomeVideoProps) {
               posterUrl={poster}
               playLabel="Putar video"
             />
-          ) : video?.file_url ? (
+          ) : (
             <video
               className="h-full w-full rounded-lg bg-black/5"
               controls
               preload="metadata"
               poster={poster}
             >
-              <source src={video.file_url} />
+              <source src={video.file_url ?? undefined} />
               Browser Anda tidak mendukung pemutaran video.
             </video>
-          ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-lg bg-black/5 text-sm text-gray-500">
-              Video belum tersedia.
-            </div>
           )}
         </div>
       </div>
