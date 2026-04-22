@@ -12,7 +12,7 @@ import {
 import OrganizationSchema from "@/../../app/seo/schema/OrganitazionSchema";
 import { Analytics } from "@vercel/analytics/next";
 
-// Metadata utama untuk seluruh site
+// Metadata utama untuk seluruh sites
 export const metadata: Metadata = {
   title: "DMD ShoeParts Manufacturing",
   description:
